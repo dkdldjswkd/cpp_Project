@@ -1,0 +1,2 @@
+﻿  소스.cpp
+C:\Users\carpk\OneDrive\Desktop\Procademy\02_Project\01_Assignment\22.09.16 - 채팅서버\Test\소스.cpp(7,18): error C2440: '초기화 중': 'nullptr'에서 'int &'(으)로 변환할 수 없습니다.
