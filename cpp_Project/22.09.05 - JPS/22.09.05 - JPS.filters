@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Default</Filter>
+    </ClInclude>
+    <ClInclude Include="stRGB.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="WndProc.h">
+      <Filter>WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="enums.h">
+      <Filter>WinAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="JPS.h">
+      <Filter>WinAPI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Default</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Default</Filter>
+    </ClCompile>
+    <ClCompile Include="stRGB.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="WndProc.cpp">
+      <Filter>WinAPI</Filter>
+    </ClCompile>
+    <ClCompile Include="JPS.cpp">
+      <Filter>WinAPI</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="WinAPI">
+      <UniqueIdentifier>{c5079b15-a8bc-4e94-ba77-9c2aa35022b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Default">
+      <UniqueIdentifier>{980e9a99-48ba-485f-aea4-ca62d83821e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{4c5139d2-d1c1-46ba-85ae-4189d116d798}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

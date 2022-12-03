@@ -1,0 +1,18 @@
+#include <windows.h>
+#include <iostream>
+#include <memory.h>
+#include <conio.h>
+#include <vector>
+#include <list>
+using namespace std;
+
+#define dfSCREEN_WIDTH		81		// ÄÜ¼Ö °¡·Î 80Ä­ + NULL
+#define dfSCREEN_HEIGHT		24		// ÄÜ¼Ö ¼¼·Î 24Ä­
+
+#define TITLE_FILE_NAME ".\\GamaData\\TITLE.txt"
+#define STAGEINFO_FILE_NAME ".\\GamaData\\StageInfo.txt"
+#define ENEMYINFO_FILE_NAME ".\\GamaData\\EnemyInfo.txt"
+#define CLEAR_FILE_NAME ".\\GamaData\\Clear.txt"
+#define OVER_FILE_NAME ".\\GamaData\\GAMEOVER.txt"
+
+bool Pos_Check(int x, int y);
