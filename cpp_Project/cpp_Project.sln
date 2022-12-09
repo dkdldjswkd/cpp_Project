@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "22.11.02 - IO_PENDING count
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "22.12.03 - LockFreeStack", "22.12.03 - LockFreeStack\22.12.03 - LockFreeStack.vcxproj", "{2ED56619-1219-488C-B592-A1619EF2FBA5}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "22.08.31 - A 스타", "22.08.31 - A 스타\22.08.31 - A 스타.vcxproj", "{DAEAA871-1F4A-4F84-8346-C69376876AA4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -81,6 +83,14 @@ Global
 		{2ED56619-1219-488C-B592-A1619EF2FBA5}.Release|x64.Build.0 = Release|x64
 		{2ED56619-1219-488C-B592-A1619EF2FBA5}.Release|x86.ActiveCfg = Release|Win32
 		{2ED56619-1219-488C-B592-A1619EF2FBA5}.Release|x86.Build.0 = Release|Win32
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Debug|x64.ActiveCfg = Debug|x64
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Debug|x64.Build.0 = Debug|x64
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Debug|x86.ActiveCfg = Debug|Win32
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Debug|x86.Build.0 = Debug|Win32
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Release|x64.ActiveCfg = Release|x64
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Release|x64.Build.0 = Release|x64
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Release|x86.ActiveCfg = Release|Win32
+		{DAEAA871-1F4A-4F84-8346-C69376876AA4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

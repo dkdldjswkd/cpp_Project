@@ -153,13 +153,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ObjectPool.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="ObjectPool.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ObjectPool.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ObjectPool.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
