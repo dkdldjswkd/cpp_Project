@@ -143,12 +143,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CrashDump.cpp" />
-    <ClCompile Include="LockFreeStack.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MemoryNote.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CrashDump.h" />
     <ClInclude Include="LockFreeStack.h" />
+    <ClInclude Include="MemoryNote.h" />
+    <ClInclude Include="ObjectPool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,6 +7,6 @@
     <Text Include="ObjectPool.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ObjectPool.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
 </Project>

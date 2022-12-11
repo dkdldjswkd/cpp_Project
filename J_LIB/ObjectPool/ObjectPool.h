@@ -6,6 +6,7 @@
 #include <BaseTsd.h>
 
 // * 해당 ObjectPool 구현 환경 : Release, x64, 최적화 컴파일 OFF
+//	오전 12:07 2022-12-12
 
 #define CRASH() do{				\
 					int* p = 0;	\
@@ -18,10 +19,25 @@ constexpr BYTE UNUSED_BIT = 17;
 
 namespace J_LIB {
 	template <typename T>
-	struct Pool_Node;
+	struct Node;
 
 	template <typename T>
 	class ObjectPool {
+	private:
+		struct Node {
+		public:
+			Node(ULONG_PTR integrity) : integrity(integrity), under(MEM_GUARD), obejct(), over(MEM_GUARD), next_node(nullptr) {};
+
+			//   8     8        ?        8       8
+			// [코드][언더] [ OBJECT ] [오버] [ NEXT* ]
+		public:
+			const ULONG_PTR integrity;
+			const size_t under = MEM_GUARD;
+			T obejct;
+			const size_t over = MEM_GUARD;
+			Node* next_node = nullptr;
+		};
+
 	public:
 		// node_num 만큼 node 동적할당, flag set (true : Alloc 시 마다 생성자 call, false : 노드 생성 시 최초 1회 생성자 call)
 		ObjectPool(int node_num = 0, bool flag_placementNew = false);
@@ -59,8 +75,8 @@ namespace J_LIB {
 		use_count(0)
 	{
 		for (int i = 0; i < node_num; i++) {
-			Pool_Node<T>* new_node = new Pool_Node<T>((ULONG_PTR)this);
-			new_node->next_node = (Pool_Node<T>*)unique_top;
+			Node* new_node = new Node((ULONG_PTR)this);
+			new_node->next_node = (Node*)unique_top;
 			unique_top = (DWORD64)new_node; 
 		}
 	}
@@ -70,10 +86,10 @@ namespace J_LIB {
 	ObjectPool<T>::~ObjectPool() {
 		// 상위 17bit(unique 값) 날림
 		DWORD64 copy_unique_top = unique_top;
-		Pool_Node<T>* top = (Pool_Node<T>*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
+		Node* top = (Node*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
 
 		for (; top != nullptr;) {
-			Pool_Node<T>* delete_node = top;
+			Node* delete_node = top;
 			top = top->next_node;
 			delete delete_node;
 		}
@@ -86,11 +102,11 @@ namespace J_LIB {
 
 		for (;;) {
 			DWORD64 copy_unique_top = unique_top;
-			Pool_Node<T>* copy_top = (Pool_Node<T>*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
+			Node* copy_top = (Node*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
 
 			// Not empty!!
-			if (copy_unique_top) {
-				Pool_Node<T>* unique_next = (Pool_Node<T>*)((unique_num << (64 - UNUSED_BIT)) | (DWORD64)copy_top->next_node);
+			if (copy_top) {
+				Node* unique_next = (Node*)((unique_num << (64 - UNUSED_BIT)) | (DWORD64)copy_top->next_node);
 
 				// 스택에 변화가 있었다면 다시시도
 				if (copy_unique_top != InterlockedCompareExchange64((LONG64*)&unique_top, (LONG64)unique_next, (LONG64)copy_unique_top))
@@ -109,7 +125,7 @@ namespace J_LIB {
 				InterlockedIncrement((LONG*)&use_count);
 
 				// Node 중 Object 포인터 ret
-				return &(new Pool_Node<T>((ULONG_PTR)this))->obejct;
+				return &(new Node((ULONG_PTR)this))->obejct;
 			}
 		}
 	}
@@ -118,7 +134,7 @@ namespace J_LIB {
 	template<typename T>
 	void ObjectPool<T>::Free(T* p_obejct) {
 		// 오브젝트 노드로 변환
-		Pool_Node<T>* node = (Pool_Node<T>*)((char*)p_obejct - sizeof(size_t) - sizeof(ULONG_PTR));
+		Node* node = (Node*)((char*)p_obejct - sizeof(size_t) - sizeof(ULONG_PTR));
 
 		if (integrity != node->integrity)
 			CRASH();
@@ -133,11 +149,11 @@ namespace J_LIB {
 
 		// Node의 주소를 Unique하게 바꿔서 스택에 꼽음 (ABA 이슈 해결책)
 		DWORD64 unique_num = InterlockedIncrement64((LONG64*)&unique);
-		Pool_Node<T>* unique_node = (Pool_Node<T>*)((unique_num << (64 - UNUSED_BIT)) | (DWORD64)node);
+		Node* unique_node = (Node*)((unique_num << (64 - UNUSED_BIT)) | (DWORD64)node);
 
 		for (;;) {
 			DWORD64 copy_unique_top = unique_top;
-			Pool_Node<T>* copy_top = (Pool_Node<T>*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
+			Node* copy_top = (Node*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
 			node->next_node = copy_top;
 
 			// 스택에 변화가 있었다면 다시시도
@@ -148,39 +164,19 @@ namespace J_LIB {
 			return;
 		}
 	}
-
-	//------------------------------
-	// Node
-	//------------------------------
-
-	template <typename T>
-	struct Pool_Node {
-	public:
-		Pool_Node(ULONG_PTR integrity) : integrity(integrity), under(MEM_GUARD), obejct(), over(MEM_GUARD), next_node(nullptr) {};
-
-		//   8     8        ?        8       8
-		// [코드][언더] [ OBJECT ] [오버] [ NEXT* ]
-	public:
-		const ULONG_PTR integrity;
-		const size_t under = MEM_GUARD;
-		T obejct;
-		const size_t over = MEM_GUARD;
-		Pool_Node* next_node = nullptr;
-	};
-
 }
 
 //------------------------------
 // ABA_BitCheck
 //------------------------------
 
-// 유저영역의 상위 17bit를 유저영역에서 여전히 사용하지 않는지
-// 런타임에 체크
+void ABA_BitCheck() {
+	SYSTEM_INFO sys_info;
+	GetSystemInfo(&sys_info);
 
-struct ABA_BitCheck {
-private:
-	ABA_BitCheck();
-
-private:
-	static ABA_BitCheck inst;
-};
+	// 오브젝트풀 내부에서 ABA 이슈를 막기 위해 유저영역에서 사용할 수 없는 메모리 주소 상위 17bit를 활용함
+	// 만약 윈도우 시스템의 업데이트로 인해 유저영역 상위 17bit를 활용하게 된다면 nullptr Access로 인한 크래시 유도.
+	if (((DWORD64)sys_info.lpMaximumApplicationAddress >> (64 - UNUSED_BIT))) {
+		CRASH();
+	}
+}

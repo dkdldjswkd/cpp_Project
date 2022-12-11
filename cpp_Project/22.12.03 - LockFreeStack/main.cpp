@@ -4,31 +4,44 @@
 #include "CrashDump.h"
 using namespace std;
 
+#define TEST_LOOP 1000000
+#define THREAD_NUM 5
+
 CrashDump dump;
 thread t[THREAD_NUM];
-LockFreeStack j_stack;
+LockFreeStack<int> j_stack;
 
-BYTE flag = 0x90;
 void f() {
-	BYTE func_flag = InterlockedAdd((LONG*)&flag, 0x10);
+	int a;
 
-	printf("flag : %02X \n", func_flag);
-
-	for (int i = 0; i < TEST_LOOP; i++)
-		j_stack.Push(func_flag);
-
-	for (int i = 0; i < TEST_LOOP; i++)
-		j_stack.Pop(func_flag);
-
-	for (int i = 0; i < TEST_LOOP; i++)
-		j_stack.Push(func_flag);
-
-	for (int i = 0; i < TEST_LOOP; i++)
-		j_stack.Pop(func_flag);
+	//for (int i = 0; i < TEST_LOOP; i++) {
+	for (;;) {
+		for (int i = 0; i < 5; i++) {
+			j_stack.Push(rand() % 1000);
+			j_stack.Pop(&a);
+		}
+	}
 }
+
+void monitor_func() {
+	for (;;) {
+		Sleep(1000);
+		system("cls");
+		int n = j_stack.GetUseCount();
+		printf("stack size : %d ", n);
+
+		if (n < 0 || n > 5) {
+			CRASH();
+		}
+	}
+}
+
+thread monitor_t;
 
 int main() {
 	printf("TEST_LOOP : %d / THREAD_NUM : %d \n", TEST_LOOP, THREAD_NUM);
+
+	monitor_t = thread(monitor_func);
 
 	for (int i = 0; i < THREAD_NUM; i++) {
 		t[i] = thread(f);
@@ -39,5 +52,9 @@ int main() {
 			t[i].join();
 	}
 
+	if (monitor_t.joinable())
+		monitor_t.join();
+
+	printf("stack size : %d ", j_stack.GetUseCount());
 	printf("³¡ \n");
 }
