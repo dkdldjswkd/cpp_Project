@@ -31,17 +31,19 @@ LFQueue<T>::LFQueue() {
 
 template<typename T>
 void LFQueue<T>::Enqueue(T t) {
-	Node* node = new Node;
-	node->data = t;
-	node->next = NULL;
+	Node* insert_node = new Node;
+	insert_node->data = t;
+	insert_node->next = NULL;
 
 	while (true) {
-		Node* tail = tail;
-		Node* next = tail->next;
+		Node* copy_tail = tail;
+		Node* next = copy_tail->next;
 
 		if (next == NULL) {
-			if (InterlockedCompareExchangePointer((PVOID*)&tail->next, node, next) == next) {
-				InterlockedCompareExchangePointer((PVOID*)&tail, node, tail);
+			// Enqueue 성공
+			if (InterlockedCompareExchangePointer((PVOID*)&tail->next, insert_node, NULL) == NULL) {
+				// tail 뒤로 밀기
+				InterlockedCompareExchangePointer((PVOID*)&tail, insert_node, copy_tail);
 				break;
 			}
 		}
