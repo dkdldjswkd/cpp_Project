@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{c4574a7c-6d86-4e29-b9c9-f3eeb4b6615f}</ProjectGuid>
+    <ProjectGuid>{f63bce54-2f7d-429f-abf4-953e44ab819f}</ProjectGuid>
     <RootNamespace>ObjectPool</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -70,25 +70,8 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\..\..\중간디렉터리</OutDir>
-    <IntDir>..\..\..\..\중간디렉터리</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-    <OutDir>..\..\..\..\중간디렉터리</OutDir>
-    <IntDir>..\..\..\..\중간디렉터리</IntDir>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
-    <OutDir>..\..\..\..\중간디렉터리</OutDir>
-    <IntDir>..\..\..\..\중간디렉터리</IntDir>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
     <OutDir>.</OutDir>
-    <IntDir>..\..\..\..\중간디렉터리</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -96,7 +79,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -111,8 +93,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <Optimization>Disabled</Optimization>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,7 +107,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,13 +132,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ObjectPool.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="ObjectPool.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ObjectPool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
