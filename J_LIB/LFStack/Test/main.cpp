@@ -1,23 +1,27 @@
 #include <iostream>
 #include <thread>
-#include "LockFreeStack.h"
 #include "CrashDump.h"
+#include "LFStack.h"
 using namespace std;
 
-#define TEST_LOOP 1000000
-#define THREAD_NUM 5
+#define TEST_LOOP 100000
+#define THREAD_NUM 3
+#define PUSH_SIZE 100 // 스레드에서의 최대 삽입 수
 
-CrashDump dump;
 thread t[THREAD_NUM];
-LockFreeStack<int> j_stack;
+LFStack<int> j_stack;
+CrashDump dump;
 
 void f() {
 	int a;
 
-	//for (int i = 0; i < TEST_LOOP; i++) {
 	for (;;) {
-		for (int i = 0; i < 5; i++) {
+
+		for (int j = 0; j < PUSH_SIZE; j++) {
 			j_stack.Push(rand() % 1000);
+		}
+
+		for (int j = 0; j < PUSH_SIZE; j++) {
 			j_stack.Pop(&a);
 		}
 	}
@@ -30,7 +34,7 @@ void monitor_func() {
 		int n = j_stack.GetUseCount();
 		printf("stack size : %d ", n);
 
-		if (n < 0 || n > 5) {
+		if (n < 0 || n > THREAD_NUM * PUSH_SIZE) {
 			CRASH();
 		}
 	}
@@ -51,9 +55,6 @@ int main() {
 		if (t[i].joinable())
 			t[i].join();
 	}
-
-	if (monitor_t.joinable())
-		monitor_t.join();
 
 	printf("stack size : %d ", j_stack.GetUseCount());
 	printf("끝 \n");

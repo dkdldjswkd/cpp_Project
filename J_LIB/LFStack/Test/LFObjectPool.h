@@ -4,16 +4,18 @@
 #include <stdarg.h>
 #include <memory>
 #include <BaseTsd.h>
+// LFObjectPool - 사본
 
 // * 해당 LFObjectPool 구현 환경 : Release, x64, 최적화 컴파일 OFF
-//	오전 12:07 2022-12-12
+//	오전 3:14 2022-12-18
 
 #define CRASH() do{				\
 					int* p = 0;	\
 					*p = 0;		\
 				}while(false)
 
-constexpr BYTE UNUSED_BIT = 17;
+constexpr BYTE	  UNUSED_BIT	= 17;
+constexpr DWORD64 UNUSED_COUNT	= 0x800000000000;
 
 #define MEM_GUARD 0xFDFDFDFDFDFDFDFD
 
@@ -48,10 +50,12 @@ namespace J_LIB {
 	private:
 		const ULONG_PTR integrity = (ULONG_PTR)this;
 		bool flag_placementNew = false;
-		__declspec(align(64)) DWORD64 unique = 0;
-		__declspec(align(64)) DWORD64 unique_top = NULL;
+		__declspec(align(64)) DWORD64 top_ABA = NULL;
 		__declspec(align(64)) int capacity = 0;
 		__declspec(align(64)) int use_count = 0;
+		int object_offset = 0;
+		DWORD64 mask		 = 0x00007FFFFFFFFFFF; // 상위 17bit 0
+		DWORD64 mask_reverse = 0xFFFF800000000000; // 상위 17bit 0
 
 	public:
 		T* Alloc();
@@ -70,23 +74,29 @@ namespace J_LIB {
 		integrity((ULONG_PTR)this),
 		flag_placementNew(flag_placementNew),
 
-		unique_top(NULL),
+		top_ABA(NULL),
 		capacity(node_num),
 		use_count(0)
 	{
-		for (int i = 0; i < node_num; i++) {
+		// object_offset를 셋팅하기 위해 Node 생성
+		Node* new_node = new Node((ULONG_PTR)this);
+		new_node->next_node = (Node*)top_ABA;
+		top_ABA = (DWORD64)new_node;
+		object_offset = ((int)(&new_node->obejct) - (int)new_node);
+		capacity++;
+
+		// 요청한 노드 개수만큼 미리 노드 생성
+		for (int i = 0; i < node_num - 1; i++) {
 			Node* new_node = new Node((ULONG_PTR)this);
-			new_node->next_node = (Node*)unique_top;
-			unique_top = (DWORD64)new_node; 
+			new_node->next_node = (Node*)top_ABA;
+			top_ABA = (DWORD64)new_node;
 		}
 	}
 
 	// 소멸자 (* 호출 시 멀티 스레드에서의 Alloc, Free 호출이 있어선 안됨)
 	template<typename T>
 	LFObjectPool<T>::~LFObjectPool() {
-		// 상위 17bit(unique 값) 날림
-		DWORD64 copy_unique_top = unique_top;
-		Node* top = (Node*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
+		Node* top = (Node*)(top_ABA & mask);
 
 		for (; top != nullptr;) {
 			Node* delete_node = top;
@@ -98,18 +108,18 @@ namespace J_LIB {
 	// 락프리 스택의 POP에 해당
 	template<typename T>
 	T* LFObjectPool<T>::Alloc() {
-		DWORD64 unique_num = InterlockedIncrement64((LONG64*)&unique);
-
 		for (;;) {
-			DWORD64 copy_unique_top = unique_top;
-			Node* copy_top = (Node*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
+			DWORD64 copy_ABA = top_ABA;
+			Node* copy_top = (Node*)(copy_ABA & mask);
 
 			// Not empty!!
 			if (copy_top) {
-				Node* unique_next = (Node*)((unique_num << (64 - UNUSED_BIT)) | (DWORD64)copy_top->next_node);
+				// aba count 추출 및 new_ABA 생성
+				DWORD64 aba_count = (copy_ABA + UNUSED_COUNT) & mask_reverse;
+				Node* new_ABA = (Node*)(aba_count | (DWORD64)copy_top->next_node);
 
 				// 스택에 변화가 있었다면 다시시도
-				if (copy_unique_top != InterlockedCompareExchange64((LONG64*)&unique_top, (LONG64)unique_next, (LONG64)copy_unique_top))
+				if (copy_ABA != InterlockedCompareExchange64((LONG64*)&top_ABA, (LONG64)new_ABA, (LONG64)copy_ABA))
 					continue;
 
 				if (flag_placementNew) {
@@ -130,11 +140,11 @@ namespace J_LIB {
 		}
 	}
 
-	// 락프리 스택의 PUSH에 해당 (ABA 문제를 막기위해 스택에 꽂을때 unique 값을 증가시켜주자)
+	// 락프리 스택의 PUSH에 해당
 	template<typename T>
 	void LFObjectPool<T>::Free(T* p_obejct) {
 		// 오브젝트 노드로 변환
-		Node* node = (Node*)((char*)p_obejct - sizeof(size_t) - sizeof(ULONG_PTR));
+		Node* node = (Node*)((char*)p_obejct - object_offset);
 
 		if (integrity != node->integrity)
 			CRASH();
@@ -147,17 +157,18 @@ namespace J_LIB {
 			p_obejct->~T();
 		}
 
-		// Node의 주소를 Unique하게 바꿔서 스택에 꼽음 (ABA 이슈 해결책)
-		DWORD64 unique_num = InterlockedIncrement64((LONG64*)&unique);
-		Node* unique_node = (Node*)((unique_num << (64 - UNUSED_BIT)) | (DWORD64)node);
-
 		for (;;) {
-			DWORD64 copy_unique_top = unique_top;
-			Node* copy_top = (Node*)((copy_unique_top << UNUSED_BIT) >> UNUSED_BIT);
-			node->next_node = copy_top;
+			DWORD64 copy_ABA = top_ABA;
+
+			// top에 이어줌
+			node->next_node = (Node*)(copy_ABA & mask);
+
+			// aba count 추출 및 new_ABA 생성
+			DWORD64 aba_count = (copy_ABA + UNUSED_COUNT) & mask_reverse;
+			Node* new_ABA = (Node*)(aba_count | (DWORD64)node);
 
 			// 스택에 변화가 있었다면 다시시도
-			if ((DWORD64)copy_unique_top != InterlockedCompareExchange64((LONG64*)&unique_top, (LONG64)unique_node, (LONG64)copy_unique_top))
+			if ((DWORD64)copy_ABA != InterlockedCompareExchange64((LONG64*)&top_ABA, (LONG64)new_ABA, (LONG64)copy_ABA))
 				continue;
 
 			InterlockedDecrement((LONG*)&use_count);
