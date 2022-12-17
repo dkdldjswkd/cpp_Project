@@ -4,9 +4,10 @@
 #include <stdarg.h>
 #include <memory>
 #include <BaseTsd.h>
+// LFObjectPool - 원본
 
-// * 해당 ObjectPool 구현 환경 : Release, x64, 최적화 컴파일 OFF
-//	오전 12:07 2022-12-12
+// * 해당 LFObjectPool 구현 환경 : Release, x64, 최적화 컴파일 OFF
+//	오후 8:52 2022-12-16
 
 #define CRASH() do{				\
 					int* p = 0;	\
@@ -52,6 +53,7 @@ namespace J_LIB {
 		__declspec(align(64)) DWORD64 unique_top = NULL;
 		__declspec(align(64)) int capacity = 0;
 		__declspec(align(64)) int use_count = 0;
+		int object_offset = 0;
 
 	public:
 		T* Alloc();
@@ -74,6 +76,14 @@ namespace J_LIB {
 		capacity(node_num),
 		use_count(0)
 	{
+		// object_offset를 셋팅하기 위해 Node 생성
+		Node* new_node = new Node((ULONG_PTR)this);
+		new_node->next_node = (Node*)unique_top;
+		unique_top = (DWORD64)new_node;
+		object_offset = ((int)(&new_node->obejct) - (int)new_node);
+		capacity++;
+
+		// 요청한 노드 개수만큼 미리 노드 생성
 		for (int i = 0; i < node_num; i++) {
 			Node* new_node = new Node((ULONG_PTR)this);
 			new_node->next_node = (Node*)unique_top;
@@ -134,7 +144,7 @@ namespace J_LIB {
 	template<typename T>
 	void LFObjectPool<T>::Free(T* p_obejct) {
 		// 오브젝트 노드로 변환
-		Node* node = (Node*)((char*)p_obejct - sizeof(size_t) - sizeof(ULONG_PTR));
+		Node* node = (Node*)((char*)p_obejct - object_offset);
 
 		if (integrity != node->integrity)
 			CRASH();

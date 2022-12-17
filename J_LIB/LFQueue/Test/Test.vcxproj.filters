@@ -3,8 +3,12 @@
   <ItemGroup>
     <ClInclude Include="LFObjectPool.h" />
     <ClInclude Include="LFQueue.h" />
+    <ClInclude Include="CrashDump.h" />
+    <ClInclude Include="MemoryNote.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="CrashDump.cpp" />
+    <ClCompile Include="MemoryNote.cpp" />
   </ItemGroup>
 </Project>

@@ -1,9 +1,12 @@
 #pragma once
 #include <Windows.h>
 #include "LFObjectPool.h"
+// LFStack - 원본
 
 // * 해당 LFStack 구현 환경 : Release, x64, 최적화 컴파일 OFF
-//		J_LIB::LFObjectPool에 종속적임
+//	오후 10:48 2022-12-15
+
+// J_LIB::LFObjectPool에 종속적임
 
 #define CRASH()		do{						\
 						int* p = nullptr;	\
@@ -11,7 +14,7 @@
 					}while(true); 
 
 template <typename T>
-struct LFStack{
+struct LFStack {
 public:
 	struct Node {
 	public:
@@ -34,7 +37,7 @@ public:
 private:
 	J_LIB::LFObjectPool<Node> node_pool;
 
-public:
+private:
 	__declspec(align(64)) DWORD64 unique = 0;
 	__declspec(align(64)) DWORD64 unique_top = NULL;
 	__declspec(align(64)) int node_count = 0;
@@ -46,7 +49,7 @@ public:
 };
 
 //------------------------------
-// LockFreeStack
+// LFStack
 //------------------------------
 
 template <typename T>
@@ -108,13 +111,12 @@ bool LFStack<T>::Pop(T* dst) {
 				continue;
 
 			InterlockedDecrement((LONG*)&node_count);
-			memmove(dst, &copy_top->data, sizeof(copy_top->data));
+			*dst = copy_top->data;
 			node_pool.Free(copy_top);
 			return true;
 		}
 		// empty!!
 		else {
-			dst = nullptr;
 			return false;
 		}
 	}
