@@ -1,8 +1,6 @@
 #include "CrashDump.h"
-#include "MemoryNote.h"
 #include <stdio.h>
 
-extern MemoryNote note;
 long CrashDump::_DumpCount;
 bool CrashDump::wait = false;
 
@@ -89,17 +87,6 @@ LONG WINAPI CrashDump::MyExceptionFilter(__in PEXCEPTION_POINTERS pExceptionPoin
 		CloseHandle(hDumpFile);
 
 		wprintf(L"CrashDump Save Finish !");
-	}
-
-	// memory note write
-	FILE* f;
-	fopen_s(&f, "memory_log", "wb");
-	if (f != 0) {
-		fwrite(note.begin, note.note_size, 1, f);
-		fclose(f);
-	}
-	else {
-		printf("¸Þ¸ð¸® LOG fwrite fail \n");
 	}
 
 	return EXCEPTION_EXECUTE_HANDLER;

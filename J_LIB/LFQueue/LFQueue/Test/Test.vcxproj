@@ -135,12 +135,12 @@
     <ClInclude Include="CrashDump.h" />
     <ClInclude Include="LFObjectPool.h" />
     <ClInclude Include="LFQueue.h" />
-    <ClInclude Include="MemoryNote.h" />
+    <ClInclude Include="MemoryLog.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MemoryNote.cpp" />
+    <ClCompile Include="MemoryLog.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
