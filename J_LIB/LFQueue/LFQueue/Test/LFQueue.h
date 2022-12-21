@@ -1,6 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include "LFObjectPool.h"
+#include "MemoryLog.h"
 
 // * 해당 LFQueue 구현 환경 : Release, x64, 최적화 컴파일 OFF
 //		J_LIB::LFObjectPool에 종속적
@@ -83,38 +84,46 @@ LFQueue<T>::~LFQueue(){
 
 template<typename T>
 void LFQueue<T>::Enqueue(T data, BYTE thread_id) {
+	char* wp;
+
 	Node* insert_node = node_pool.Alloc();
 	insert_node->data = data;
 	insert_node->next = NULL;
 
 	for (;;) {
 		DWORD64 copy_tail_ABA = tail_ABA;
-		Node* copy_tail = (Node*)(copy_tail_ABA & mask);
-		Node* copy_tail_next = copy_tail->next;
+		memLogger.Log(thread_id + 0, &copy_tail_ABA);
 
-		// aba count 추출 및 new_ABA 생성
-		DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
-		DWORD64 new_tail_ABA = (tail_aba_count | (DWORD64)insert_node);
+		Node* copy_tail = (Node*)(copy_tail_ABA & mask);
+		memLogger.Log(thread_id + 1, &copy_tail);
+
+		Node* copy_tail_next = copy_tail->next;
+		memLogger.Log(thread_id + 2, &copy_tail_next);
+
 		if (insert_node == nullptr)
 			CRASH();
 
 		if (copy_tail_next == nullptr){
+			memLogger.Log(thread_id + 3);
+
 			// Enqueue 시도
 			if (InterlockedCompareExchange64((LONG64*)&copy_tail->next, (LONG64)insert_node, NULL) == NULL) {
 				InterlockedIncrement((LONG*)&size);
+
+				// new_ABA 생성
+				DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
+				DWORD64 new_tail_ABA = (tail_aba_count | (DWORD64)insert_node);
 				InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)new_tail_ABA, (LONG64)copy_tail_ABA);
 				return;
 			}
 		}
 		else {
 			// next_ABA 생성
+			DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
 			DWORD64 next_tail_ABA = (tail_aba_count | (DWORD64)copy_tail_next);
-			// ABA 체크 해야함
-			//...
-
 			if (InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA) == (LONG64)copy_tail_ABA) {
-				// tail->next == tail
-				if(copy_tail_next == NULL)
+				// 디버깅
+				if (copy_tail_next == NULL)
 					CRASH();
 				if (copy_tail_next == copy_tail)
 					CRASH();
@@ -130,14 +139,14 @@ bool LFQueue<T>::Dequeue(T* data, BYTE thread_id) {
 		return false;
 	}
 
-	for (int i=0;i < 0xffffffff;i++) {
+	for (int i=0;;i++) {
 		DWORD64 copy_head_ABA = head_ABA;
 		Node* copy_head = (Node*)(copy_head_ABA & mask);
 		Node* copy_head_next = copy_head->next;
 
 		// ABA 발생 (copy_head가 새로운 node를 가르키는 상황)
 		if (copy_head_next == nullptr) {
-			if (i != 0 && i % 1000 == 0) printf("dq : %d \n", i);
+			if (i != 0 && i % 1000 == 0) printf("dq : %d, thread_id : %x \n", i, thread_id);
 			continue;
 		}
 
@@ -149,19 +158,21 @@ bool LFQueue<T>::Dequeue(T* data, BYTE thread_id) {
 		Node* copy_tail = (Node*)(copy_tail_ABA & mask);
 		Node* copy_tail_next = copy_tail->next;
 
-		// aba count 추출 및 new_ABA 생성
-		DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
-		Node* next_tail_ABA = (Node*)(tail_aba_count | (DWORD64)copy_tail_next);
-		
 		// head, tail 역전 방지
-		if (copy_head == copy_tail) {
-			// ABA 발생 // ** 여기서 무한루프 돔
-			if (copy_tail_next == NULL) {
-				if (i != 0 && i % 1000 == 0) printf("dq : %d \n", i);
-				continue;
-			}
+		if (copy_head_ABA == copy_tail_ABA) {
+			//// ABA 발생 // ** 여기서 무한루프 돔
+			//if (copy_tail_next == NULL) {
+			//	if (i != 0 && i % 1000 == 0) printf("dq : %d, thread_id : %x \n", i, thread_id);
+			//	continue;
+			//}
+
+			// aba count 추출 및 new_ABA 생성
+			DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
+			Node* next_tail_ABA = (Node*)(tail_aba_count | (DWORD64)copy_tail_next);
 
 			if (InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA)) {
+				if(copy_tail_next == nullptr)
+					CRASH();
 				if (copy_tail == copy_tail_next)
 					CRASH();
 			}

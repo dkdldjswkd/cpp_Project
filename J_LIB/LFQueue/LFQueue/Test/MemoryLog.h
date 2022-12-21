@@ -17,3 +17,5 @@ public:
 	char* Log(BYTE thread_id);
 	char* Log(BYTE thread_id, void* p_logMsg);
 };
+
+extern MemoryLog memLogger;

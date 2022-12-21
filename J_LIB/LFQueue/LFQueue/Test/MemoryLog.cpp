@@ -4,6 +4,8 @@
 #define LOG_SIZE 8
 #define MEMORY_SIZE 134217727 // 0xFFFFFFFF >> 5; (2^27)
 
+MemoryLog memLogger;
+
 MemoryLog::MemoryLog(){
 	mask = MEMORY_SIZE;
 
