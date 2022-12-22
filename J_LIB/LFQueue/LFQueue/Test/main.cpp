@@ -25,29 +25,17 @@ void f() {
 		for (int j = 0; j < PUSH_LOOP; j++) {
 			Q.Enqueue(a, func_flag);
 		}
-		if(i % 1000000 == 0)
-			printf("Enqueue 완료 \n");
-
-		// CRASH, 큐가 이상한 상태
-		use_size = Q.GetUseCount();
-		if (use_size < -1 || use_size > MAX_NODE) CRASH();
-
-		for (int j = 0; j < PUSH_LOOP; j++) {
-			Q.Dequeue(&a, func_flag);
-			if (a != 100)
-				CRASH();
-		}
-		if (i % 1000000 == 0)
-			printf("Dequeue 완료 \n");
-
-		// CRASH, 큐가 이상한 상태
-		use_size = Q.GetUseCount();
-		if (use_size < -1 || use_size > MAX_NODE) CRASH();
 
 		// 스레드 종료
 		if (J::shutdown) {
 			printf("종료");
 			break;
+		}
+
+		for (int j = 0; j < PUSH_LOOP; j++) {
+			Q.Dequeue(&a, func_flag);
+			if (a != 100)
+				CRASH();
 		}
 	}
 }
@@ -56,12 +44,14 @@ void monitor_func() {
 	int count = 0;
 
 	for (;;) {
-		Sleep(1000);
-		printf("node count : %d \n", use_size);
+		Sleep(100);
+		printf("node count : %d \n", Q.GetUseCount());
 
 		++count;
-		if (count == 10)
+		if (count == 100) {
 			system("cls");
+			count = 0;
+		}
 
 #pragma warning(suppress : 4996)
 		if (kbhit()) {

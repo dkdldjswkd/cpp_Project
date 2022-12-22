@@ -10,7 +10,7 @@
 
 #define THREAD_NUM	2
 #define TEST_LOOP	100
-#define PUSH_LOOP	3
+#define PUSH_LOOP	2
 #define MAX_NODE	THREAD_NUM * PUSH_LOOP
 
 template <typename T>
@@ -44,7 +44,7 @@ private:
 public:
 	__declspec(align(64)) DWORD64 head_ABA;
 	__declspec(align(64)) DWORD64 tail_ABA;
-	__declspec(align(64)) int size = 0;
+	__declspec(align(32)) int size = 0;
 
 public:
 	void Enqueue(T data, BYTE thread_id);
@@ -88,32 +88,31 @@ void LFQueue<T>::Enqueue(T data, BYTE thread_id) {
 
 	Node* insert_node = node_pool.Alloc();
 	insert_node->data = data;
-	insert_node->next = NULL;
+	wp = memLogger.Log(thread_id + 0, &insert_node);
 
 	for (;;) {
 		DWORD64 copy_tail_ABA = tail_ABA;
-		memLogger.Log(thread_id + 0, &copy_tail_ABA);
-
 		Node* copy_tail = (Node*)(copy_tail_ABA & mask);
-		memLogger.Log(thread_id + 1, &copy_tail);
+		wp = memLogger.Log(thread_id + 1, &copy_tail);
 
 		Node* copy_tail_next = copy_tail->next;
-		memLogger.Log(thread_id + 2, &copy_tail_next);
-
-		if (insert_node == nullptr)
-			CRASH();
+		wp = memLogger.Log(thread_id + 2, &copy_tail_next);
 
 		if (copy_tail_next == nullptr){
-			memLogger.Log(thread_id + 3);
-
 			// Enqueue 시도
 			if (InterlockedCompareExchange64((LONG64*)&copy_tail->next, (LONG64)insert_node, NULL) == NULL) {
-				InterlockedIncrement((LONG*)&size);
+				wp = memLogger.Log(thread_id + 3, &insert_node);
+				int eq_size = InterlockedIncrement((LONG*)&size);
+				wp = memLogger.Log(thread_id + 3, &eq_size);
 
 				// new_ABA 생성
 				DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
 				DWORD64 new_tail_ABA = (tail_aba_count | (DWORD64)insert_node);
-				InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)new_tail_ABA, (LONG64)copy_tail_ABA);
+				LONG64 ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)new_tail_ABA, (LONG64)copy_tail_ABA);
+
+				if(ret == copy_tail_ABA)
+					wp = memLogger.Log(thread_id + 4, &insert_node);
+
 				return;
 			}
 		}
@@ -121,61 +120,70 @@ void LFQueue<T>::Enqueue(T data, BYTE thread_id) {
 			// next_ABA 생성
 			DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
 			DWORD64 next_tail_ABA = (tail_aba_count | (DWORD64)copy_tail_next);
-			if (InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA) == (LONG64)copy_tail_ABA) {
-				// 디버깅
-				if (copy_tail_next == NULL)
-					CRASH();
-				if (copy_tail_next == copy_tail)
-					CRASH();
-			}
+			LONG64 ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA);
+			if (ret == copy_tail_ABA)
+				wp = memLogger.Log(thread_id + 5, &copy_tail_next);
 		}
 	}
 }
 
 template<typename T>
 bool LFQueue<T>::Dequeue(T* data, BYTE thread_id) {
-	if (InterlockedDecrement((LONG*)&size) < 0) {
+	char* wp;
+
+	int dq_size = InterlockedDecrement((LONG*)&size);
+	// 내가 빼서 마이너스가 되버린다면
+	if (dq_size < 0) {
+		// 증가 시키고 반환
 		InterlockedIncrement((LONG*)&size);
 		return false;
 	}
 
 	for (int i=0;;i++) {
+		// 내가 빼서 되야하는 노드 숫자
+		wp = memLogger.Log(thread_id + 6, &dq_size);
+
 		DWORD64 copy_head_ABA = head_ABA;
 		Node* copy_head = (Node*)(copy_head_ABA & mask);
-		Node* copy_head_next = copy_head->next;
+		wp = memLogger.Log(thread_id + 7, &copy_head);
 
-		// ABA 발생 (copy_head가 새로운 node를 가르키는 상황)
-		if (copy_head_next == nullptr) {
-			if (i != 0 && i % 1000 == 0) printf("dq : %d, thread_id : %x \n", i, thread_id);
-			continue;
-		}
+		Node* copy_head_next = copy_head->next;
+		wp = memLogger.Log(thread_id + 8, &copy_head_next);
+
+		//// ABA 발생 (copy_head가 새로운 node를 가르키는 상황)
+		//if (copy_head_next == nullptr) {
+		//	if (i != 0 && i % 10000 == 0) printf("dq : %d, thread_id : %x \n", i, thread_id);
+		//	continue;
+		//}
 
 		//------------------------------
 		// head, tail 역전 방지
 		//------------------------------
 
 		DWORD64 copy_tail_ABA = tail_ABA;
-		Node* copy_tail = (Node*)(copy_tail_ABA & mask);
-		Node* copy_tail_next = copy_tail->next;
-
-		// head, tail 역전 방지
 		if (copy_head_ABA == copy_tail_ABA) {
-			//// ABA 발생 // ** 여기서 무한루프 돔
-			//if (copy_tail_next == NULL) {
-			//	if (i != 0 && i % 1000 == 0) printf("dq : %d, thread_id : %x \n", i, thread_id);
-			//	continue;
-			//}
+			Node* copy_tail = (Node*)(copy_tail_ABA & mask);
+			wp = memLogger.Log(thread_id + 9, &copy_tail);
 
-			// aba count 추출 및 new_ABA 생성
+			Node* copy_tail_next = copy_tail->next;
+			wp = memLogger.Log(thread_id + 10, &copy_tail_next);
+
+			if (copy_tail_next == nullptr)
+				continue;
+
 			DWORD64 tail_aba_count = (copy_tail_ABA + UNUSED_COUNT) & mask_stamp;
-			Node* next_tail_ABA = (Node*)(tail_aba_count | (DWORD64)copy_tail_next);
+			DWORD64 next_tail_ABA = (tail_aba_count | (DWORD64)copy_tail_next);
+			auto ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA);
 
-			if (InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA)) {
-				if(copy_tail_next == nullptr)
-					CRASH();
-				if (copy_tail == copy_tail_next)
-					CRASH();
+			// tail 밀기 성공
+			if (ret == copy_tail_ABA) {
+				wp = memLogger.Log(thread_id + 11, &copy_tail_next);
+				// 근데 tail이 nullptr로 밀림
+				if (copy_tail_next == nullptr)
+				CRASH();
 			}
+
+			if (i != 0 && i % 10000 == 0) printf("dq : %d, thread_id : %x \n", i, thread_id);
 			continue;
 		}
 
@@ -189,6 +197,11 @@ bool LFQueue<T>::Dequeue(T* data, BYTE thread_id) {
 
 		// Dequeue 시도
 		if (InterlockedCompareExchange64((LONG64*)&head_ABA, (LONG64)next_head_ABA, (LONG64)copy_head_ABA) == (DWORD64)copy_head_ABA) {
+			wp = memLogger.Log(thread_id + 12, &copy_head_next);
+
+			if (copy_head_next == nullptr)
+				CRASH();
+
 			*data = copy_head_next->data;
 			node_pool.Free(copy_head);
 			return true;
