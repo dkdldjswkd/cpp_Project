@@ -1,5 +1,5 @@
-[battle] [Dec 25 2022 04:04:06 / FATAL] 3 start battle  asdf 
-[battle] [Dec 25 2022 04:04:06 / FATAL] 3 start battle  asdf 
-[battle] [Dec 25 2022 04:04:06 / FATAL] 3 start battle  asdf 
-[battle] [Dec 25 2022 04:04:06 / FATAL] 3 start battle  asdf 
-[battle] [Dec 25 2022 04:04:06 / FATAL] 3 start battle  asdf 
+3 start battle  asdf 
+3 start battle  asdf 
+3 start battle  asdf 
+3 start battle  asdf 
+3 start battle  asdf 

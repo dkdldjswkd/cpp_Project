@@ -4,7 +4,9 @@
 
 #define LOG_SIZE 1024
 #define LOG_INST				Logger::inst
-#define LOG_INIT()				do { Logger::inst.Init(); } while (false);
+
+#define LOG_INIT()				do { Logger::inst.Init();	 } while (false);
+#define LOG_RELEASE()			do { Logger::inst.Release(); } while (false);
 #define LOG(type, format, ...)	do { Logger::inst.Log(type, format, __VA_ARGS__); }while(false);
 
 struct Logger {
@@ -15,18 +17,7 @@ public:
 	static Logger inst;
 
 public:
-	struct LogData {
-	public:
-		LogData();
-		~LogData();
-
-	public:
-		const char* type;
-		char log_str[LOG_SIZE];
-	};
-
-public:
-	static enum LogLevel :BYTE {
+	static enum class LogLevel :BYTE {
 		LEVEL_FATAL = 0,
 		LEVEL_ERROR = 1,
 		LEVEL_WARN = 2,
@@ -39,7 +30,20 @@ public:
 #define LOG_LEVEL_INFO  Logger::LogLevel::LEVEL_INFO	
 #define LOG_LEVEL_DEBUG Logger::LogLevel::LEVEL_DEBUG
 
+public:
+	static struct LogData {
+	public:
+		LogData();
+		~LogData();
+
+	public:
+		const char* type;
+		Logger::LogLevel logLevel;
+		char log_str[LOG_SIZE];
+	};
+
 private:
+	bool shutDown = false;
 	bool initialised = false;
 	std::thread log_thread;
 	LogLevel logLevel = LOG_LEVEL_INFO;
@@ -48,6 +52,7 @@ private:
 private:
 	void Log_Worker();
 	static VOID NTAPI Log_APC(ULONG_PTR p_LoggingFunctor);
+	static VOID NTAPI ShutDown_APC(ULONG_PTR);
 
 public:
 	bool Init();
