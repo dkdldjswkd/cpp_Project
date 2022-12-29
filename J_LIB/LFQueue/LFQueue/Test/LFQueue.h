@@ -150,12 +150,6 @@ bool LFQueue<T>::Dequeue(T* data, BYTE thread_id) {
 		Node* copy_head_next = copy_head->next;
 		wp = memLogger.Log(thread_id + 8, &copy_head_next);
 
-		//// ABA 발생 (copy_head가 새로운 node를 가르키는 상황)
-		//if (copy_head_next == nullptr) {
-		//	if (i != 0 && i % 10000 == 0) printf("dq : %d, thread_id : %x \n", i, thread_id);
-		//	continue;
-		//}
-
 		//------------------------------
 		// head, tail 역전 방지
 		//------------------------------
