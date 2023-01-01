@@ -2,21 +2,12 @@
 #include <Windows.h>
 #include <synchapi.h>
 #include <thread>
+#pragma comment(lib, "Synchronization.lib")
 using namespace std;
 
-void f();
-
-SRWLOCK lock;
+int key = 100;
 int main() {
-	InitializeSRWLock(&lock);
-	thread t(f);
-
-	Sleep(INFINITE);
-}
-
-void f() {
-	AcquireSRWLockExclusive(&lock);
-	int a =1;
-	a++;
-	ReleaseSRWLockExclusive(&lock);
+	int lock = 101;
+	WaitOnAddress(&key, &lock, sizeof(int), INFINITE);
+	printf("¹ÝÈ¯ \n");
 }
