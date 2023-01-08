@@ -6,36 +6,41 @@
 #include "CrashDump.h"
 using namespace std;
 
+#define THREAD_NUM	2
+#define TEST_LOOP	100
+#define PUSH_LOOP	2
+#define MAX_NODE	THREAD_NUM * PUSH_LOOP
+
 CrashDump dump;
 thread t[THREAD_NUM];
 LFQueue<int> Q;
 int use_size = 0;
+bool _shutdown = false;
 
-namespace J {
-	bool shutdown = false;
-}
-
-BYTE flag = 0x90;
 void f() {
-	BYTE func_flag = InterlockedAdd((LONG*)&flag, 0x10);
 	int a = 100;
 
-	printf("flag : %02X \n", func_flag);
 	for (int i = 0;; i++) {
 		for (int j = 0; j < PUSH_LOOP; j++) {
-			Q.Enqueue(a, func_flag);
+			Q.Enqueue(a);
+
+			// 터지면 문제 있음
+			auto count = Q.GetUseCount();
+			if (MAX_NODE < count || count < 0) CRASH();
 		}
 
 		// 스레드 종료
-		if (J::shutdown) {
-			printf("종료");
+		if (_shutdown) {
+			printf("셧 다운 \n");
 			break;
 		}
 
 		for (int j = 0; j < PUSH_LOOP; j++) {
-			Q.Dequeue(&a, func_flag);
-			if (a != 100)
-				CRASH();
+			Q.Dequeue(&a);
+
+			// 터지면 문제 있음
+			auto count = Q.GetUseCount();
+			if (MAX_NODE < count || count < 0 || a != 100) CRASH();
 		}
 	}
 }
@@ -44,8 +49,8 @@ void monitor_func() {
 	int count = 0;
 
 	for (;;) {
-		Sleep(100);
-		printf("node count : %d \n", Q.GetUseCount());
+		Sleep(300);
+		printf("node count : %d // Q,q 입력시 종료 \n", Q.GetUseCount());
 
 		++count;
 		if (count == 100) {
@@ -58,9 +63,9 @@ void monitor_func() {
 #pragma warning(suppress : 4996)
 			char key = getch();
 			printf("%c \n", key);
-			if (key == 's' || key == 'S') {
-				J::shutdown = true;
-				break;
+			if (key == 'q' || key == 'Q') {
+				_shutdown = true;
+				return;
 			}
 		}
 	}
@@ -85,5 +90,9 @@ int main() {
 	}
 
 
-	printf("끝 \n");
+	if (Q.GetUseCount() != MAX_NODE) {
+		printf("종료, 노드 개수 안맞음 크래시!! \n");
+		CRASH();
+	}
+	printf("정상 종료. \n");
 }

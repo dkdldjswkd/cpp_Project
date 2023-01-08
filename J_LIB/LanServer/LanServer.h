@@ -6,9 +6,10 @@
 #include <mutex>
 #include "PacketBuffer.h"
 #include "RingBuffer.h"
+#include "LFQueue.h"
 
-constexpr UINT64	INVALID_SESSION_ID = 0;
 #define				MAX_SEND_MSG		100
+constexpr UINT64	INVALID_SESSION_ID = 0;
 
 class ProtocolBuffer;
 enum class IO_TYPE : BYTE;
@@ -62,7 +63,7 @@ public:
 	OVERLAPPED recv_overlapped = { 0, };
 	OVERLAPPED send_overlapped = { 0, };
 	RingBuffer recv_buf;
-	RingBuffer send_buf;
+	LFQueue<J_LIB::PacketBuffer*> sendQ;
 
 public:
 	void Clear();
@@ -96,29 +97,10 @@ private:
 	std::thread acceptThread;
 
 	// 모니터링
-	DWORD session_count = 0;
-	DWORD accept_tps = 0;
-	DWORD recvMsg_tps = 0;
-	DWORD sendMsg_tps = 0;
-
-public:
-	void StartUp(DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);
-	void CleanUp();
-	int Get_SessionCount();
-	bool Send_Packet(SESSION_ID session_id, J_LIB::PacketBuffer* send_packet);
-	void Monitoring();
-
-// 라이브러리 사용자 측 재정의 하여 사용
-protected:
-	virtual bool OnConnectionRequest(in_addr IP, WORD Port) = 0;	//  accept 직후 호출, client 수용 여부 반환
-	virtual void OnClientJoin(SESSION_ID session_id) = 0;		// 접속 처리 후 호출
-	virtual void OnRecv(SESSION_ID session_id, J_LIB::PacketBuffer* contents_packet) = 0;
-	virtual void OnClientLeave(SESSION_ID session_id) = 0; // Release 후 호출
-	virtual void OnError(int errorcode /* (wchar*) */) = 0;
-
-	//virtual void OnSend(SessionID, int sendsize) = 0;           // 패킷 송신 완료 후
-	//virtual void OnWorkerThreadBegin() = 0;                    // 워커스레드 GQCS 바로 하단에서 호출
-	//virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
+	alignas(32) DWORD session_count = 0;
+	alignas(32) DWORD accept_tps = 0;
+	alignas(32) DWORD recvMsg_tps = 0;
+	alignas(32) DWORD sendMsg_tps = 0;
 
 private:
 	// Set
@@ -146,6 +128,25 @@ private:
 
 	// 컨텐츠
 	void Release_Session(Session* p_session);
+
+public:
+	void StartUp(DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);
+	void CleanUp();
+	int  Get_SessionCount();
+	bool Send_Packet(SESSION_ID session_id, J_LIB::PacketBuffer* send_packet);
+	void Monitoring();
+
+// 라이브러리 사용자 측 재정의 하여 사용
+protected:
+	virtual bool OnConnectionRequest(in_addr IP, WORD Port) = 0;	//  accept 직후 호출, client 수용 여부 반환
+	virtual void OnClientJoin(SESSION_ID session_id) = 0;		// 접속 처리 후 호출
+	virtual void OnRecv(SESSION_ID session_id, J_LIB::PacketBuffer* contents_packet) = 0;
+	virtual void OnClientLeave(SESSION_ID session_id) = 0; // Release 후 호출
+	virtual void OnError(int errorcode /* (wchar*) */) = 0;
+
+	//virtual void OnSend(SessionID, int sendsize) = 0;           // 패킷 송신 완료 후
+	//virtual void OnWorkerThreadBegin() = 0;                    // 워커스레드 GQCS 바로 하단에서 호출
+	//virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
 };
 
 enum class IO_TYPE : BYTE {

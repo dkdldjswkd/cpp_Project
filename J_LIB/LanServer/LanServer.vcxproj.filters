@@ -13,6 +13,12 @@
     <ClCompile Include="PacketBuffer.cpp">
       <Filter>LanServer LIB\include</Filter>
     </ClCompile>
+    <ClCompile Include="CrashDump.cpp">
+      <Filter>LanServer LIB\include</Filter>
+    </ClCompile>
+    <ClCompile Include="LFObjectPoolTLS.cpp">
+      <Filter>LanServer LIB\include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LanServer.h">
@@ -31,6 +37,18 @@
       <Filter>LanServer LIB\include</Filter>
     </ClInclude>
     <ClInclude Include="ObjectPool.h">
+      <Filter>LanServer LIB\include</Filter>
+    </ClInclude>
+    <ClInclude Include="LFQueue.h">
+      <Filter>LanServer LIB\include</Filter>
+    </ClInclude>
+    <ClInclude Include="LFObjectPool.h">
+      <Filter>LanServer LIB\include</Filter>
+    </ClInclude>
+    <ClInclude Include="CrashDump.h">
+      <Filter>LanServer LIB\include</Filter>
+    </ClInclude>
+    <ClInclude Include="LFObjectPoolTLS.h">
       <Filter>LanServer LIB\include</Filter>
     </ClInclude>
   </ItemGroup>

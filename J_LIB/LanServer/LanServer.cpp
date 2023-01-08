@@ -92,15 +92,16 @@ void LanServer::WorkerFunc() {
 		Session* p_session = 0;
 
 		BOOL ret_GQCS = GetQueuedCompletionStatus(h_iocp, &io_size, (PULONG_PTR)&key, &p_overlapped, INFINITE);
+		p_session = (Session*)key;
 
 		// 워커 스레드 종료 (** IO Error X)
 		if (io_size == 0 && key == 0 && p_overlapped == 0) {
 			PostQueuedCompletionStatus(h_iocp, 0, 0, 0);
 			return;
 		}
+		// IOCP 디큐잉 실패 (IOCP 에러)
+		if (p_overlapped == 0) CRASH();
 
-		p_session = (Session*)key;
-		
 		// FIN
 		if (io_size == 0) {
 			// 디버깅
@@ -110,32 +111,21 @@ void LanServer::WorkerFunc() {
 		else {
 			// recv 완료통지
 			if (&p_session->recv_overlapped == p_overlapped) {
-				if (FALSE == ret_GQCS) {
-					SocketError_Handling(p_session, IO_TYPE::RECV);
-					// 디버깅
-					//printf("[Recv Complete Error] socket(%llu) \n", p_session->sock);
-				}
+				if (FALSE == ret_GQCS) SocketError_Handling(p_session, IO_TYPE::RECV);
 				else {
-					//printf("[ !!완료통지 RECV ] socket(%llu) \n", p_session->sock);
 					p_session->recv_buf.Move_Rear(io_size);
 					Recv_Completion(p_session);
 				}
 			}
 			// send 완료통지
 			else if (&p_session->send_overlapped == p_overlapped) {
-				if (FALSE == ret_GQCS) {
-					SocketError_Handling(p_session, IO_TYPE::SEND);
-					// 디버깅
-					//printf("[Send Complete Error] socket(%llu) \n", p_session->sock);
-				}
+				if (FALSE == ret_GQCS) SocketError_Handling(p_session, IO_TYPE::SEND);
 				else {
-					//printf("[ !!완료통지 SEND ] socket(%llu) \n", p_session->sock);
 					Send_Completion(p_session);
 				}
 			}
-			// 디버깅
 			else {
-				throw;
+				CRASH();
 			}
 		}
 
@@ -165,6 +155,9 @@ void LanServer::AcceptFunc() {
 			continue;
 		}
 
+		//------------------------------
+		// 연결 수락 판단
+		//------------------------------
 		in_addr accept_ip = client_addr.sin_addr;
 		WORD accept_port = ntohs(client_addr.sin_port);
 		if (false == OnConnectionRequest(accept_ip, accept_port)) {
@@ -172,11 +165,8 @@ void LanServer::AcceptFunc() {
 			continue;
 		}
 
-		// 디버깅
-		//printf("1. 엑셉트 성공 \n");
-
 		//------------------------------
-		// 세션 생성 및 세션 자료구조 등록
+		// 세션 할당
 		//------------------------------
 
 		// ID 할당
@@ -186,29 +176,26 @@ void LanServer::AcceptFunc() {
 			continue;
 		}
 
-		//printf("2. 세션 아이디 할당 성공 Session id(%llu), index(%u), unique(%u) \n", session_id.session_id, session_id.session_index, session_id.session_unique);
-
-		// 세션 설정
+		// 세션 자료구조 할당
 		Session& accept_session = session_array[session_id.session_index];
 		accept_session.Clear();
 		accept_session.Set(accept_sock, accept_ip, accept_port, session_id);
 		auto ret = LanServer::Bind_IOCP(accept_sock, (ULONG_PTR)&accept_session);
+		InterlockedIncrement(&accept_tps);
 		
-		// 로그인 패킷 Send ( I/O Count 0 방지 )
+		//------------------------------
+		// 로그인 세션에 대한 작업 (로그인 패킷 Send)
+		//------------------------------
 		accept_session.io_count++;
 		OnClientJoin(session_id.session_id);
-
-		// 디버깅
 		InterlockedIncrement(&session_count);
-		//printf("[Accept] socket(%llu) \n", accept_sock);
 
-		InterlockedIncrement(&accept_tps);
 		//------------------------------
 		// WSARecv
 		//------------------------------
 		ret = Post_Recv(&accept_session);
 
-		// 방지용 I/O Count 차감
+		// 로그인 패킷 I/O Count 차감
 		if (InterlockedDecrement((LONG*)&accept_session.io_count) == 0) 
 			Release_Session(&accept_session);
 	}
@@ -218,7 +205,7 @@ void LanServer::AcceptFunc() {
 
 void LanServer::Release_Session(Session* p_session){
 	for (int i = 0; i < p_session->sendPacket_count; i++)
-		J_LIB::PacketBuffer::Free(p_session->sendPacket_array[i]);
+		PacketBuffer::Free(p_session->sendPacket_array[i]);
 
 	closesocket(p_session->sock);
 
@@ -229,13 +216,16 @@ void LanServer::Release_Session(Session* p_session){
 
 void LanServer::Send_Completion(Session* p_session){
 	// Send 완료된 Packet 반환 및 send flag off
-	for (int i = 0; i < p_session->sendPacket_count; i++)
+	for (int i = 0; i < p_session->sendPacket_count; i++) {
 		J_LIB::PacketBuffer::Free(p_session->sendPacket_array[i]);
+		InterlockedIncrement(&sendMsg_tps);
+	}
 	p_session->sendPacket_count = 0;
-	if (InterlockedExchange8((char*)&p_session->send_flag, false) == false)
-		throw;
 
-	if (8 > p_session->send_buf.Get_UseSize())
+	if (InterlockedExchange8((char*)&p_session->send_flag, false) == false)
+		CRASH();
+
+	if (p_session->sendQ.GetUseCount() <= 0)
 		return;
 	
 	Post_Send(p_session);
@@ -244,66 +234,54 @@ void LanServer::Send_Completion(Session* p_session){
 // WSARecv 성공 여부 반환
 bool LanServer::Post_Recv(Session* p_session){
 	InterlockedIncrement((LONG*)&p_session->io_count);
-
-	auto ret = IOCP_Recv(p_session);
-	if (SOCKET_ERROR == ret) {
+	if (SOCKET_ERROR == IOCP_Recv(p_session)) {
+		// Recv 실패
 		if (WSAGetLastError() != ERROR_IO_PENDING) {
-			//printf("[리시브 실패] socket(%llu) \n", p_session->sock);
 			if (InterlockedDecrement((LONG*)&p_session->io_count) == 0) {
 				Release_Session(p_session);
+				return false;
 			}
-			return false;
-		}
-		else {
-			//printf("Recv IO_Pending \n");
 		}
 	}
 
-	//printf("[리시브 걸어놨다] socket(%llu) \n", p_session->sock);
 	return true;
 }
 
-// SendQ Enqueue 만을 보장
-bool LanServer::Send_Packet(SESSION_ID session_id, J_LIB::PacketBuffer* send_packet) {
+// SendQ Enqueue (네트워크 헤더 추가 후 SendQ Enqueue, 경우에 따라 WSASend() call)
+bool LanServer::Send_Packet(SESSION_ID session_id, PacketBuffer* send_packet) {
 	Session& session = session_array[session_id.session_index];
 
 	// 패킷 완성 (페이로드 부 앞에 헤더 삽입)
 	LAN_HEADER lan_header;
 	lan_header.len = send_packet->Get_UseSize();
 	send_packet->Set_header(&lan_header);
-	PLONGLONG p_send_packet = (PLONGLONG)send_packet;
-
-	// 네트워크 패킷, 컨텐츠 페킷 Enqueue (Enqueue 패킷 포인터, 8)
 	send_packet->Increment_refCount();
-	auto size = session.send_buf.Enqueue(&p_send_packet, sizeof(p_send_packet));
-	//if (size != 8) {
-	//	throw;
-	//}
+	session.sendQ.Enqueue(send_packet);
 
 	Post_Send(&session);
 	return false;
 }
 
-
-// 한 세션에 대해서 한 스레드에서만 들어갈 수 있음
+// Send 시도 (Overlapped Send 진행중이지 않다면 Send)
 bool LanServer::Post_Send(Session* p_session) {
-	// Send Q 데이터 체크
-	if (8 > p_session->send_buf.Get_UseSize())
+	// Empty return
+	if (p_session->sendQ.GetUseCount() <= 0)
 		return false;
 
+	// Send 1회 체크 (send flag, true 시 send 진행 중)
+	if (p_session->send_flag == true)
+		return false;
 	if (InterlockedExchange8((char*)&p_session->send_flag, true) == true)
 		return false;
 
-	// Send Q 데이터 체크
-	if (8 > p_session->send_buf.Get_UseSize()) {
+	// Empty continue
+	if (p_session->sendQ.GetUseCount() <= 0) {
 		InterlockedExchange8((char*)&p_session->send_flag, false);
 		return Post_Send(p_session);
 	}
 
 	InterlockedIncrement((LONG*)&p_session->io_count);
-	auto ret = IOCP_Send(p_session);
-
-	if (SOCKET_ERROR == ret) {
+	if (SOCKET_ERROR == IOCP_Send(p_session)) {
 		if (WSAGetLastError() != ERROR_IO_PENDING) {
 			if (InterlockedDecrement((LONG*)&p_session->io_count) == 0) 
 				Release_Session(p_session);
@@ -318,36 +296,23 @@ bool LanServer::Post_Send(Session* p_session) {
 	return true;
 }
 
-// Send RingBuffer 데이터 전부 Send
+// WSASend 래핑 (Send : SendQ)
 int LanServer::IOCP_Send(Session* p_session) {
-	// Set var
 	WSABUF wsaBuf[MAX_SEND_MSG];
-	PacketBuffer* packet;
+	PacketBuffer* send_packet;
 
 	for (int i = 0; i < MAX_SEND_MSG; i++) {
-		//// 디버깅
-		//auto size = p_session->send_buf.Get_UseSize();
-		//if (size % 8 != 0) {
-		//	printf("sendPacket_count : %d, i : %d", p_session->sendPacket_count);
-		//	throw;
-		//}
-
-		if (8 > p_session->send_buf.Get_UseSize()) {
-			if (i <= 0) {
-				throw;
-			}
+		if (p_session->sendQ.GetUseCount() <= 0) {
+			if (i <= 0) CRASH();
 			break;
 		}
 
-		p_session->send_buf.Dequeue(&packet, sizeof(packet));
-		wsaBuf[i].buf = packet->Get_Packet();
-		wsaBuf[i].len = packet->Get_PacketSize();
+		p_session->sendQ.Dequeue((PacketBuffer**)&send_packet);
+		wsaBuf[i].buf = send_packet->Get_Packet();
+		wsaBuf[i].len = send_packet->Get_PacketSize();
 
-		p_session->sendPacket_array[p_session->sendPacket_count] = packet;
+		p_session->sendPacket_array[p_session->sendPacket_count] = send_packet;
 		p_session->sendPacket_count++;
-
-		// 모니터링
-		InterlockedIncrement(&sendMsg_tps);
 	}
 
 	return WSASend(p_session->sock, wsaBuf, p_session->sendPacket_count, NULL, 0, &p_session->send_overlapped, NULL);
@@ -524,7 +489,11 @@ void Session::Clear() {
 	ZeroMemory(&send_overlapped, sizeof(send_overlapped));
 
 	recv_buf.Clear();
-	send_buf.Clear();
+	for (;;) {
+		PacketBuffer* data;
+		if (sendQ.Dequeue(&data) == false)
+			break;
+	}
 }
 
 void Session::Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id){

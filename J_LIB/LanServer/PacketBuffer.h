@@ -6,10 +6,7 @@
 #include "ObjectPool.h"
 #include "protocol.h"
 
-// * HEADER_SIZE 정의 필요 (구현부에서 해당 변수 이름 사용)
 constexpr unsigned PAYLOAD_SPACE = 8000;
-
-// 네트워크 라이브러리 클래스
 class LanServer;
 
 namespace J_LIB {

@@ -2,7 +2,7 @@
 #include "MemoryLog.h"
 
 #define LOG_SIZE 8
-#define MEMORY_SIZE 134217727 // 0xFFFFFFFF >> 5; (2^27)
+#define MEMORY_SIZE 134217727 // 0xFFFFFFFF >> 5; (2^27, 0x07FFFFFF)
 
 MemoryLog memLogger;
 
@@ -19,6 +19,7 @@ char* MemoryLog::get_wp() {
 	return begin + (InterlockedAdd((LONG*)&offset, (LONG64)LOG_SIZE) & mask);
 }
 
+// 1byte 기록
 char* MemoryLog::Log(BYTE thread_id){
 	char* const wp = get_wp();
 	*wp = thread_id;
@@ -26,6 +27,7 @@ char* MemoryLog::Log(BYTE thread_id){
 	return wp;
 }
 
+// 8byte 기록
 char* MemoryLog::Log(BYTE thread_id, void* p_logMsg){
 	char* const wp = get_wp();
 	*wp = thread_id;

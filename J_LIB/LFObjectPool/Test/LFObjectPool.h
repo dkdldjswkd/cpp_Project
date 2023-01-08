@@ -7,15 +7,15 @@
 // LFObjectPool - 사본
 
 // * 해당 LFObjectPool 구현 환경 : Release, x64, 최적화 컴파일 OFF
-//	오전 2:22 2022-12-18
+//	오전 3:14 2022-12-18
 
 #define CRASH() do{				\
 					int* p = 0;	\
 					*p = 0;		\
 				}while(false)
 
-constexpr BYTE	  UNUSED_BIT	= 17;
-constexpr DWORD64 UNUSED_COUNT	= 0x800000000000;
+constexpr BYTE	  UNUSED_BIT = 17;
+constexpr DWORD64 UNUSED_COUNT = 0x800000000000;
 
 #define MEM_GUARD 0xFDFDFDFDFDFDFDFD
 
@@ -50,12 +50,11 @@ namespace J_LIB {
 	private:
 		const ULONG_PTR integrity = (ULONG_PTR)this;
 		bool flag_placementNew = false;
-		__declspec(align(64)) DWORD64 unique = 0;
 		__declspec(align(64)) DWORD64 top_ABA = NULL;
 		__declspec(align(64)) int capacity = 0;
 		__declspec(align(64)) int use_count = 0;
 		int object_offset = 0;
-		DWORD64 mask		 = 0x00007FFFFFFFFFFF; // 상위 17bit 0
+		DWORD64 mask = 0x00007FFFFFFFFFFF; // 상위 17bit 0
 		DWORD64 mask_reverse = 0xFFFF800000000000; // 상위 17bit 0
 
 	public:
@@ -141,7 +140,7 @@ namespace J_LIB {
 		}
 	}
 
-	// 락프리 스택의 PUSH에 해당 (ABA 문제를 막기위해 스택에 꽂을때 unique 값을 증가시켜주자)
+	// 락프리 스택의 PUSH에 해당
 	template<typename T>
 	void LFObjectPool<T>::Free(T* p_obejct) {
 		// 오브젝트 노드로 변환
