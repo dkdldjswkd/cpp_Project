@@ -1,15 +1,16 @@
 #pragma once
 
 #include <Windows.h>
-#include <stack>
 #include <thread>
 #include <mutex>
 #include "PacketBuffer.h"
 #include "RingBuffer.h"
 #include "LFQueue.h"
+#include "LFStack.h"
 
+#define				MAX_SESSION			20000
 #define				MAX_SEND_MSG		100
-constexpr UINT64	INVALID_SESSION_ID = 0;
+constexpr UINT64	INVALID_SESSION_ID = -1;
 
 class ProtocolBuffer;
 enum class IO_TYPE : BYTE;
@@ -55,6 +56,9 @@ public:
 
 	SESSION_ID	session_id = INVALID_SESSION_ID;
 	bool send_flag = false;
+
+	// 세션 레퍼런스 카운트 역할
+	alignas(8) BOOL release_flag = false;
 	LONG io_count = 0;
 
 	J_LIB::PacketBuffer* sendPacket_array[MAX_SEND_MSG];
@@ -86,10 +90,9 @@ private:
 	WORD server_port = 0;
 
 	// 세션
-	Session* session_array;
+	Session *session_array;
 	DWORD max_session;
-	std::stack<WORD> sessionIndex_stack;
-	std::mutex index_lock;
+	LFStack<DWORD> sessionIndex_stack;
 
 	// 스레드
 	WORD worker_num;
@@ -97,10 +100,10 @@ private:
 	std::thread acceptThread;
 
 	// 모니터링
-	alignas(32) DWORD session_count = 0;
-	alignas(32) DWORD accept_tps = 0;
-	alignas(32) DWORD recvMsg_tps = 0;
-	alignas(32) DWORD sendMsg_tps = 0;
+	alignas(64) DWORD session_count = 0;
+	alignas(64) DWORD accept_tps = 0;
+	alignas(64) DWORD recvMsg_tps = 0;
+	alignas(64) DWORD sendMsg_tps = 0;
 
 private:
 	// Set
@@ -110,31 +113,33 @@ private:
 
 	// 세션
 	SESSION_ID Get_SessionID();
+	Session* Check_InvalidSession(SESSION_ID session_id);
 
 	// 스레드
 	void WorkerFunc();
 	void AcceptFunc();
 
-	// IO 완료 통지 시
+	// IO 완료 통지 루틴
 	void Recv_Completion(Session* p_session);
 	void Send_Completion(Session* p_session);
 
 	// Send/Recv
-	bool Post_Recv(Session* p_session);
-	bool Post_Send(Session* p_session);
-	int	IOCP_Send(Session* p_session);
-	int	IOCP_Recv(Session* p_session);
+	bool SendPost(Session* p_session);
+	int	AsyncSend(Session* p_session);
+	int	AsyncRecv(Session* p_session);
 	int	SocketError_Handling(Session* p_session, IO_TYPE io_type);
 
 	// 컨텐츠
-	void Release_Session(Session* p_session);
+	bool Release_Session(Session* p_session);
+
+public:
+	bool SendPacket(SESSION_ID session_id, J_LIB::PacketBuffer* send_packet);
 
 public:
 	void StartUp(DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);
 	void CleanUp();
 	int  Get_SessionCount();
-	bool Send_Packet(SESSION_ID session_id, J_LIB::PacketBuffer* send_packet);
-	void Monitoring();
+	void PrintTPS();
 
 // 라이브러리 사용자 측 재정의 하여 사용
 protected:

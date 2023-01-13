@@ -135,7 +135,6 @@
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="EchoServer.cpp" />
     <ClCompile Include="LanServer.cpp" />
-    <ClCompile Include="LFObjectPoolTLS.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PacketBuffer.cpp" />
   </ItemGroup>
@@ -146,7 +145,7 @@
     <ClInclude Include="LFObjectPool.h" />
     <ClInclude Include="LFObjectPoolTLS.h" />
     <ClInclude Include="LFQueue.h" />
-    <ClInclude Include="ObjectPool.h" />
+    <ClInclude Include="LFStack.h" />
     <ClInclude Include="PacketBuffer.h" />
     <ClInclude Include="protocol.h" />
     <ClInclude Include="RingBuffer.h" />

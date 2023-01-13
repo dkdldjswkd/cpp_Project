@@ -3,7 +3,7 @@
 #include <mutex>
 #include <Windows.h>
 #include <winnt.h>
-#include "ObjectPool.h"
+#include "LFObjectPoolTLS.h"
 #include "protocol.h"
 
 constexpr unsigned PAYLOAD_SPACE = 8000;
@@ -18,12 +18,10 @@ public:
 
 private:
 	friend LanServer;
-	friend Pool_Node<PacketBuffer>;
-	friend ObjectPool<PacketBuffer>;
+	friend LFObjectPoolTLS<PacketBuffer>;
 
 private:
-	static ObjectPool<PacketBuffer> pool; 
-	static std::mutex pool_lock;
+	static LFObjectPoolTLS<PacketBuffer> packetPool; 
 
 private:
 	char* begin;
@@ -101,10 +99,7 @@ inline PacketBuffer::~PacketBuffer() {
 }
 
 inline PacketBuffer* PacketBuffer::Alloc(){
-	pool_lock.lock();
-	PacketBuffer* p = pool.Alloc();
-	pool_lock.unlock();
-
+	PacketBuffer* p = packetPool.Alloc();
 	p->Clear();
 	p->ref_count = new int(1);
 	return p;
@@ -112,14 +107,13 @@ inline PacketBuffer* PacketBuffer::Alloc(){
 
 inline void PacketBuffer::Free(PacketBuffer* instance){
 	if (InterlockedDecrement((DWORD*)instance->ref_count) == 0) {
-		pool_lock.lock();
-		pool.Free(instance);
-		pool_lock.unlock();
+		delete instance->ref_count;
+		packetPool.Free(instance);
 	}
 }
 
 inline int PacketBuffer::GetUseCount() {
-	return pool.GetUseCount();
+	return packetPool.Get_UseCount();
 }
 
 inline int PacketBuffer::Get_PacketSize() {

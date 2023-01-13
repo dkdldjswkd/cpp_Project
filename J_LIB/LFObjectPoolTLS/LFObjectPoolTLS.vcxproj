@@ -145,7 +145,6 @@
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="TestCode.cpp" />
-    <ClCompile Include="LFObjectPoolTLS.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CrashDump.h" />

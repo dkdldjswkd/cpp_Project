@@ -2,8 +2,7 @@
 
 namespace J_LIB {
 
-ObjectPool<PacketBuffer>  PacketBuffer::pool;
-std::mutex  PacketBuffer::pool_lock;
+LFObjectPoolTLS<PacketBuffer>  PacketBuffer::packetPool;
 
 // header size 
 PacketBuffer::PacketBuffer() : buf_size(HEADER_SIZE + PAYLOAD_SPACE) {

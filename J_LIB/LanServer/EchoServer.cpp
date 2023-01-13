@@ -17,7 +17,7 @@ void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer * cs_contentsPacket)
 	//------------------------------
 	// Send Packet
 	//------------------------------
-	LanServer::Send_Packet(session_id, sc_contentsPacket);
+	LanServer::SendPacket(session_id, sc_contentsPacket);
 
 	//------------------------------
 	// Release Func
@@ -45,7 +45,7 @@ void EchoServer::OnClientJoin(SESSION_ID session_id){
 	//------------------------------
 	// Send Packet
 	//------------------------------
-	LanServer::Send_Packet(session_id, sc_packet);
+	LanServer::SendPacket(session_id, sc_packet);
 
 	//------------------------------
 	// Release Func

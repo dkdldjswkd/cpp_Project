@@ -14,11 +14,12 @@ int main() {
 	//timeBeginPeriod(1);
 
 	EchoServer echo_server;
+	//DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session
 	echo_server.StartUp(INADDR_ANY, 6000, 2, true, 10000);
 
 	for (;;) {
 		Sleep(300);
-		echo_server.Monitoring();
+		echo_server.PrintTPS();
 	}
 
 	echo_server.CleanUp();

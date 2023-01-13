@@ -31,7 +31,7 @@ void LanServer::Init(WORD worker_num, WORD port, DWORD max_session){
 
 	// set index stack
 	for (int i = 0; i < max_session; i++)
-		sessionIndex_stack.push(max_session - 1 - i);
+		sessionIndex_stack.Push(max_session - 1 - i);
 }
 
 bool LanServer::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
@@ -181,21 +181,20 @@ void LanServer::AcceptFunc() {
 		accept_session.Clear();
 		accept_session.Set(accept_sock, accept_ip, accept_port, session_id);
 		auto ret = LanServer::Bind_IOCP(accept_sock, (ULONG_PTR)&accept_session);
-		InterlockedIncrement(&accept_tps);
+		accept_tps++;
 		
 		//------------------------------
-		// 로그인 세션에 대한 작업 (로그인 패킷 Send)
+		// 세션 로그인 시 작업
 		//------------------------------
-		accept_session.io_count++;
 		OnClientJoin(session_id.session_id);
-		InterlockedIncrement(&session_count);
+		session_count++;
 
 		//------------------------------
 		// WSARecv
 		//------------------------------
-		ret = Post_Recv(&accept_session);
+		AsyncRecv(&accept_session);
 
-		// 로그인 패킷 I/O Count 차감
+		// 생성 I/O Count 차감
 		if (InterlockedDecrement((LONG*)&accept_session.io_count) == 0) 
 			Release_Session(&accept_session);
 	}
@@ -203,15 +202,21 @@ void LanServer::AcceptFunc() {
 	printf("End Accept Thread \n");
 }
 
-void LanServer::Release_Session(Session* p_session){
-	for (int i = 0; i < p_session->sendPacket_count; i++)
-		PacketBuffer::Free(p_session->sendPacket_array[i]);
+bool LanServer::Release_Session(Session* p_session){
+	if (0 < p_session->io_count)
+		return false;
 
-	closesocket(p_session->sock);
+	if (0 == InterlockedCompareExchange64((long long*)&p_session->release_flag, 1, 0)) {
+		for (int i = 0; i < p_session->sendPacket_count; i++) {
+			PacketBuffer::Free(p_session->sendPacket_array[i]);
+		}
+		closesocket(p_session->sock);
+		sessionIndex_stack.Push(p_session->session_id.session_index);
+		session_count--;
+		return true;
+	}
 
-	index_lock.lock();
-	sessionIndex_stack.push(p_session->session_id.session_index);
-	index_lock.unlock();
+	return false;
 }
 
 void LanServer::Send_Completion(Session* p_session){
@@ -228,42 +233,31 @@ void LanServer::Send_Completion(Session* p_session){
 	if (p_session->sendQ.GetUseCount() <= 0)
 		return;
 	
-	Post_Send(p_session);
-}
-
-// WSARecv 성공 여부 반환
-bool LanServer::Post_Recv(Session* p_session){
-	InterlockedIncrement((LONG*)&p_session->io_count);
-	if (SOCKET_ERROR == IOCP_Recv(p_session)) {
-		// Recv 실패
-		if (WSAGetLastError() != ERROR_IO_PENDING) {
-			if (InterlockedDecrement((LONG*)&p_session->io_count) == 0) {
-				Release_Session(p_session);
-				return false;
-			}
-		}
-	}
-
-	return true;
+	SendPost(p_session);
 }
 
 // SendQ Enqueue (네트워크 헤더 추가 후 SendQ Enqueue, 경우에 따라 WSASend() call)
-bool LanServer::Send_Packet(SESSION_ID session_id, PacketBuffer* send_packet) {
-	Session& session = session_array[session_id.session_index];
+bool LanServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
+	Session* p_session = Check_InvalidSession(session_id);
+	if (nullptr == p_session) 
+		return false;
 
-	// 패킷 완성 (페이로드 부 앞에 헤더 삽입)
+	// 패킷 헤더부 생성
 	LAN_HEADER lan_header;
 	lan_header.len = send_packet->Get_UseSize();
 	send_packet->Set_header(&lan_header);
 	send_packet->Increment_refCount();
-	session.sendQ.Enqueue(send_packet);
+	p_session->sendQ.Enqueue(send_packet);
 
-	Post_Send(&session);
-	return false;
+	bool send_success = SendPost(p_session);
+	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+		Release_Session(p_session);
+	}
+	return send_success;
 }
 
-// Send 시도 (Overlapped Send 진행중이지 않다면 Send)
-bool LanServer::Post_Send(Session* p_session) {
+// Send 시도 (Send 조건 1. Send 진행중 X, 2. SendQ not empty)
+bool LanServer::SendPost(Session* p_session) {
 	// Empty return
 	if (p_session->sendQ.GetUseCount() <= 0)
 		return false;
@@ -277,33 +271,20 @@ bool LanServer::Post_Send(Session* p_session) {
 	// Empty continue
 	if (p_session->sendQ.GetUseCount() <= 0) {
 		InterlockedExchange8((char*)&p_session->send_flag, false);
-		return Post_Send(p_session);
+		return SendPost(p_session);
 	}
 
-	InterlockedIncrement((LONG*)&p_session->io_count);
-	if (SOCKET_ERROR == IOCP_Send(p_session)) {
-		if (WSAGetLastError() != ERROR_IO_PENDING) {
-			if (InterlockedDecrement((LONG*)&p_session->io_count) == 0) 
-				Release_Session(p_session);
-
-			//printf("[센드 실패] socket(%u) \n", p_session->sock);
-			SocketError_Handling(p_session, IO_TYPE::SEND);
-			return false;
-		}
-	}
-
-	//printf("[오버랩 센드 했다] socket(%d) \n", p_session->sock);
-	return true;
+	return AsyncSend(p_session);
 }
 
-// WSASend 래핑 (Send : SendQ)
-int LanServer::IOCP_Send(Session* p_session) {
+// WSASend 래핑 (* 세션 권한 휙득 후 Call 할것. 유효한 세션이라 가정)
+int LanServer::AsyncSend(Session* p_session) {
 	WSABUF wsaBuf[MAX_SEND_MSG];
 	PacketBuffer* send_packet;
 
 	for (int i = 0; i < MAX_SEND_MSG; i++) {
 		if (p_session->sendQ.GetUseCount() <= 0) {
-			if (i <= 0) CRASH();
+			if (i <= 0) CRASH(); // 0 byte send
 			break;
 		}
 
@@ -315,12 +296,23 @@ int LanServer::IOCP_Send(Session* p_session) {
 		p_session->sendPacket_count++;
 	}
 
-	return WSASend(p_session->sock, wsaBuf, p_session->sendPacket_count, NULL, 0, &p_session->send_overlapped, NULL);
+	InterlockedIncrement((LONG*)&p_session->io_count);
+	if (SOCKET_ERROR == WSASend(p_session->sock, wsaBuf, p_session->sendPacket_count, NULL, 0, &p_session->send_overlapped, NULL)) {
+		if (WSAGetLastError() != ERROR_IO_PENDING) {
+			if (InterlockedDecrement((LONG*)&p_session->io_count) == 0) {
+				Release_Session(p_session); // 사실 상 호출되지 않아야함
+			}
+			return false;
+		}
+	}
+
+	return true;
 }
 
 // Recv RingBuffer에 Recv
-int LanServer::IOCP_Recv(Session* p_session) {
+int LanServer::AsyncRecv(Session* p_session) {
 	WSABUF wsaBuf[2];
+	DWORD flags = 0;
 
 	// Recv Remain Pos
 	wsaBuf[1].buf = p_session->recv_buf.Get_BeginPos();
@@ -330,10 +322,17 @@ int LanServer::IOCP_Recv(Session* p_session) {
 	wsaBuf[0].buf = p_session->recv_buf.Get_WritePos();
 	wsaBuf[0].len = p_session->recv_buf.Direct_EnqueueSize();
 
-	//printf("[IOCP_Recv] socket(%u),  %d + %d \n", p_session->sock, wsaBuf[0].len, wsaBuf[1].len);
+	InterlockedIncrement((LONG*)&p_session->io_count);
+	if (SOCKET_ERROR == WSARecv(p_session->sock, wsaBuf, 2, NULL, &flags, &p_session->recv_overlapped, NULL)) {
+		if (WSAGetLastError() != ERROR_IO_PENDING) {
+			if (InterlockedDecrement((LONG*)&p_session->io_count) == 0) {
+				Release_Session(p_session);
+			}
+			return false;
+		}
+	}
 
-	DWORD flags = 0;
-	return WSARecv(p_session->sock, wsaBuf, 2, NULL, &flags, &p_session->recv_overlapped, NULL);
+	return true;
 }
 
 int LanServer::SocketError_Handling(Session* p_session, IO_TYPE io_type){
@@ -357,7 +356,6 @@ void LanServer::Recv_Completion(Session* p_session){
 	int recv_len = p_session->recv_buf.Get_UseSize();
 	while (LAN_HEADER_SIZE < recv_len) {
 		p_session->recv_buf.Peek(&network_header, LAN_HEADER_SIZE);
-		//printf("%d \n", network_header.len);
 
 		// 페이로드 데이터 부족
 		if (recv_len < network_header.len + LAN_HEADER_SIZE) 
@@ -365,6 +363,7 @@ void LanServer::Recv_Completion(Session* p_session){
 		
 		// 모니터링
 		InterlockedIncrement(&recvMsg_tps);
+
 		//------------------------------
 		// OnRecv 
 		//------------------------------
@@ -382,7 +381,7 @@ void LanServer::Recv_Completion(Session* p_session){
 	//------------------------------
 	// Post Recv (Recv 걸어두기)
 	//------------------------------
-	if (!Post_Recv(p_session)) return;
+	if (!AsyncRecv(p_session)) return;
 
 	//------------------------------
 	// Release
@@ -412,7 +411,7 @@ void LanServer::CleanUp(void) {
 	WSACleanup();
 }
 
-void LanServer::Monitoring() {
+void LanServer::PrintTPS() {
 	printf("\
 session_count : %d \n\
 accept_tps    : %d \n\
@@ -434,17 +433,36 @@ session_count, accept_tps, recvMsg_tps, sendMsg_tps, PacketBuffer::GetUseCount()
 SESSION_ID LanServer::Get_SessionID() {
 	static DWORD unique = 1;
 
-	index_lock.lock();
-	if (sessionIndex_stack.empty()) {
-		index_lock.unlock();
+	DWORD index;
+	if (false == sessionIndex_stack.Pop(&index)) {
 		return INVALID_SESSION_ID;
 	}
 
-	SESSION_ID session_id(sessionIndex_stack.top(), unique++);
-	sessionIndex_stack.pop();
-	index_lock.unlock();
-
+	SESSION_ID session_id(index, unique++);
 	return session_id;
+}
+
+Session* LanServer::Check_InvalidSession(SESSION_ID session_id){
+	Session* p_session = &session_array[session_id.session_index];
+
+	InterlockedIncrement((LONG*)&p_session->io_count);
+	// 세션 릴리즈 중
+	if (true == p_session->release_flag) {
+		if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+			Release_Session(p_session);
+			return nullptr;
+		}
+	}
+	// 세션 재사용
+	if (p_session->session_id != session_id) {
+		if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+			Release_Session(p_session);
+			return nullptr;
+		}
+	}
+
+	// 재사용 가능성 제로
+	return p_session;
 }
 
 SESSION_ID::SESSION_ID(){}
@@ -501,4 +519,8 @@ void Session::Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id){
 	this->ip = ip;
 	this->port = port;
 	this->session_id = session_id;
+
+	// 생성하자 마자 릴리즈 되는것을 방지
+	InterlockedIncrement(&io_count);
+	this->release_flag = false;
 }

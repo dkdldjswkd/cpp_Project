@@ -4,6 +4,7 @@
 // 오후 11:07 2023-01-03
 
 #define CHUNCK_SIZE 500
+#define TLSPOOL_MONITORING
 
 template <typename T>
 class LFObjectPoolTLS {
@@ -68,20 +69,19 @@ public:
 	};
 
 private:
-	static J_LIB::LFObjectPool<Chunk> chunkPool;
-
-private:
+	J_LIB::LFObjectPool<Chunk> chunkPool;
 	const int tlsIndex;
-	bool flag_placementNew;
+	const bool flag_placementNew;
+	alignas(32) int use_count = 0;
 
 private:
-	static Chunk* ChunkAlloc() {
+	Chunk* ChunkAlloc() {
 		Chunk* p_chunk = chunkPool.Alloc();
 		p_chunk->Clear(flag_placementNew);
 		return p_chunk;
 	}
 
-	static void ChunkFree(Chunk* p_chunk) {
+	void ChunkFree(Chunk* p_chunk) {
 		chunkPool.Free(p_chunk);
 	}
 
@@ -94,7 +94,15 @@ public:
 		return chunkPool.GetUseCount();
 	}
 
+	int Get_UseCount() {
+		return use_count;
+	}
+
 	T* Alloc() {
+#ifdef TLSPOOL_MONITORING
+		InterlockedIncrement((LONG*)&use_count);
+#endif
+
 		// TLS에서 청크를 가져옴
 		Chunk* p_chunk = (Chunk*)TlsGetValue(tlsIndex);
 		if (p_chunk == nullptr) {
@@ -114,6 +122,10 @@ public:
 	}
 
 	void Free(T* p_object) {
+#ifdef TLSPOOL_MONITORING
+		InterlockedDecrement((LONG*)&use_count);
+#endif
+
 		ChunkData* p_chunkData = (ChunkData*)((char*)p_object - sizeof(Chunk*));
 		if (p_chunkData->p_chunk->Free(p_object)) {
 			ChunkFree(p_chunkData->p_chunk);
