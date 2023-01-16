@@ -132,6 +132,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChattingServer.cpp" />
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="EchoServer.cpp" />
     <ClCompile Include="LanServer.cpp" />
@@ -139,6 +140,8 @@
     <ClCompile Include="PacketBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ChattingServer.h" />
+    <ClInclude Include="CommonProtocol.h" />
     <ClInclude Include="CrashDump.h" />
     <ClInclude Include="EchoServer.h" />
     <ClInclude Include="LanServer.h" />

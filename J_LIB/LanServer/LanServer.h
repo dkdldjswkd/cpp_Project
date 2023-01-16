@@ -32,9 +32,6 @@ public:
 	~SESSION_ID();
 
 public:
-	//------------------------------
-	// 대입 연산자
-	//------------------------------
 	void operator=(const SESSION_ID& other);
 	void operator=(UINT64 value);
 	bool operator==(UINT64 value);
@@ -56,6 +53,7 @@ public:
 
 	SESSION_ID	session_id = INVALID_SESSION_ID;
 	bool send_flag = false;
+	bool disconnect_flag = false;
 
 	// 세션 레퍼런스 카운트 역할
 	alignas(8) BOOL release_flag = false;
@@ -111,10 +109,6 @@ private:
 	bool Create_IOCP();
 	bool Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey);
 
-	// 세션
-	SESSION_ID Get_SessionID();
-	Session* Check_InvalidSession(SESSION_ID session_id);
-
 	// 스레드
 	void WorkerFunc();
 	void AcceptFunc();
@@ -122,6 +116,10 @@ private:
 	// IO 완료 통지 루틴
 	void Recv_Completion(Session* p_session);
 	void Send_Completion(Session* p_session);
+
+	// 세션
+	SESSION_ID Get_SessionID();
+	Session* Check_InvalidSession(SESSION_ID session_id);
 
 	// Send/Recv
 	bool SendPost(Session* p_session);
@@ -134,6 +132,7 @@ private:
 
 public:
 	bool SendPacket(SESSION_ID session_id, J_LIB::PacketBuffer* send_packet);
+	bool Disconnect(SESSION_ID session_id);
 
 public:
 	void StartUp(DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);

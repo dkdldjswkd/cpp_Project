@@ -5,12 +5,12 @@ void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer * cs_contentsPacket)
 	//------------------------------
 	// var set
 	//------------------------------
-	PacketBuffer* sc_contentsPacket = PacketBuffer::Alloc();
+	PacketBuffer* sc_contentsPacket = PacketBuffer::Alloc_LanPacket();
 
 	//------------------------------
 	// SC Contents Packet 생성
 	//------------------------------
-	auto cs_contentsPacket_len = cs_contentsPacket->Get_UseSize();
+	auto cs_contentsPacket_len = cs_contentsPacket->Get_PayloadSize();
 	sc_contentsPacket->Put_Data(cs_contentsPacket->Get_readPos(), cs_contentsPacket_len);
 	cs_contentsPacket->Move_Rp(cs_contentsPacket_len);
 
@@ -35,7 +35,7 @@ void EchoServer::OnClientJoin(SESSION_ID session_id){
 	//------------------------------
 	// var set
 	//------------------------------
-	PacketBuffer* sc_packet = PacketBuffer::Alloc();
+	PacketBuffer* sc_packet = PacketBuffer::Alloc_LanPacket();
 
 	//------------------------------
 	// sc packet 조립

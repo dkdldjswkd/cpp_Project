@@ -21,6 +21,10 @@ bool LanServer::Create_IOCP() {
 	return (h_iocp != INVALID_HANDLE_VALUE);
 }
 
+bool LanServer::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
+	return h_iocp == CreateIoCompletionPort((HANDLE)h_file, h_iocp, completionKey, 0);
+}
+
 void LanServer::Init(WORD worker_num, WORD port, DWORD max_session){
 	this->worker_num = worker_num;
 	this->server_port = port;
@@ -32,10 +36,6 @@ void LanServer::Init(WORD worker_num, WORD port, DWORD max_session){
 	// set index stack
 	for (int i = 0; i < max_session; i++)
 		sessionIndex_stack.Push(max_session - 1 - i);
-}
-
-bool LanServer::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
-	return h_iocp == CreateIoCompletionPort((HANDLE)h_file, h_iocp, completionKey, 0);
 }
 
 void LanServer::StartUp(DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session) {
@@ -230,6 +230,8 @@ void LanServer::Send_Completion(Session* p_session){
 	if (InterlockedExchange8((char*)&p_session->send_flag, false) == false)
 		CRASH();
 
+	if (p_session->disconnect_flag)
+		return;
 	if (p_session->sendQ.GetUseCount() <= 0)
 		return;
 	
@@ -242,10 +244,17 @@ bool LanServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 	if (nullptr == p_session) 
 		return false;
 
+	if (p_session->disconnect_flag) {
+		if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+			Release_Session(p_session);
+		}
+		return false;
+	}
+
 	// 패킷 헤더부 생성
 	LAN_HEADER lan_header;
-	lan_header.len = send_packet->Get_UseSize();
-	send_packet->Set_header(&lan_header);
+	lan_header.len = send_packet->Get_PayloadSize();
+	send_packet->Set_LanHeader();
 	send_packet->Increment_refCount();
 	p_session->sendQ.Enqueue(send_packet);
 
@@ -254,6 +263,20 @@ bool LanServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 		Release_Session(p_session);
 	}
 	return send_success;
+}
+
+bool LanServer::Disconnect(SESSION_ID session_id){
+	Session* p_session = Check_InvalidSession(session_id);
+	if (nullptr == p_session)
+		return true;
+
+	p_session->disconnect_flag = true;
+	CancelIoEx((HANDLE)p_session->sock, NULL);
+
+	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+		Release_Session(p_session);
+	}
+	return true;
 }
 
 // Send 시도 (Send 조건 1. Send 진행중 X, 2. SendQ not empty)
@@ -324,12 +347,18 @@ int LanServer::AsyncRecv(Session* p_session) {
 
 	InterlockedIncrement((LONG*)&p_session->io_count);
 	if (SOCKET_ERROR == WSARecv(p_session->sock, wsaBuf, 2, NULL, &flags, &p_session->recv_overlapped, NULL)) {
+		// Recv 실패
 		if (WSAGetLastError() != ERROR_IO_PENDING) {
 			if (InterlockedDecrement((LONG*)&p_session->io_count) == 0) {
 				Release_Session(p_session);
 			}
 			return false;
 		}
+	}
+	// Recv 성공
+	if (p_session->disconnect_flag) {
+		// 재사용일 수 있으나, 상관없음
+		CancelIoEx((HANDLE)p_session->sock, NULL);
 	}
 
 	return true;
@@ -345,7 +374,7 @@ void LanServer::Recv_Completion(Session* p_session){
 	//------------------------------
 	// var set
 	//------------------------------
-	PacketBuffer* contents_packet = PacketBuffer::Alloc();
+	PacketBuffer* contents_packet = PacketBuffer::Alloc_LanPacket();
 	LAN_HEADER network_header;
 
 	//------------------------------
@@ -365,12 +394,13 @@ void LanServer::Recv_Completion(Session* p_session){
 		InterlockedIncrement(&recvMsg_tps);
 
 		//------------------------------
-		// OnRecv 
+		// OnRecv (네트워크 헤더 제거, 컨텐츠 패킷 단위로 분해)
 		//------------------------------
-		contents_packet->Clear();
+		contents_packet->Clear_Lan();
 		p_session->recv_buf.Move_Front(LAN_HEADER_SIZE);
 		p_session->recv_buf.Dequeue(contents_packet->Get_writePos(), network_header.len);
 		contents_packet->Move_Wp(network_header.len);
+		// 사용자 패킷 처리
 		OnRecv(p_session->session_id, contents_packet);
 
 		// set recv len
@@ -381,12 +411,8 @@ void LanServer::Recv_Completion(Session* p_session){
 	//------------------------------
 	// Post Recv (Recv 걸어두기)
 	//------------------------------
-	if (!AsyncRecv(p_session)) return;
-
-	//------------------------------
-	// Release
-	//------------------------------
-	return;
+	if (false == p_session->disconnect_flag)
+		AsyncRecv(p_session);
 }
 
 void LanServer::CleanUp(void) {
@@ -519,6 +545,7 @@ void Session::Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id){
 	this->ip = ip;
 	this->port = port;
 	this->session_id = session_id;
+	disconnect_flag = false;
 
 	// 생성하자 마자 릴리즈 되는것을 방지
 	InterlockedIncrement(&io_count);

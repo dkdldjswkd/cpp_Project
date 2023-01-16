@@ -1,14 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Test</Filter>
-    </ClCompile>
     <ClCompile Include="LanServer.cpp">
       <Filter>LanServer LIB</Filter>
     </ClCompile>
     <ClCompile Include="EchoServer.cpp">
-      <Filter>Test</Filter>
+      <Filter>EchoServer</Filter>
     </ClCompile>
     <ClCompile Include="PacketBuffer.cpp">
       <Filter>LanServer LIB\include</Filter>
@@ -16,13 +13,19 @@
     <ClCompile Include="CrashDump.cpp">
       <Filter>LanServer LIB\include</Filter>
     </ClCompile>
+    <ClCompile Include="ChattingServer.cpp">
+      <Filter>ChattingServer</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Default</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LanServer.h">
       <Filter>LanServer LIB</Filter>
     </ClInclude>
     <ClInclude Include="EchoServer.h">
-      <Filter>Test</Filter>
+      <Filter>EchoServer</Filter>
     </ClInclude>
     <ClInclude Include="protocol.h">
       <Filter>LanServer LIB</Filter>
@@ -48,6 +51,12 @@
     <ClInclude Include="LFStack.h">
       <Filter>LanServer LIB\include</Filter>
     </ClInclude>
+    <ClInclude Include="ChattingServer.h">
+      <Filter>ChattingServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="유의할것.txt">
@@ -58,9 +67,6 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Test">
-      <UniqueIdentifier>{8c747a4a-ad5b-4a4d-ac0e-94d41e993cb1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Others">
       <UniqueIdentifier>{a565356c-0b8c-4c90-9fb8-ef6a6fba5020}</UniqueIdentifier>
     </Filter>
@@ -69,6 +75,18 @@
     </Filter>
     <Filter Include="LanServer LIB\include">
       <UniqueIdentifier>{17ec244e-fb86-4f45-9f4e-be80c3afd2c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EchoServer">
+      <UniqueIdentifier>{8c747a4a-ad5b-4a4d-ac0e-94d41e993cb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ChattingServer">
+      <UniqueIdentifier>{acbc4098-1b14-44f4-a2cc-9e5dea7a01af}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Default">
+      <UniqueIdentifier>{a5174fdc-b667-4d6b-91e2-5d8252ed74b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{3cd1dd1b-21a5-45c6-b2e7-5fc6dd0140d3}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
