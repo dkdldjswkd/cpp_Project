@@ -1,0 +1,34 @@
+// PacketAlloc 호출 부
+// SendPacket 위해 패킷 생성
+OnClientJoin
+OnRecv
+
+// PacketFree 호출 부
+Release_Session
+Send_Completion
+
+
+SendQ 패킷 전부 Free 되지 않으면 릭
+	1. 릴리즈 에서 Free
+	2. 완료 통지에서 Free
+	
+PacketBuffer::Get_PacketSize()
+PacketBuffer::Get_Packet()
+	-> Lan, Net 패킷마다 다름, 수정해야함 (패이로드 위치 - 헤더 사이즈 리턴함 (Net, Lan 헤더 크기 다름))
+
+Send 최대치 초과하면 Disconnect 해주기 (wsaBuf 크기 초과)
+
+Disconnect 신뢰성 테스트 해야함, 호출하는 곳 없음. (disconnect flag)
+
+SendQ 제한 시 끊어주기 테스트 해야함
+
+릴리즈 세션 시 멤버변수 셋팅?
+
+Send 완료통지 io size 0 일 수 있을까 -> 그렇다면 패킷 릭
+
+크래시 디파인 걸어서 디버그 용으로 터뜨릴 수 있게
+	-> 유틸 헤더?
+
+세션 연결종료.
+A. 센드 컴플리트, Packet Free, SendQ에 데이터 없음.
+B. 패킷 할당, Send Packet, SendQ Enq

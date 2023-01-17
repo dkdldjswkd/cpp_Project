@@ -124,7 +124,7 @@ private:
 	// Send/Recv
 	bool SendPost(Session* p_session);
 	int	AsyncSend(Session* p_session);
-	int	AsyncRecv(Session* p_session);
+	bool	AsyncRecv(Session* p_session);
 	int	SocketError_Handling(Session* p_session, IO_TYPE io_type);
 
 	// ÄÁÅÙÃ÷

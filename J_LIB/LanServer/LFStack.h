@@ -11,7 +11,7 @@
 #define CRASH()		do{						\
 						int* p = nullptr;	\
 						int a = *p;			\
-					}while(true); 
+					}while(true)
 
 template <typename T>
 struct LFStack {

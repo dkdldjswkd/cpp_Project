@@ -27,7 +27,7 @@ private:
 	char* begin;
 	char* end;
 	const int buf_size;
-	int* ref_count;
+	int ref_count;
 
 public:
 	char* write_pos;
@@ -36,7 +36,7 @@ public:
 public:
 	static PacketBuffer* Alloc_LanPacket();
 	static PacketBuffer* Alloc_NetPacket();
-	static void Free(PacketBuffer* instance);
+	static bool Free(PacketBuffer* instance);
 
 private:
 	// 네트워크 라이브러리에서 사용하기 위함
@@ -52,8 +52,8 @@ private:
 	BYTE Get_CheckSum();
 
 public:
-	inline void Clear_Lan();
-	inline void Clear_Net();
+	inline void Set_Lan();
+	inline void Set_Net();
 	inline bool Empty() const;
 	inline bool Full() const;
 	inline int Get_FreeSize()const;
@@ -107,23 +107,23 @@ inline PacketBuffer::~PacketBuffer() {
 
 inline PacketBuffer* PacketBuffer::Alloc_LanPacket(){
 	PacketBuffer* p = packetPool.Alloc();
-	p->Clear_Lan();
-	p->ref_count = new int(1);
+	p->Set_Lan();
 	return p;
 }
 
 inline PacketBuffer* PacketBuffer::Alloc_NetPacket(){
 	PacketBuffer* p = packetPool.Alloc();
-	p->Clear_Net();
-	p->ref_count = new int(1);
+	p->Set_Net();
 	return p;
 }
 
-inline void PacketBuffer::Free(PacketBuffer* instance){
-	if (InterlockedDecrement((DWORD*)instance->ref_count) == 0) {
-		delete instance->ref_count;
+inline bool PacketBuffer::Free(PacketBuffer* instance){
+	if (InterlockedDecrement((DWORD*)&instance->ref_count) == 0) {
 		packetPool.Free(instance);
+		return true;
 	}
+
+	return false;
 }
 
 inline int PacketBuffer::GetUseCount() {
@@ -131,11 +131,11 @@ inline int PacketBuffer::GetUseCount() {
 }
 
 inline int PacketBuffer::Get_PacketSize() {
-	return write_pos - (payload_pos - LAN_HEADER_SIZE);
+	return (write_pos - payload_pos) + LAN_HEADER_SIZE;
 }
 
 inline void PacketBuffer::Increment_refCount(){
-	InterlockedIncrement((DWORD*)this->ref_count);
+	InterlockedIncrement((DWORD*)&ref_count);
 }
 
 inline void PacketBuffer::Set_LanHeader(){
@@ -196,14 +196,16 @@ inline char* PacketBuffer::Get_Packet(){
 	return (payload_pos - LAN_HEADER_SIZE);
 }
 
-inline void PacketBuffer::Clear_Lan() {
+inline void PacketBuffer::Set_Lan() {
 	write_pos = begin + LAN_HEADER_SIZE;
 	payload_pos = begin + LAN_HEADER_SIZE;
+	ref_count = 1;
 }
 
-inline void PacketBuffer::Clear_Net(){
+inline void PacketBuffer::Set_Net(){
 	write_pos = begin + NET_HEADER_SIZE;
 	payload_pos = begin + NET_HEADER_SIZE;
+	ref_count = 1;
 }
 
 inline bool PacketBuffer::Empty() const {
