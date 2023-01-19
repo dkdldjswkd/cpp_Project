@@ -2,7 +2,8 @@
 
 namespace J_LIB {
 
-LFObjectPoolTLS<PacketBuffer>  PacketBuffer::packetPool;
+	//static LFObjectPool<PacketBuffer> packetPool;
+	LFObjectPool<PacketBuffer>  PacketBuffer::packetPool;
 
 // header size 
 PacketBuffer::PacketBuffer() : buf_size(LAN_HEADER_SIZE + PAYLOAD_SPACE) {

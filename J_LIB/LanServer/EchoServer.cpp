@@ -1,7 +1,7 @@
 #include "EchoServer.h"
 using namespace J_LIB;
 
-void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer * cs_contentsPacket) {
+void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
 	//------------------------------
 	// var set
 	//------------------------------

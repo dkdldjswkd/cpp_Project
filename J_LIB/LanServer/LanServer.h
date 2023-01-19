@@ -50,8 +50,8 @@ public:
 	SOCKET sock = INVALID_SOCKET;
 	in_addr ip;
 	WORD port;
-
 	SESSION_ID	session_id = INVALID_SESSION_ID;
+
 	bool send_flag = false;
 	bool disconnect_flag = false;
 
@@ -68,7 +68,6 @@ public:
 	LFQueue<J_LIB::PacketBuffer*> sendQ;
 
 public:
-	void Clear();
 	void Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id);
 };
 typedef Session* PSession;
@@ -120,6 +119,9 @@ private:
 	// 세션
 	SESSION_ID Get_SessionID();
 	Session* Check_InvalidSession(SESSION_ID session_id);
+	void DecrementIOCount(Session* p_session);
+	void IncrementIOCount(Session* p_session);
+	void DisconnectSession(Session* p_session);
 
 	// Send/Recv
 	bool SendPost(Session* p_session);
@@ -137,7 +139,6 @@ public:
 public:
 	void StartUp(DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);
 	void CleanUp();
-	int  Get_SessionCount();
 	void PrintTPS();
 
 // 라이브러리 사용자 측 재정의 하여 사용
@@ -151,6 +152,10 @@ protected:
 	//virtual void OnSend(SessionID, int sendsize) = 0;           // 패킷 송신 완료 후
 	//virtual void OnWorkerThreadBegin() = 0;                    // 워커스레드 GQCS 바로 하단에서 호출
 	//virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
+
+	// 디버깅
+public:
+	const int tls_index;
 };
 
 enum class IO_TYPE : BYTE {
@@ -159,3 +164,21 @@ enum class IO_TYPE : BYTE {
 	RECV,
 	ACCEPT,
 };
+
+inline void LanServer::DecrementIOCount(Session* p_session) {
+	auto ret = InterlockedDecrement((LONG*)&p_session->io_count);
+	IF_CRASH(ret == -1);
+	if (ret == 0) {
+		Release_Session(p_session);
+	}
+}
+
+inline void LanServer::IncrementIOCount(Session* p_session) {
+	InterlockedIncrement((LONG*)&p_session->io_count);
+}
+
+// Session 권한 취득 후 사용할것. (Session 재사용 문제 있으면 안됨.)
+inline void LanServer::DisconnectSession(Session* p_session) {
+	p_session->disconnect_flag = true;
+	CancelIoEx((HANDLE)p_session->sock, NULL);
+}

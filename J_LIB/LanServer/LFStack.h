@@ -8,10 +8,17 @@
 
 // J_LIB::LFObjectPool에 종속적임
 
-#define CRASH()		do{						\
-						int* p = nullptr;	\
-						int a = *p;			\
-					}while(true)
+#define CRASH()			do{						\
+							int* p = nullptr;	\
+							int a = *p;			\
+						}while(false)
+
+#define IF_CRASH(X)		do{							\
+							if(X){					\
+								int* p = nullptr;	\
+								int a = *p;			\
+							}						\
+						}while(false)
 
 template <typename T>
 struct LFStack {

@@ -18,10 +18,12 @@ public:
 
 private:
 	friend LanServer;
-	friend LFObjectPoolTLS<PacketBuffer>;
+	//friend LFObjectPoolTLS<PacketBuffer>;
+	friend LFObjectPool<PacketBuffer>;
 
 private:
-	static LFObjectPoolTLS<PacketBuffer> packetPool; 
+	//static LFObjectPoolTLS<PacketBuffer> packetPool; 
+	static LFObjectPool<PacketBuffer> packetPool; 
 
 private:
 	char* begin;
@@ -36,7 +38,7 @@ public:
 public:
 	static PacketBuffer* Alloc_LanPacket();
 	static PacketBuffer* Alloc_NetPacket();
-	static bool Free(PacketBuffer* instance);
+	static int Free(PacketBuffer* instance);
 
 private:
 	// 네트워크 라이브러리에서 사용하기 위함
@@ -117,17 +119,18 @@ inline PacketBuffer* PacketBuffer::Alloc_NetPacket(){
 	return p;
 }
 
-inline bool PacketBuffer::Free(PacketBuffer* instance){
-	if (InterlockedDecrement((DWORD*)&instance->ref_count) == 0) {
+inline int PacketBuffer::Free(PacketBuffer* instance){
+	auto ref_count = InterlockedDecrement((DWORD*)&instance->ref_count);
+	if (ref_count == 0) {
 		packetPool.Free(instance);
-		return true;
 	}
 
-	return false;
+	return ref_count;
 }
 
 inline int PacketBuffer::GetUseCount() {
-	return packetPool.Get_UseCount();
+	//return packetPool.Get_UseCount();
+	return packetPool.GetUseCount();
 }
 
 inline int PacketBuffer::Get_PacketSize() {
