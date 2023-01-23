@@ -1,6 +1,9 @@
 #include "EchoServer.h"
 using namespace J_LIB;
 
+#define ECHO_ON
+#ifdef ECHO_ON
+
 void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
 	//------------------------------
 	// var set
@@ -11,13 +14,13 @@ void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) 
 	// SC Contents Packet »ý¼º
 	//------------------------------
 	auto cs_contentsPacket_len = cs_contentsPacket->Get_PayloadSize();
-	sc_contentsPacket->Put_Data(cs_contentsPacket->Get_readPos(), cs_contentsPacket_len);
+	sc_contentsPacket->Put_Data(cs_contentsPacket->Get_payloadPos(), cs_contentsPacket_len);
 	cs_contentsPacket->Move_Rp(cs_contentsPacket_len);
 
 	//------------------------------
 	// Send Packet
 	//------------------------------
-	LanServer::SendPacket(session_id, sc_contentsPacket);
+	NetworkLib::SendPacket(session_id, sc_contentsPacket);
 
 	//------------------------------
 	// Release Func
@@ -45,7 +48,7 @@ void EchoServer::OnClientJoin(SESSION_ID session_id){
 	//------------------------------
 	// Send Packet
 	//------------------------------
-	LanServer::SendPacket(session_id, sc_packet);
+	NetworkLib::SendPacket(session_id, sc_packet);
 
 	//------------------------------
 	// Release Func
@@ -59,3 +62,5 @@ void EchoServer::OnClientLeave(SESSION_ID session_id){
 
 void EchoServer::OnError(int errorcode){
 }
+
+#endif

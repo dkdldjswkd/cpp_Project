@@ -1,7 +1,7 @@
 #pragma once
 #include "LanServer.h"
 
-class EchoServer : public LanServer {
+class EchoServer : public NetworkLib {
 public:
 	bool OnConnectionRequest(in_addr IP, WORD Port);
 	void OnClientJoin(SESSION_ID session_id);

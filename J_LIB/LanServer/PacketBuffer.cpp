@@ -10,8 +10,46 @@ PacketBuffer::PacketBuffer() : buf_size(LAN_HEADER_SIZE + PAYLOAD_SPACE) {
 	begin = (char*)malloc(buf_size);
 	end = begin + buf_size;
 
-	write_pos = begin + LAN_HEADER_SIZE;
 	payload_pos = begin + LAN_HEADER_SIZE;
+	write_pos = begin + LAN_HEADER_SIZE;
+}
+
+void PacketBuffer::Set_LanHeader() {
+	LAN_HEADER lanHeader;
+	lanHeader.len = Get_PayloadSize();
+	memmove(begin, &lanHeader, LAN_HEADER_SIZE);
+}
+
+void PacketBuffer::Set_NetHeader() {
+	// 중복 암호화 하지 않기 위함 (이미 암호화 된 패킷)
+	if (encrypt_flag)
+		return;
+	encrypt_flag = true;
+
+	NET_HEADER netHeader;
+	netHeader.code = PROTOCOL_CODE;
+	netHeader.len = Get_PayloadSize();
+	netHeader.randKey = (rand() & 0xFF);
+	netHeader.checkSum = Get_CheckSum();
+	memmove(begin, &netHeader, NET_HEADER_SIZE);
+
+	auto type = *(WORD*)payload_pos;
+	if (10 < type) {
+		CRASH();
+	}
+
+	char* encryptPos = payload_pos - 1;	// 암호화'될' 주소
+	short encrypt_len = netHeader.len + 1;	// 암호화될 길이
+	BYTE RK = netHeader.randKey; // 랜덤 키
+	BYTE K = CONST_KEY;		 // 고정 키
+	BYTE P = 0, E = 0;
+
+	// 암호화
+	for (int i = 0; i < encrypt_len; i++, encryptPos++) {
+		P = (*encryptPos) ^ (P + RK + (i + 1));
+		E = P ^ (E + K + (i + 1));
+		*((BYTE*)encryptPos) = E;
+	}
 }
 
 ///////////////////////////////
@@ -337,18 +375,19 @@ void PacketBuffer::Get_Data(char* dst, int size) {
 	}
 }
 
+// this에 암호 패킷 복호화 작업
 bool PacketBuffer::DecryptPacket(PacketBuffer* encryptPacket) {
 	memmove(begin, encryptPacket->begin, NET_HEADER_SIZE - 1); // 암호화 안된부분 복사
 
-	char* encryptPos = encryptPacket->begin + (NET_HEADER_SIZE - 1); // 암호 주소
-	short encrypt_len = ((NET_HEADER*)encryptPacket->begin)->len;	  // 암호 길이
-	char* decryptPos = begin + (NET_HEADER_SIZE - 1);				  // 복호화'될' 주소
+	char* decryptPos = begin				+ (NET_HEADER_SIZE - 1);		// 복호화'될' 주소
+	char* encryptPos = encryptPacket->begin	+ (NET_HEADER_SIZE - 1);		// 암호 주소
+	const short encrypt_len = ((NET_HEADER*)encryptPacket->begin)->len + 1;	// 암호 길이
 	BYTE RK = ((NET_HEADER*)encryptPacket->begin)->randKey; // 랜덤 키
 	BYTE K = CONST_KEY;										// 고정 키
 	BYTE P = 0, LP = 0, LE = 0;
 
 	// 복호화
-	for (int i = 0; i < encrypt_len; i++, encryptPos++) {
+	for (int i = 0; i < encrypt_len; i++, encryptPos++, decryptPos++) {
 		P = (*encryptPos) ^ (LE + K + (i + 1));
 		*((BYTE*)decryptPos) = P ^ (LP + RK + (i + 1)); // 복호화
 
@@ -356,7 +395,9 @@ bool PacketBuffer::DecryptPacket(PacketBuffer* encryptPacket) {
 		LP = P;
 	}
 
-	if (((NET_HEADER*)begin)->checkSum == Get_CheckSum()) {
+	Move_Wp(encrypt_len - 1);
+	auto checksum = Get_CheckSum();
+	if (((NET_HEADER*)begin)->checkSum == checksum) {
 		return true;
 	}
 	return false;

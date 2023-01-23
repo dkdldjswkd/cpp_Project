@@ -15,6 +15,12 @@ constexpr UINT64	INVALID_SESSION_ID = -1;
 class ProtocolBuffer;
 enum class IO_TYPE : BYTE;
 
+enum class NetworkArea : BYTE {
+	NONE,
+	LAN,
+	NET,
+};
+
 //------------------------------
 // SESSION_ID
 //------------------------------
@@ -73,15 +79,16 @@ public:
 typedef Session* PSession;
 
 //------------------------------
-// LanServer
+// NetworkLib
 //------------------------------
-class LanServer {
+class NetworkLib {
 public:
-	LanServer();
-	virtual ~LanServer();
+	NetworkLib();
+	virtual ~NetworkLib();
 
 private:
 	// 네트워크
+	NetworkArea networkArea;
 	SOCKET listen_sock = INVALID_SOCKET;
 	HANDLE h_iocp = INVALID_HANDLE_VALUE;
 	WORD server_port = 0;
@@ -113,8 +120,10 @@ private:
 	void AcceptFunc();
 
 	// IO 완료 통지 루틴
-	void Recv_Completion(Session* p_session);
-	void Send_Completion(Session* p_session);
+	void (NetworkLib::*RecvCompletion)(Session* p_session);
+	void RecvCompletion_LAN(Session* p_session);
+	void RecvCompletion_NET(Session* p_session);
+	void SendCompletion(Session* p_session);
 
 	// 세션
 	SESSION_ID Get_SessionID();
@@ -125,9 +134,9 @@ private:
 
 	// Send/Recv
 	bool SendPost(Session* p_session);
-	int	AsyncSend(Session* p_session);
-	bool	AsyncRecv(Session* p_session);
-	int	SocketError_Handling(Session* p_session, IO_TYPE io_type);
+	int	 AsyncSend(Session* p_session);
+	bool AsyncRecv(Session* p_session);
+	int	 SocketError_Handling(Session* p_session, IO_TYPE io_type);
 
 	// 컨텐츠
 	bool Release_Session(Session* p_session);
@@ -137,11 +146,11 @@ public:
 	bool Disconnect(SESSION_ID session_id);
 
 public:
-	void StartUp(DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);
+	void StartUp(NetworkArea area, DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);
 	void CleanUp();
 	void PrintTPS();
 
-// 라이브러리 사용자 측 재정의 하여 사용
+	// 라이브러리 사용자 측 재정의 하여 사용
 protected:
 	virtual bool OnConnectionRequest(in_addr IP, WORD Port) = 0;	//  accept 직후 호출, client 수용 여부 반환
 	virtual void OnClientJoin(SESSION_ID session_id) = 0;		// 접속 처리 후 호출
@@ -165,7 +174,7 @@ enum class IO_TYPE : BYTE {
 	ACCEPT,
 };
 
-inline void LanServer::DecrementIOCount(Session* p_session) {
+inline void NetworkLib::DecrementIOCount(Session* p_session) {
 	auto ret = InterlockedDecrement((LONG*)&p_session->io_count);
 	IF_CRASH(ret == -1);
 	if (ret == 0) {
@@ -173,12 +182,12 @@ inline void LanServer::DecrementIOCount(Session* p_session) {
 	}
 }
 
-inline void LanServer::IncrementIOCount(Session* p_session) {
+inline void NetworkLib::IncrementIOCount(Session* p_session) {
 	InterlockedIncrement((LONG*)&p_session->io_count);
 }
 
 // Session 권한 취득 후 사용할것. (Session 재사용 문제 있으면 안됨.)
-inline void LanServer::DisconnectSession(Session* p_session) {
+inline void NetworkLib::DisconnectSession(Session* p_session) {
 	p_session->disconnect_flag = true;
 	CancelIoEx((HANDLE)p_session->sock, NULL);
 }

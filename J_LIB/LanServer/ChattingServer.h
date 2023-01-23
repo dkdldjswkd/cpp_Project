@@ -2,20 +2,19 @@
 #include <Windows.h>
 #include <thread>
 #include <unordered_map>
+#include <unordered_set>
 #include "LFObjectPool.h"
+#include "LFQueue.h"
 #include "LanServer.h"
 
-#define RANGE_MOVE_TOP		0
-#define RANGE_MOVE_LEFT		0
-#define RANGE_MOVE_RIGHT	6400
-#define RANGE_MOVE_BOTTOM	6400
-
-#define SECTOR_SIZE		200
-#define SECTOR_MAX_X	(RANGE_MOVE_RIGHT / SECTOR_SIZE)
-#define SECTOR_MAX_Y	(RANGE_MOVE_BOTTOM / SECTOR_SIZE)
+#define SECTOR_MAX_X		50
+#define SECTOR_MAX_Y		50
 
 #define ID_LEN				20
 #define NICKNAME_LEN		20
+
+#define JOB_TYPE_CLIENT_JOIN  100
+#define JOB_TYPE_CLIENT_LEAVE 101
 
 typedef INT64 ACCOUNT_NO;
 
@@ -37,10 +36,15 @@ private:
 
 public:
 	SESSION_ID session_id = INVALID_SESSION_ID;
+	bool is_connect = false;
+	bool is_login = false;
 
 public:
 	WCHAR id[ID_LEN];
-	WCHAR nickName[NICKNAME_LEN];
+	WCHAR nickname[NICKNAME_LEN];
+	char sessionKey[64]; // 인증토큰
+
+public:
 	Sector sectorPos;
 	SectorAround sectorAround;
 
@@ -71,45 +75,77 @@ private:
 	}
 
 public:
-	void Set(SESSION_ID session_id = INVALID_SESSION_ID, WCHAR* id = nullptr, WCHAR* nickName = nullptr, Sector sectorPos = { -1,-1 }) {
+	inline void Set_Connect(SESSION_ID session_id) {
 		this->session_id = session_id;
-		Set_ID(id);
-		Set_Nickname(nickName);
-		Set_Sector(sectorPos);
+		is_connect = true;
+		sectorPos.x = -2;
+		sectorPos.y = -2;
+		sectorAround.count = 0;
+	}
+	inline void Set_Login() {
+		is_login = true;
 	}
 	inline void Set_ID(WCHAR* id) {
-		if (id != nullptr) {
-#pragma warning(suppress : 4996)
+			#pragma warning(suppress : 4996)
 			wcsncpy(this->id, id, ID_LEN);
 			this->id[ID_LEN] = 0;
-		}
 	}
-	inline void Set_Nickname(WCHAR* id) {
-		if (nickName != nullptr) {
-#pragma warning(suppress : 4996)
-			wcsncpy(this->nickName, nickName, NICKNAME_LEN);
-			this->nickName[NICKNAME_LEN] = 0;
-		}
+	inline void Set_Nickname(WCHAR* nickname) {
+			#pragma warning(suppress : 4996)
+			wcsncpy(this->nickname, nickname, NICKNAME_LEN);
+			this->nickname[NICKNAME_LEN] = 0;
+	}
+	inline void Set_SessionKey(char* key) {
+			#pragma warning(suppress : 4996)
+			strncpy(sessionKey, key, 64);
 	}
 	inline void Set_Sector(Sector sectorPos) {
 		this->sectorPos = sectorPos;
 		Set_SectorAround();
 	}
+	inline void Reset() {
+		// 세션에 대한 경합이 있다면 일괄처리 되어야함
+		is_connect = false;
+		is_login = false;
+	}
 };
 
-class ChattingServer: public LanServer {
+class ChattingServer: public NetworkLib {
 public:
 	ChattingServer();
 	~ChattingServer();
 
 private:
-	HANDLE h_iocp = INVALID_HANDLE_VALUE;
-	std::thread updateThread;
-	std::thread heartbeatThread;
+	static struct Job {
+	public:
+		SESSION_ID session_id;
+		WORD type;
+		J_LIB::PacketBuffer* p_packet;
+
+	public:
+		void Set(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* p_packet = nullptr) {
+			this->session_id = session_id;
+			this->type = type;
+			this->p_packet = p_packet;
+		}
+	};
 
 private:
+	// Player 컨테이너
 	J_LIB::LFObjectPool<Player> playerPool;
-	std::unordered_map<DWORD64, Player*> player_map;
+	std::unordered_map<DWORD64, Player*> player_map;						// 공유자원
+	std::unordered_set<Player*> sectors_set[SECTOR_MAX_Y][SECTOR_MAX_X];	// 공유자원
+
+private:
+	// JOB
+	J_LIB::LFObjectPool<Job> jobPool;
+	LFQueue<Job*> jobQ; 
+	HANDLE updateEvent;
+	std::thread updateThread;
+
+private:
+	// 모니터링
+	int player_count = 0;											// 공유자원
 
 private:
 	// Lib callback
@@ -121,13 +157,21 @@ private:
 
 private:
 	void UpdateFunc();
-	void HeartbeatFunc();
 	void Disconnect_Player(Player* p_player);
-	
+	void JobQueuing(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* p_packet = nullptr);
+
 private:
-	bool ProcPacket(Player* p_player, WORD type, J_LIB::PacketBuffer* cs_contentsPacket);
-	bool ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(Player* p_player, J_LIB::PacketBuffer* cs_contentsPacket);
-	bool ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(Player* p_player, J_LIB::PacketBuffer* cs_contentsPacket);
-	bool ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(Player* p_player, J_LIB::PacketBuffer* cs_contentsPacket);
-	bool ProcPacket_en_PACKET_CS_CHAT_REQ_HEARTBEATE(Player* p_player, J_LIB::PacketBuffer* cs_contentsPacket);
+	void SendSectorAround(Player* p_player, J_LIB::PacketBuffer* send_packet);
+	void SendSector(J_LIB::PacketBuffer* send_packet, Sector sector);
+
+private:
+	// JOB 처리
+	bool ProcJob(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* cs_contentsPacket);
+	// 패킷(JOB) 처리
+	bool ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 1
+	bool ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 3
+	bool ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 5
+	// OnFunc(JOB) 처리
+	bool ProcJob_ClientJoin(SESSION_ID session_id);  // 100
+	bool ProcJob_ClientLeave(SESSION_ID session_id); // 101
 };

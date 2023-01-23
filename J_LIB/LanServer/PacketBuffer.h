@@ -7,7 +7,7 @@
 #include "protocol.h"
 
 constexpr unsigned PAYLOAD_SPACE = 8000;
-class LanServer;
+class NetworkLib;
 
 namespace J_LIB {
 class PacketBuffer {
@@ -17,12 +17,10 @@ public:
 	inline ~PacketBuffer();
 
 private:
-	friend LanServer;
-	//friend LFObjectPoolTLS<PacketBuffer>;
+	friend NetworkLib;
 	friend LFObjectPool<PacketBuffer>;
 
 private:
-	//static LFObjectPoolTLS<PacketBuffer> packetPool; 
 	static LFObjectPool<PacketBuffer> packetPool; 
 
 private:
@@ -30,12 +28,14 @@ private:
 	char* end;
 	const int buf_size;
 	int ref_count;
+	bool encrypt_flag = false;
 
 public:
 	char* write_pos;
 	char* payload_pos;
 
 public:
+	static PacketBuffer* Alloc(); // 밖에서 편하게 사용할 수 있게 해야함
 	static PacketBuffer* Alloc_LanPacket();
 	static PacketBuffer* Alloc_NetPacket();
 	static int Free(PacketBuffer* instance);
@@ -45,10 +45,11 @@ private:
 	void Set_LanHeader();
 	void Set_NetHeader();
 	bool DecryptPacket(PacketBuffer* encryptPacket);
-	char* Get_Packet(); // 패킷 시작위치 반환 (헤더 포함)
+	char* GetPacketPos_LAN(); // 네트워크 헤더 시작위치 반환
+	char* GetPacketPos_NET();
 	static int GetUseCount();
-	inline int Get_PacketSize();
-	void Increment_refCount();
+	inline int Get_PacketSize_LAN();
+	inline int Get_PacketSize_NET();
 
 private:
 	BYTE Get_CheckSum();
@@ -62,7 +63,8 @@ public:
 	inline int Get_PayloadSize() const;
 	inline int Get_BufSize() const;
 	inline char* Get_writePos() const;
-	inline char* Get_readPos() const;
+	inline char* Get_payloadPos() const;
+	void Increment_refCount();
 
 public:
 	// instream
@@ -133,31 +135,17 @@ inline int PacketBuffer::GetUseCount() {
 	return packetPool.GetUseCount();
 }
 
-inline int PacketBuffer::Get_PacketSize() {
+inline int PacketBuffer::Get_PacketSize_LAN() {
 	return (write_pos - payload_pos) + LAN_HEADER_SIZE;
+}
+
+inline int PacketBuffer::Get_PacketSize_NET() {
+	return (write_pos - payload_pos) + NET_HEADER_SIZE;
 }
 
 inline void PacketBuffer::Increment_refCount(){
 	InterlockedIncrement((DWORD*)&ref_count);
 }
-
-inline void PacketBuffer::Set_LanHeader(){
-	LAN_HEADER lanHeader;
-	lanHeader.len = Get_PayloadSize();
-	memmove(begin, &lanHeader, LAN_HEADER_SIZE);
-}
-
-// Code(1byte) - Len(2byte) - RandKey(1byte) - CheckSum(1byte) - Payload(Len byte)
-// 
-// 사이즈: 55byte
-// 
-// 데이터(텍스트) : aaaaaaaaaabbbbbbbbbbcccccccccc1234567890abcdefghijklmn(널문자포함 55byte)
-// 데이터(16진수) : 61 61 61 61 61 61 61 61 61 61 62 62 62 62 62 62 62 62 62 62 63 63 63 63 63 63 63 63 63 63 31 32 33 34 35 36 37 38 39 30 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 00
-// 
-// 고정키 : 0xa9
-// 랜덤키 : 0x31
-// 
-// 암호화(16진수) : f9 43 95 8c 5f f3 f7 44 b1 87 46 23 ad b5 1e 01 c1 a3 1e 3f b4 80 18 1b b2 ac 36 0b 8c 9c 4a 5e 84 84 7a 0e 74 84 72 0c 16 a8 82 68 c6 ac 72 74 86 20 32 50 86 04 2d
 
 inline BYTE PacketBuffer::Get_CheckSum() {
 	WORD len = Get_PayloadSize();
@@ -168,35 +156,16 @@ inline BYTE PacketBuffer::Get_CheckSum() {
 		checkSum += *cpy_readPos;
 		cpy_readPos++;
 	}
-	return (BYTE)(checkSum & 0xFF);
+	//return (BYTE)(checkSum & 0xFF);
+	return (BYTE)(checkSum % 256);
 }
 
-inline void PacketBuffer::Set_NetHeader(){
-	NET_HEADER netHeader;
-	netHeader.code = PROTOCOL_CODE;
-	netHeader.len = Get_PayloadSize();
-	netHeader.randKey = (rand() & 0xFF);
-	netHeader.checkSum = Get_CheckSum();
-	memmove(begin, &netHeader, NET_HEADER_SIZE);
-
-	char* encryptPos  = payload_pos - 1;	// 암호화'될' 주소
-	short encrypt_len = netHeader.len + 1;	// 암호화될 길이
-	BYTE RK = netHeader.randKey; // 랜덤 키
-	BYTE K  = CONST_KEY;		 // 고정 키
-	BYTE P = 0, E = 0;
-
-	// 암호화
-	for (int i = 0; i < encrypt_len; i++, encryptPos++) {
-		P = (*encryptPos) ^ (P + RK + (i + 1));
-		E = P ^ (E + K + (i + 1));
-		*((BYTE*)encryptPos) = E;
-	}
-}
-
-
-
-inline char* PacketBuffer::Get_Packet(){
+inline char* PacketBuffer::GetPacketPos_LAN(){
 	return (payload_pos - LAN_HEADER_SIZE);
+}
+
+inline char* PacketBuffer::GetPacketPos_NET(){
+	return (payload_pos - NET_HEADER_SIZE);
 }
 
 inline void PacketBuffer::Set_Lan() {
@@ -208,6 +177,7 @@ inline void PacketBuffer::Set_Lan() {
 inline void PacketBuffer::Set_Net(){
 	write_pos = begin + NET_HEADER_SIZE;
 	payload_pos = begin + NET_HEADER_SIZE;
+	encrypt_flag = false;
 	ref_count = 1;
 }
 
@@ -239,7 +209,7 @@ inline char* PacketBuffer::Get_writePos() const {
 	return write_pos;
 }
 
-inline char* PacketBuffer::Get_readPos() const {
+inline char* PacketBuffer::Get_payloadPos() const {
 	return payload_pos;
 }
 }
