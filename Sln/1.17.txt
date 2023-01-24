@@ -1,3 +1,5 @@
+// 오전 3:46 2023-01-25
+
 PacketBuffer::Get_PacketSize()
 PacketBuffer::Get_Packet()
 	-> Lan, Net 패킷마다 다름, 수정해야함 (패이로드 위치 - 헤더 사이즈 리턴함 (Net, Lan 헤더 크기 다름))
@@ -7,7 +9,7 @@ PacketBuffer::Get_Packet()
 세션 수, 플레이어 수 제한
 
 *** Packet TLS Pool 대체
-
+ 
 타임아웃 구현 // 내부 외부?
 
 릴리즈 부 패킷 free 로직 기억하기. (왜 SendQ, SendQ arr 둘다 Free 해야 하는지)
@@ -17,3 +19,17 @@ Lan, Net 편하게 사용할 수 있게 하기 (PACKET::alloc_lan X)
 고정 Key, 타임아웃 시간 등 파서 로 읽어와서 서버 셋팅하게하기
 
 Player Set에서 뭐 해줘야할까?
+
+mem TLS, 링버퍼 cpp로 쓰기
+
+IOCP 제한 러닝스레드 개수, 워커 스레드 개수 옵션 지정
+
+할당 주소를 재할당하는 문제
+	1. 스레드마다 갖고있는 청크가 같았다.
+		한 스레드에서 Free 후에도 들고있었다?
+	2. 한 스레드에서
+
+JLIB 공통 헤더 만들기?
+	옵션 헤더
+
+청크 데이터에서 청크 포인터 잘 들고있나?

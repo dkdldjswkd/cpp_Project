@@ -143,6 +143,10 @@
   <ItemGroup>
     <ClCompile Include="소스.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LFObjectPool.h" />
+    <ClInclude Include="LFObjectPoolTLS.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

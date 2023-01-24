@@ -3,4 +3,8 @@
   <ItemGroup>
     <ClCompile Include="소스.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="LFObjectPoolTLS.h" />
+    <ClInclude Include="LFObjectPool.h" />
+  </ItemGroup>
 </Project>

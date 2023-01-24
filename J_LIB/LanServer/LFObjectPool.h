@@ -61,7 +61,7 @@ namespace J_LIB {
 		T* Alloc();
 		void Free(T* p_obejct);
 		inline int GetCapacityCount() const { return capacity; }
-		inline int GetUseCount() const { return use_count; }
+		inline int Get_UseCount() const { return use_count; }
 	};
 
 	//------------------------------

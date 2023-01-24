@@ -1,7 +1,7 @@
 #pragma once
 #include "LFObjectPool.h"
 
-// 오후 11:07 2023-01-03
+// 오후 10:04 2023-01-24
 
 #define CHUNCK_SIZE 500
 #define TLSPOOL_MONITORING
@@ -9,61 +9,65 @@
 template <typename T>
 class LFObjectPoolTLS {
 public:
-	LFObjectPoolTLS(bool flag_placementNew = false);
-	~LFObjectPoolTLS();
+	LFObjectPoolTLS(bool flag_placementNew = false) : flag_placementNew(flag_placementNew), tlsIndex(TlsAlloc()) {};
+	~LFObjectPoolTLS() {}
 
 public:
 	struct Chunk;
 	static struct ChunkData {
+	public:
 		Chunk* p_chunk;
 		T object;
+
+	public:
+		void Free() {
+			p_chunk->Free(&object);
+		}
 	};
 
 public:
+	// 스레드마다 다른 Chunk를 들고있음
 	static struct Chunk {
 	public:
 		Chunk() {}
 		~Chunk() {}
 
 	private:
+		J_LIB::LFObjectPool<Chunk>* p_myPool;
 		ChunkData chunkData_array[CHUNCK_SIZE];
-		int alloc_count;
-		alignas(32) int free_count;
+		int alloc_index;
+		alignas(32) int free_index;
 		bool flag_placementNew;
 
 	public:
-		// 청크에서 할당해줄 데이터가 없다면 ret nullptr
-		T* Alloc() {
-			// 할당 성공
-			if (alloc_count < CHUNCK_SIZE) {
-				ChunkData* p_chunkData = &chunkData_array[alloc_count++];
-				T* p_object = &p_chunkData->object;
-				if (flag_placementNew) new (p_object) T;
-				return p_object;
-			}
-
-			// 할당 실패
-			return nullptr;
-		}
-
-		// true 반환 시 데이터 꽉참
-		bool Free(T* p_object) {
-			if (flag_placementNew) p_object->~T();
-
-			if (CHUNCK_SIZE == InterlockedIncrement((DWORD*)&free_count)) {
-				if (free_count > alloc_count) CRASH();
+		inline bool CanAlloc() {
+			if (alloc_index < CHUNCK_SIZE)
 				return true;
-			}
-			else
-				return false;
+			return false;
 		}
 
-		void Clear(bool flag_placementNew) {
-			alloc_count = 0;
-			free_count = 0;
+		T* Alloc() {
+			T* p_object = &(chunkData_array[alloc_index++].object);
+			if (flag_placementNew) new (p_object) T;
+			return p_object;
+		}
+
+		// 직접호출할 일 없음.
+		void Free(T* p_object) {
+			if (flag_placementNew) p_object->~T();
+			if (CHUNCK_SIZE == InterlockedIncrement((DWORD*)&free_index)) {
+				if (free_index > alloc_index) CRASH(); //중복반환
+				p_myPool->Free(this);
+			}
+		}
+
+		void Set(bool flag_placementNew, J_LIB::LFObjectPool<Chunk>* p_chunkPool) {
 			this->flag_placementNew = flag_placementNew;
-			for (auto& chunkData : chunkData_array) {
-				chunkData.p_chunk = this;
+			p_myPool = p_chunkPool;
+			alloc_index = 0;
+			free_index = 0;
+			for (int i = 0; i < CHUNCK_SIZE; i++) {
+				chunkData_array[i].p_chunk = this;
 			}
 		}
 	};
@@ -75,14 +79,22 @@ private:
 	alignas(32) int use_count = 0;
 
 private:
+	// 유효한 Chunk 반환
 	Chunk* ChunkAlloc() {
-		Chunk* p_chunk = chunkPool.Alloc();
-		p_chunk->Clear(flag_placementNew);
+		Chunk* p_chunk = (Chunk*)TlsGetValue(tlsIndex);
+		if (p_chunk == nullptr) {
+			// 스레드에서 최초 1회 호출 시
+			p_chunk = chunkPool.Alloc();
+			p_chunk->Set(flag_placementNew, &chunkPool);
+			TlsSetValue(tlsIndex, (LPVOID)p_chunk);
+		}
+		if (false == p_chunk->CanAlloc()) {
+			// 청크 데이터 모두 할당해준상태
+			p_chunk = chunkPool.Alloc();
+			p_chunk->Set(flag_placementNew, &chunkPool);
+			TlsSetValue(tlsIndex, (LPVOID)p_chunk);
+		}
 		return p_chunk;
-	}
-
-	void ChunkFree(Chunk* p_chunk) {
-		chunkPool.Free(p_chunk);
 	}
 
 public:
@@ -91,7 +103,7 @@ public:
 	}
 
 	int Get_ChunkUseCount() {
-		return chunkPool.GetUseCount();
+		return chunkPool.Get_UseCount();
 	}
 
 	int Get_UseCount() {
@@ -99,48 +111,20 @@ public:
 	}
 
 	T* Alloc() {
-#ifdef TLSPOOL_MONITORING
+		#ifdef TLSPOOL_MONITORING
 		InterlockedIncrement((LONG*)&use_count);
-#endif
-
-		// TLS에서 청크를 가져옴
-		Chunk* p_chunk = (Chunk*)TlsGetValue(tlsIndex);
-		if (p_chunk == nullptr) {
-			p_chunk = ChunkAlloc();
-			TlsSetValue(tlsIndex, p_chunk);
-		}
-
-		// 청크에서 오브젝트 할당
-		T* p_object = p_chunk->Alloc();
-		if (p_object == nullptr) {
-			p_chunk = ChunkAlloc();
-			TlsSetValue(tlsIndex, p_chunk);
-			p_object = p_chunk->Alloc();
-		}
-
-		return p_object;
+		#endif
+		
+		// ChunkAlloc()로 얻은 청크는 유효한 청크 (아니라면 결함)
+		return ChunkAlloc()->Alloc();
 	}
 
 	void Free(T* p_object) {
-#ifdef TLSPOOL_MONITORING
+		#ifdef TLSPOOL_MONITORING
 		InterlockedDecrement((LONG*)&use_count);
-#endif
+		#endif
 
 		ChunkData* p_chunkData = (ChunkData*)((char*)p_object - sizeof(Chunk*));
-		if (p_chunkData->p_chunk->Free(p_object)) {
-			ChunkFree(p_chunkData->p_chunk);
-		}
+		p_chunkData->Free();
 	}
 };
-
-//------------------------------
-// LFObjectPoolTLS
-//------------------------------
-
-template<typename T>
-inline LFObjectPoolTLS<T>::LFObjectPoolTLS(bool flag_placementNew) : flag_placementNew(flag_placementNew), tlsIndex(TlsAlloc()) {
-}
-
-template<typename T>
-inline LFObjectPoolTLS<T>::~LFObjectPoolTLS(){
-}

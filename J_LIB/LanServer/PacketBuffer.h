@@ -9,6 +9,8 @@
 constexpr unsigned PAYLOAD_SPACE = 8000;
 class NetworkLib;
 
+#define TLS_TEST
+
 namespace J_LIB {
 class PacketBuffer {
 private:
@@ -18,10 +20,16 @@ public:
 
 private:
 	friend NetworkLib;
+#ifdef TLS_TEST
+	friend LFObjectPoolTLS<PacketBuffer>;
+	static LFObjectPoolTLS<PacketBuffer> packetPool;
+#endif // TLS_TEST
+#ifndef TLS_TEST
 	friend LFObjectPool<PacketBuffer>;
+	static LFObjectPool<PacketBuffer> packetPool; 
+#endif // !TLS_TEST
 
 private:
-	static LFObjectPool<PacketBuffer> packetPool; 
 
 private:
 	char* begin;
@@ -132,7 +140,7 @@ inline int PacketBuffer::Free(PacketBuffer* instance){
 
 inline int PacketBuffer::GetUseCount() {
 	//return packetPool.Get_UseCount();
-	return packetPool.GetUseCount();
+	return packetPool.Get_UseCount();
 }
 
 inline int PacketBuffer::Get_PacketSize_LAN() {
