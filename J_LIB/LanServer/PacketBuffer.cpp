@@ -2,10 +2,10 @@
 
 namespace J_LIB {
 
-#ifdef TLS_TEST
+#ifdef USE_TLS
 	LFObjectPoolTLS<PacketBuffer>  PacketBuffer::packetPool;
 #endif // TLS_TEST
-#ifndef TLS_TEST
+#ifndef USE_TLS
 	LFObjectPool<PacketBuffer>  PacketBuffer::packetPool;
 #endif // !TLS_TEST
 

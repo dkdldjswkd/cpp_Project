@@ -9,7 +9,7 @@
 constexpr unsigned PAYLOAD_SPACE = 8000;
 class NetworkLib;
 
-#define TLS_TEST
+#define USE_TLS
 
 namespace J_LIB {
 class PacketBuffer {
@@ -20,11 +20,11 @@ public:
 
 private:
 	friend NetworkLib;
-#ifdef TLS_TEST
+#ifdef USE_TLS
 	friend LFObjectPoolTLS<PacketBuffer>;
 	static LFObjectPoolTLS<PacketBuffer> packetPool;
 #endif // TLS_TEST
-#ifndef TLS_TEST
+#ifndef USE_TLS
 	friend LFObjectPool<PacketBuffer>;
 	static LFObjectPool<PacketBuffer> packetPool; 
 #endif // !TLS_TEST
