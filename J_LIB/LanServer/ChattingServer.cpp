@@ -5,8 +5,6 @@ using namespace std;
 
 #define MAX_MSG 300
 
-int qqqq = 0;
-
 ChattingServer::ChattingServer() {
 	updateEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	updateThread = thread([this]{UpdateFunc(); });
@@ -42,11 +40,8 @@ void ChattingServer::UpdateFunc() {
 	for (;;) {
 		WaitForSingleObject(updateEvent, INFINITE);
 		while (jobQ.Dequeue(&p_job)) {
-			InterlockedDecrement((LONG*)&qqqq);
 			ProcJob(p_job->session_id, p_job->type, p_job->p_packet);
-			if (nullptr != p_job->p_packet) {
-				PacketBuffer::Free(p_job->p_packet);
-			}
+			if (nullptr != p_job->p_packet) { PacketBuffer::Free(p_job->p_packet); }
 			jobPool.Free(p_job);
 		}
 	}
@@ -124,7 +119,11 @@ bool ChattingServer::ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID sessio
 	*cs_contentsPacket >> sectorX;
 	*cs_contentsPacket >> sectorY;
 
-	p_player->Set_Sector({ sectorX , sectorY }); // 섹터 조건 체크 안하고있음.
+	// 섹터 좌표 조건 체크 안하고있음
+	if (p_player->sectorPos.CheckInvalid()) {
+		sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
+	}
+	p_player->Set_Sector({ sectorX , sectorY }); 
 	sectors_set[sectorY][sectorX].insert(p_player);
 
 	PacketBuffer* p_packet = PacketBuffer::Alloc_NetPacket();
@@ -188,12 +187,8 @@ bool ChattingServer::ProcJob_ClientLeave(SESSION_ID session_id) {
 
 	// 컨테이너에서 삭제
 	player_map.erase(iter);
-	if (player_map.size() != 0) CRASH();
-	sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
-	for (int i = 0; i < SECTOR_MAX_Y; i++) {
-		for (int j = 0; j < SECTOR_MAX_X; j++) {
-			if (sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].size() != 0) CRASH();
-		}
+	if (p_player->sectorPos.CheckInvalid()) {
+		sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
 	}
 
 	// Player 반환
@@ -211,7 +206,6 @@ void ChattingServer::OnError(int errorcode) {
 void ChattingServer::JobQueuing(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* p_packet) {
 	Job* p_job = jobPool.Alloc();
 	p_job->Set(session_id, type, p_packet);
-	InterlockedIncrement((LONG*)&qqqq);
 	jobQ.Enqueue(p_job);
 	SetEvent(updateEvent);
 }

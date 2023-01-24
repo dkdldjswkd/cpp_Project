@@ -19,8 +19,18 @@
 typedef INT64 ACCOUNT_NO;
 
 static struct Sector {
+public:
 	int x;
 	int y;
+
+public:
+	inline bool CheckInvalid() {
+		if (0 > x || 0 > y)
+			return false;
+		if (SECTOR_MAX_X <= x || SECTOR_MAX_Y <= y)
+			return false;
+		return true;
+	}
 };
 
 struct Player {
@@ -52,10 +62,8 @@ private:
 	void Set_SectorAround() {
 		sectorAround.count = 0;
 
-		if (sectorPos.x < 0 || sectorPos.y < 0) {
-			sectorAround.count = 0;
+		if (false == sectorPos.CheckInvalid())
 			return;
-		}
 
 		int sector_x = sectorPos.x - 1;
 		int sector_y = sectorPos.y - 1;

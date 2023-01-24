@@ -6,28 +6,14 @@ PacketBuffer::Get_Packet()
 
 세션 수, 플레이어 수 제한
 
-메모리풀 TLS에 문제 있어서 기본 메모리풀로 교체했음, *추후 tls 풀로 교체할것
-
-복호화 공식 1byte로 하면 오버플로우 문제?
+*** Packet TLS Pool 대체
 
 타임아웃 구현 // 내부 외부?
 
-JOB 어떻게 던질건지
-
-채팅서버 IOCP -> LFQ 변경
-
 릴리즈 부 패킷 free 로직 기억하기. (왜 SendQ, SendQ arr 둘다 Free 해야 하는지)
 
-Lan, Net 나누기
+Lan, Net 편하게 사용할 수 있게 하기 (PACKET::alloc_lan X)
 
 고정 Key, 타임아웃 시간 등 파서 로 읽어와서 서버 셋팅하게하기
-
-악의적 클라 패킷 길이 너무 길게 보내서 이상한곳 찌르는 문제 대비하기
-
-memcpy, memmove 차이 (어셈까보기)
-
-복호화 해야함, 체크섬 확인하기
-
-패킷 밖에서 편하게 생성할 수 있게 해주기 (PACKET::alloc_lan X)
 
 Player Set에서 뭐 해줘야할까?

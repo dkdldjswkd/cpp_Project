@@ -33,11 +33,6 @@ void PacketBuffer::Set_NetHeader() {
 	netHeader.checkSum = Get_CheckSum();
 	memmove(begin, &netHeader, NET_HEADER_SIZE);
 
-	auto type = *(WORD*)payload_pos;
-	if (10 < type) {
-		CRASH();
-	}
-
 	char* encryptPos = payload_pos - 1;	// 암호화'될' 주소
 	short encrypt_len = netHeader.len + 1;	// 암호화될 길이
 	BYTE RK = netHeader.randKey; // 랜덤 키
