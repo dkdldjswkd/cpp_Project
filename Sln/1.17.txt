@@ -18,10 +18,6 @@ Lan, Net 편하게 사용할 수 있게 하기 (PACKET::alloc_lan X)
 
 고정 Key, 타임아웃 시간 등 파서 로 읽어와서 서버 셋팅하게하기
 
-Player Set에서 뭐 해줘야할까?
-
-mem TLS, 링버퍼 cpp로 쓰기
-
 IOCP 제한 러닝스레드 개수, 워커 스레드 개수 옵션 지정
 
 할당 주소를 재할당하는 문제
@@ -32,4 +28,43 @@ IOCP 제한 러닝스레드 개수, 워커 스레드 개수 옵션 지정
 JLIB 공통 헤더 만들기?
 	옵션 헤더
 
-청크 데이터에서 청크 포인터 잘 들고있나?
+시스템 로그 남기기
+
+자료구조 컨테이너, LOCK 은 정확히 표시하자.
+플레이어 락?
+
+*** {release_flag, io_count} 64 경계 
+
+//
+
+Update 스레드로 JOB을 던지면, io count를 물고있지 않기때문에
+SESSION ID로 
+but Onrecv로 처리하게 된다면, OnLeave에서 ID를 key로 갖는 Value는 삭제, 재사용될 수 없음
+SESSION ID로 접근하는 
+
+
+
+1. Player Sector가 언제 수정되는가?
+	1. Sector Move 패킷 수신 시
+	2. OnClientJoin 호출 시
+
+
+1 순위
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

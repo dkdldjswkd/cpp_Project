@@ -9,9 +9,8 @@
 // * 해당 LFObjectPool 구현 환경 : Release, x64, 최적화 컴파일 OFF
 //	오전 3:14 2022-12-18
 
-#define CRASH() do{				\
-					int* p = 0;	\
-					*p = 0;		\
+#define CRASH() do{						\
+					*(int*)nullptr = 0	\
 				}while(false)
 
 constexpr BYTE	  UNUSED_BIT	= 17;

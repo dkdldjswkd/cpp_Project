@@ -218,6 +218,7 @@ bool NetworkLib::Release_Session(Session* p_session){
 	if (0 < p_session->io_count)
 		return false;
 
+	// * release_flag(0), iocount(0) -> release_flag(1), iocount(0)
 	if (0 == InterlockedCompareExchange64((long long*)&p_session->release_flag, 1, 0)) {
 		PacketBuffer* packet;
 		while (p_session->sendQ.Dequeue(&packet)) {

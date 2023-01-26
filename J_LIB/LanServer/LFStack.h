@@ -8,15 +8,13 @@
 
 // J_LIB::LFObjectPool에 종속적임
 
-#define CRASH()			do{						\
-							int* p = nullptr;	\
-							int a = *p;			\
+#define CRASH()			do{							\
+							*(int*)nullptr = 0;		\
 						}while(false)
 
 #define IF_CRASH(X)		do{							\
 							if(X){					\
-								int* p = nullptr;	\
-								int a = *p;			\
+								*(int*)nullptr = 0;	\
 							}						\
 						}while(false)
 

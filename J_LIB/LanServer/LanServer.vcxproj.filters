@@ -22,6 +22,9 @@
     <ClCompile Include="MemoryLogger.cpp">
       <Filter>LanServer LIB\include</Filter>
     </ClCompile>
+    <ClCompile Include="ChattingServerMulti.cpp">
+      <Filter>ChattingServer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LanServer.h">
@@ -62,6 +65,9 @@
     </ClInclude>
     <ClInclude Include="MemoryLogger.h">
       <Filter>LanServer LIB\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ChattingServerMulti.h">
+      <Filter>ChattingServer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

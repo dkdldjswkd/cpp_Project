@@ -44,7 +44,7 @@ void StartChattingServer(int thread_num) {
 	chatting_server.CleanUp();
 }
 
-//#define CHATTING
+#define CHATTING
 int main() {
 	int thread_num;
 	printf("worker thread num >> ");
