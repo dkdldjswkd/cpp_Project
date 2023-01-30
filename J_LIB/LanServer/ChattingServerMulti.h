@@ -24,12 +24,29 @@ public:
 	int y;
 
 public:
+	// true ¹ÝÈ¯ ½Ã INVALID
 	inline bool CheckInvalid() {
 		if (0 > x || 0 > y)
-			return false;
+			return true;
 		if (SECTOR_MAX_X <= x || SECTOR_MAX_Y <= y)
+			return true;
+		return false;
+	}
+
+	bool operator==(const Sector& other) {
+		if (x != other.x)
+			return false;
+		if (y != other.y)
 			return false;
 		return true;
+	}
+
+	bool operator!=(const Sector& other) {
+		if (x != other.x)
+			return true;
+		if (y != other.y)
+			return true;
+		return false;
 	}
 };
 
@@ -45,7 +62,6 @@ private:
 	};
 
 public:
-	SRWLOCK lock;
 	SESSION_ID session_id = INVALID_SESSION_ID;
 	bool is_connect = false;
 	bool is_login = false;
@@ -63,7 +79,7 @@ private:
 	void Set_SectorAround() {
 		sectorAround.count = 0;
 
-		if (false == sectorPos.CheckInvalid())
+		if (sectorPos.CheckInvalid())
 			return;
 
 		int sector_x = sectorPos.x - 1;
@@ -85,8 +101,6 @@ private:
 
 public:
 	inline void Set_Connect(SESSION_ID session_id) {
-		InitializeSRWLock(&lock);
-
 		this->session_id = session_id;
 		is_connect = true;
 		sectorPos.x = -2;

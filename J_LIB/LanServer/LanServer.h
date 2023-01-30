@@ -99,7 +99,7 @@ private:
 	LFStack<DWORD> sessionIndex_stack;
 
 	// 스레드
-	WORD worker_num;
+	WORD worker_num[2];
 	std::thread* workerThread_Pool;
 	std::thread acceptThread;
 
@@ -111,8 +111,7 @@ private:
 
 private:
 	// Set
-	void Init(WORD worker_num, WORD port, DWORD max_session);
-	bool Create_IOCP();
+	void Init(WORD maxWorker, WORD releaseWorker, WORD port, DWORD max_session);
 	bool Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey);
 
 	// 스레드
@@ -146,7 +145,7 @@ public:
 	bool Disconnect(SESSION_ID session_id);
 
 public:
-	void StartUp(NetworkArea area, DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session);
+	void StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorker, WORD releaseWorker, bool nagle, DWORD maxSession);
 	void CleanUp();
 	void PrintTPS();
 

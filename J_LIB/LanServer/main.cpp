@@ -3,8 +3,9 @@
 #include <timeapi.h>
 #include "EchoServer.h"
 #include "ChattingServer.h"
+#include "ChattingServerMulti.h"
 #include "CrashDump.h"
-#pragma comment (lib, 	"Winmm.lib")
+#pragma comment (lib, "Winmm.lib")
 
 // 모니터링
 int sendQ_remain = 0;
@@ -15,10 +16,9 @@ using namespace std;
 CrashDump dump;
 
 // EchoServer.cpp, Define 확인
-void StartEchoServer(int thread_num) {
+void StartEchoServer(int maxThread, int releaseThread) {
 	EchoServer echo_server;
-	//DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session
-	echo_server.StartUp(NetworkArea::LAN, INADDR_ANY, 6000, thread_num, true, 10000);
+	echo_server.StartUp(NetworkArea::LAN, INADDR_ANY, 6000, maxThread, releaseThread, true, 10000);
 	printf("StartEchoServer \n");
 
 	for (;;) {
@@ -29,31 +29,45 @@ void StartEchoServer(int thread_num) {
 	echo_server.CleanUp();
 }
 
+//// CattingServer.cpp, Define 확인
+//void StartChattingServer(int maxThread, int releaseThread) {
+//	ChattingServer	chatting_server;
+//	chatting_server.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
+//	printf("StartChattingServer \n");
+//
+//	for (;;) {
+//		Sleep(1000);
+//		chatting_server.PrintTPS();
+//	}
+//
+//	chatting_server.CleanUp();
+//}
+
 // CattingServer.cpp, Define 확인
-void StartChattingServer(int thread_num) {
-	ChattingServer	chatting_server;
-	//DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session
-	chatting_server.StartUp(NetworkArea::NET, INADDR_ANY, 12001, thread_num, true, 10000);
-	printf("StartChattingServer \n");
+void StartChattingServerMulti(int maxThread, int releaseThread) {
+	ChattingServerMulti	chattingServerMulti;
+	chattingServerMulti.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
+	printf("StartChattingServer Multi \n");
 
 	for (;;) {
 		Sleep(1000);
-		chatting_server.PrintTPS();
+		chattingServerMulti.PrintTPS();
 	}
 
-	chatting_server.CleanUp();
+	chattingServerMulti.CleanUp();
 }
 
 #define CHATTING
 int main() {
-	int thread_num;
-	printf("worker thread num >> ");
-	cin >> thread_num;
+	int maxThread;
+	int releaseThread;
+	printf("max & release Thread num >> ");
+	cin >> maxThread >> releaseThread;
 
 #ifdef CHATTING
-	StartChattingServer(thread_num);
+	StartChattingServerMulti(maxThread, releaseThread);
 #endif
 #ifndef CHATTING
-	StartEchoServer(thread_num);
+	StartEchoServer(maxThread, releaseThread);
 #endif
 }

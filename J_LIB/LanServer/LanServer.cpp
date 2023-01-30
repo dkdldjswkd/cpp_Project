@@ -20,17 +20,13 @@ extern int sendQ_remain;
 NetworkLib::NetworkLib() : tls_index(TlsAlloc()) {}
 NetworkLib::~NetworkLib() {}
 
-bool NetworkLib::Create_IOCP() {
-	h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, worker_num);
-	return (h_iocp != INVALID_HANDLE_VALUE);
-}
-
 bool NetworkLib::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
 	return h_iocp == CreateIoCompletionPort((HANDLE)h_file, h_iocp, completionKey, 0);
 }
 
-void NetworkLib::Init(WORD worker_num, WORD port, DWORD max_session){
-	this->worker_num = worker_num;
+void NetworkLib::Init(WORD maxWorker, WORD releaseWorker, WORD port, DWORD max_session){
+	this->worker_num[0] = maxWorker;
+	this->worker_num[1] = releaseWorker;
 	this->server_port = port;
 	this->max_session = max_session;
 
@@ -42,7 +38,9 @@ void NetworkLib::Init(WORD worker_num, WORD port, DWORD max_session){
 		sessionIndex_stack.Push(max_session - 1 - i);
 }
 
-void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD worker_num, bool nagle, DWORD max_session) {
+void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorker, WORD releaseWorker, bool nagle, DWORD maxSession) {
+	// CHECK INVALID_PARAMETER
+	if (maxWorker < releaseWorker) CRASH();
 	networkArea = area;
 	switch (networkArea)	{
 		case NetworkArea::LAN:
@@ -54,7 +52,7 @@ void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD worker_num,
 			break;
 	}
 
-	Init(worker_num, port, max_session);
+	Init(maxWorker, releaseWorker, port, maxSession);
 
 	WSADATA wsaData;
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
@@ -69,7 +67,7 @@ void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD worker_num,
 	server_addr.sin_addr.s_addr = IP;
 
 	// Set nagle
-	if (nagle == false) {
+	if (false == nagle) {
 		int opt_val = TRUE;
 		setsockopt(listen_sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&opt_val, sizeof(opt_val));
 	}
@@ -78,15 +76,18 @@ void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD worker_num,
 	LINGER linger = { 1, 0 };
 	setsockopt(listen_sock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof linger);
 
+	// Create IOCP
+	h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, releaseWorker);
+	if(INVALID_HANDLE_VALUE == h_iocp) CRASH();
+
 	// bind & listen
-	if (0 != bind(listen_sock, (SOCKADDR*)&server_addr, sizeof(SOCKADDR_IN))) throw;
-	if (0 != listen(listen_sock, SOMAXCONN_HINT(65535))) throw;
-	if (!Create_IOCP()) throw;
+	if (0 != bind(listen_sock, (SOCKADDR*)&server_addr, sizeof(SOCKADDR_IN))) CRASH();
+	if (0 != listen(listen_sock, SOMAXCONN_HINT(65535))) CRASH();
 
 	// Create Thread
 	acceptThread = thread([this] {AcceptFunc(); });
-	workerThread_Pool = new thread[worker_num];
-	for (int i = 0; i < worker_num; i++) {
+	workerThread_Pool = new thread[maxWorker];
+	for (int i = 0; i < maxWorker; i++) {
 		workerThread_Pool[i] = thread([this] {WorkerFunc(); });
 	}
 
@@ -537,7 +538,7 @@ void NetworkLib::CleanUp(void) {
 
 	// WorkerThread Á¾·á
 	//PostQueuedCompletionStatus(h_iocp, 0, 0, 0);
-	for (int i = 0; i < worker_num; i++) {
+	for (int i = 0; i < worker_num[0]; i++) {
 		if (workerThread_Pool[i].joinable()) {
 			workerThread_Pool[i].join();
 		}
@@ -553,15 +554,16 @@ void NetworkLib::CleanUp(void) {
 
 void NetworkLib::PrintTPS() {
 	printf("\
-worker num		: %d \n\
-session_count	: %d \n\
-accept_tps		: %d \n\
-recvMsg_tps		: %d \n\
-sendMsg_tps		: %d \n\
-Packet Count	: %d \n\
-sendQ remain	: %d \n\
+max worker num      : %d \n\
+release worker num  : %d \n\
+session_count       : %d \n\
+accept_tps          : %d \n\
+recvMsg_tps         : %d \n\
+sendMsg_tps         : %d \n\
+Packet Count        : %d \n\
+sendQ remain        : %d \n\
 \n\n\n\n\n\n\n\n\n\n \n\n\n\n\n\n\n\n\n\n",
-worker_num, session_count, accept_tps, recvMsg_tps, sendMsg_tps, PacketBuffer::GetUseCount(), sendQ_remain);
+worker_num[0], worker_num[1], session_count, accept_tps, recvMsg_tps, sendMsg_tps, PacketBuffer::GetUseCount(), sendQ_remain);
 
 	accept_tps = 0;
 	recvMsg_tps = 0;
