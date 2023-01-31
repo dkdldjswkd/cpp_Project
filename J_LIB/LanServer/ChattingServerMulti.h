@@ -5,7 +5,8 @@
 #include <unordered_set>
 #include "LFObjectPool.h"
 #include "LFQueue.h"
-#include "LanServer.h"
+#include "NetworkLib.h"
+
 
 #define SECTOR_MAX_X		50
 #define SECTOR_MAX_Y		50
@@ -129,7 +130,6 @@ public:
 		Set_SectorAround();
 	}
 	inline void Reset() {
-		// 세션에 대한 경합이 있다면 일괄처리 되어야함
 		is_connect = false;
 		is_login = false;
 	}
@@ -145,10 +145,10 @@ private:
 	public:
 		SESSION_ID session_id;
 		WORD type;
-		J_LIB::PacketBuffer* p_packet;
+		PacketBuffer* p_packet;
 
 	public:
-		void Set(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* p_packet = nullptr) {
+		void Set(SESSION_ID session_id, WORD type, PacketBuffer* p_packet = nullptr) {
 			this->session_id = session_id;
 			this->type = type;
 			this->p_packet = p_packet;
@@ -166,15 +166,13 @@ private:
 private:
 	// JOB
 	J_LIB::LFObjectPool<Job> jobPool;
-	LFQueue<Job*> jobQ; 
-	HANDLE updateEvent;
-	std::thread updateThread;
+	LFQueue<Job*> jobQ;
 
 private:
 	// Lib callback
 	bool OnConnectionRequest(in_addr IP, WORD Port);
 	void OnClientJoin(SESSION_ID session_id);
-	void OnRecv(SESSION_ID session_id, J_LIB::PacketBuffer* contents_packet);
+	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 	void OnClientLeave(SESSION_ID session_id);
 	void OnError(int errorcode);
 
@@ -182,14 +180,14 @@ private:
 	void Disconnect_Player(Player* p_player);
 
 private:
-	void SendSectorAround(Player* p_player, J_LIB::PacketBuffer* send_packet);
-	void SendSector(J_LIB::PacketBuffer* send_packet, Sector sector);
+	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
+	void SendSector(PacketBuffer* send_packet, Sector sector);
 
 private:
 	// JOB 처리
-	bool ProcPacket(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* cs_contentsPacket);
+	bool ProcPacket(SESSION_ID session_id, WORD type, PacketBuffer* cs_contentsPacket);
 	// 패킷(JOB) 처리
-	bool ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 1
-	bool ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 3
-	bool ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 5
+	bool ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 1
+	bool ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 3
+	bool ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 5
 };

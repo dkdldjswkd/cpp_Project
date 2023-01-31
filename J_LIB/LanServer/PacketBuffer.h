@@ -6,12 +6,11 @@
 #include "LFObjectPoolTLS.h"
 #include "protocol.h"
 
-constexpr unsigned PAYLOAD_SPACE = 8000;
+#define PAYLOAD_SPACE 8000
+#define HEADER_SPACE 10
+
 class NetworkLib;
 
-#define USE_TLS
-
-namespace J_LIB {
 class PacketBuffer {
 private:
 	PacketBuffer();
@@ -20,51 +19,37 @@ public:
 
 private:
 	friend NetworkLib;
-#ifdef USE_TLS
 	friend LFObjectPoolTLS<PacketBuffer>;
 	static LFObjectPoolTLS<PacketBuffer> packetPool;
-#endif // TLS_TEST
-#ifndef USE_TLS
-	friend LFObjectPool<PacketBuffer>;
-	static LFObjectPool<PacketBuffer> packetPool; 
-#endif // !TLS_TEST
-
-private:
 
 private:
 	char* begin;
 	char* end;
 	const int buf_size;
 	int ref_count;
-	bool encrypt_flag = false;
-
-public:
+	bool encrypt_flag;
 	char* write_pos;
 	char* payload_pos;
 
-public:
-	static PacketBuffer* Alloc(); // 밖에서 편하게 사용할 수 있게 해야함
-	static PacketBuffer* Alloc_LanPacket();
-	static PacketBuffer* Alloc_NetPacket();
-	static int Free(PacketBuffer* instance);
-
 private:
-	// 네트워크 라이브러리에서 사용하기 위함
+	// 네트워크 라이브러리에서 사용
 	void Set_LanHeader();
 	void Set_NetHeader();
 	bool DecryptPacket(PacketBuffer* encryptPacket);
-	char* GetPacketPos_LAN(); // 네트워크 헤더 시작위치 반환
-	char* GetPacketPos_NET();
-	static int GetUseCount();
+	char* Get_PacketPos_LAN();
+	char* Get_PacketPos_NET();
 	inline int Get_PacketSize_LAN();
 	inline int Get_PacketSize_NET();
 
 private:
 	BYTE Get_CheckSum();
+	void Set();
 
 public:
-	inline void Set_Lan();
-	inline void Set_Net();
+	static PacketBuffer* Alloc();
+	static int Free(PacketBuffer* instance);
+
+public:
 	inline bool Empty() const;
 	inline bool Full() const;
 	inline int Get_FreeSize()const;
@@ -73,6 +58,7 @@ public:
 	inline char* Get_writePos() const;
 	inline char* Get_payloadPos() const;
 	void Increment_refCount();
+	static int Get_UseCount();
 
 public:
 	// instream
@@ -113,33 +99,15 @@ public:
 	inline void Move_Rp(int size) { payload_pos += size; }
 };
 
+//////////////////////////////
+// 구현 부
+//////////////////////////////
+
 inline PacketBuffer::~PacketBuffer() {
 	free(begin);
 }
 
-inline PacketBuffer* PacketBuffer::Alloc_LanPacket(){
-	PacketBuffer* p = packetPool.Alloc();
-	p->Set_Lan();
-	return p;
-}
-
-inline PacketBuffer* PacketBuffer::Alloc_NetPacket(){
-	PacketBuffer* p = packetPool.Alloc();
-	p->Set_Net();
-	return p;
-}
-
-inline int PacketBuffer::Free(PacketBuffer* instance){
-	auto ref_count = InterlockedDecrement((DWORD*)&instance->ref_count);
-	if (ref_count == 0) {
-		packetPool.Free(instance);
-	}
-
-	return ref_count;
-}
-
-inline int PacketBuffer::GetUseCount() {
-	//return packetPool.Get_UseCount();
+inline int PacketBuffer::Get_UseCount() {
 	return packetPool.Get_UseCount();
 }
 
@@ -151,53 +119,25 @@ inline int PacketBuffer::Get_PacketSize_NET() {
 	return (write_pos - payload_pos) + NET_HEADER_SIZE;
 }
 
-inline void PacketBuffer::Increment_refCount(){
+inline void PacketBuffer::Increment_refCount() {
 	InterlockedIncrement((DWORD*)&ref_count);
 }
 
-inline BYTE PacketBuffer::Get_CheckSum() {
-	WORD len = Get_PayloadSize();
-
-	DWORD checkSum = 0;
-	char* cpy_readPos = payload_pos;
-	for (int i = 0; i < len; i++) {
-		checkSum += *cpy_readPos;
-		cpy_readPos++;
-	}
-	//return (BYTE)(checkSum & 0xFF);
-	return (BYTE)(checkSum % 256);
-}
-
-inline char* PacketBuffer::GetPacketPos_LAN(){
+inline char* PacketBuffer::Get_PacketPos_LAN() {
 	return (payload_pos - LAN_HEADER_SIZE);
 }
 
-inline char* PacketBuffer::GetPacketPos_NET(){
+inline char* PacketBuffer::Get_PacketPos_NET() {
 	return (payload_pos - NET_HEADER_SIZE);
 }
 
-inline void PacketBuffer::Set_Lan() {
-	write_pos = begin + LAN_HEADER_SIZE;
-	payload_pos = begin + LAN_HEADER_SIZE;
-	ref_count = 1;
-}
-
-inline void PacketBuffer::Set_Net(){
-	write_pos = begin + NET_HEADER_SIZE;
-	payload_pos = begin + NET_HEADER_SIZE;
-	encrypt_flag = false;
-	ref_count = 1;
-}
-
 inline bool PacketBuffer::Empty() const {
-	if (write_pos <= payload_pos)
-		return true;
+	if (write_pos <= payload_pos) return true;
 	return false;
 }
 
 bool PacketBuffer::Full() const {
-	if (write_pos + 1 == end)
-		return true;
+	if (write_pos + 1 == end) return true;
 	return false;
 }
 
@@ -219,5 +159,4 @@ inline char* PacketBuffer::Get_writePos() const {
 
 inline char* PacketBuffer::Get_payloadPos() const {
 	return payload_pos;
-}
 }

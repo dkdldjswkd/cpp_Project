@@ -3,11 +3,11 @@
 #define PROTOCOL_CODE	0x77
 #define CONST_KEY		0x32
 
+#pragma pack(push, 1)
 struct LAN_HEADER {
 	WORD len;
 };
 
-#pragma pack(push, 1)
 struct NET_HEADER {
 	BYTE code;
 	WORD len;

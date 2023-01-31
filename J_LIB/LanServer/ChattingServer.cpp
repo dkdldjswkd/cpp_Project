@@ -102,7 +102,7 @@
 //	return p_player->is_login;
 //}
 //
-//bool ChattingServer::ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket) {
+//bool ChattingServer::ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
 //	auto iter = player_map.find(session_id);
 //	if (player_map.end() == iter) { 
 //		CRASH(); // end 일 수 없음
@@ -137,7 +137,7 @@
 //	return true;
 //}
 //
-//bool ChattingServer::ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket){
+//bool ChattingServer::ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
 //	auto iter = player_map.find(session_id);
 //	if (player_map.end() == iter) {
 //		CRASH(); // end 일 수 없음
@@ -203,7 +203,7 @@
 //void ChattingServer::OnError(int errorcode) {
 //}
 //
-//void ChattingServer::JobQueuing(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* p_packet) {
+//void ChattingServer::JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet) {
 //	Job* p_job = jobPool.Alloc();
 //	p_job->Set(session_id, type, p_packet);
 //	jobQ.Enqueue(p_job);

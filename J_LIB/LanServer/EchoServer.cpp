@@ -10,7 +10,7 @@ void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) 
 	//------------------------------
 	// var set
 	//------------------------------
-	PacketBuffer* sc_contentsPacket = PacketBuffer::Alloc_LanPacket();
+	PacketBuffer* sc_contentsPacket = PacketBuffer::Alloc();
 
 	//------------------------------
 	// SC Contents Packet 생성
@@ -40,7 +40,7 @@ void EchoServer::OnClientJoin(SESSION_ID session_id){
 	//------------------------------
 	// var set
 	//------------------------------
-	PacketBuffer* sc_packet = PacketBuffer::Alloc_LanPacket();
+	PacketBuffer* sc_packet = PacketBuffer::Alloc();
 
 	//------------------------------
 	// sc packet 조립

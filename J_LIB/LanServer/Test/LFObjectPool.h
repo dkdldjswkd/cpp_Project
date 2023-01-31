@@ -10,7 +10,7 @@
 //	¿ÀÀü 3:14 2022-12-18
 
 #define CRASH() do{						\
-					*(int*)nullptr = 0	\
+					*(int*)nullptr = 0;	\
 				}while(false)
 
 constexpr BYTE	  UNUSED_BIT	= 17;

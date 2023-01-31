@@ -1,24 +1,17 @@
-// 오후 5:31 2023-01-29
+// 오후 1:49 2023-01-31
 
-PacketBuffer::Get_PacketSize()
-PacketBuffer::Get_Packet()
-	-> Lan, Net 패킷마다 다름, 수정해야함 (패이로드 위치 - 헤더 사이즈 리턴함 (Net, Lan 헤더 크기 다름))
+str 손코딩 해보기
 
-릴리즈 세션 시 멤버변수 셋팅?
+JLIB 공통 옵션 헤더 만들기?
+
+서버 종료 구현
 
 세션 수, 플레이어 수 제한
+
+싱글스레드 채팅서버에서도 OnLeave 시 문제 발생?
+
+파서 구현, 서버 Start 시 옵션 파싱해오게끔 (고정 Key, TimeOut 등)
  
 타임아웃 구현 // 내부 외부?
 
-릴리즈 부 패킷 free 로직 기억하기. (왜 SendQ, SendQ arr 둘다 Free 해야 하는지)
-
-Lan, Net 편하게 사용할 수 있게 하기 (PACKET::alloc_lan X)
-
-고정 Key, 타임아웃 시간 등 파서 로 읽어와서 서버 셋팅하게하기
-
-JLIB 공통 헤더 만들기?
-	옵션 헤더
-
-시스템 로그 남기기
-
-*** {release_flag, io_count} 64 경계
+채팅서버 어택, CRASH 로깅으로 치환, 모니터링 항목 추가

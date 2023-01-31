@@ -7,9 +7,6 @@
 #include "CrashDump.h"
 #pragma comment (lib, "Winmm.lib")
 
-// 모니터링
-int sendQ_remain = 0;
-
 #define IP INADDR_ANY
 
 using namespace std;
@@ -23,7 +20,6 @@ void StartEchoServer(int maxThread, int releaseThread) {
 
 	for (;;) {
 		Sleep(1000);
-		echo_server.PrintTPS();
 	}
 
 	echo_server.CleanUp();
@@ -50,8 +46,14 @@ void StartChattingServerMulti(int maxThread, int releaseThread) {
 	printf("StartChattingServer Multi \n");
 
 	for (;;) {
+		// 1초 주기 모니터링
 		Sleep(1000);
-		chattingServerMulti.PrintTPS();
+		printf("session_count  : %d \n", chattingServerMulti.Get_sessionCount());
+		printf("Packet Count   : %d \n", PacketBuffer::Get_UseCount());
+		printf("accept_tps     : %d \n", chattingServerMulti.Get_acceptTPS());
+		printf("sendMsg_tps    : %d \n", chattingServerMulti.Get_sendTPS());
+		printf("recvMsg_tps    : %d \n", chattingServerMulti.Get_recvTPS());
+		printf("\n\n\n\n\n\n\n\n\n\n \n\n\n\n\n\n\n\n\n\n \n\n\n\n");
 	}
 
 	chattingServerMulti.CleanUp();

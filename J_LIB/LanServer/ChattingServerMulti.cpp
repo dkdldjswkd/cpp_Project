@@ -1,22 +1,10 @@
 #include "ChattingServerMulti.h"
 #include "CommonProtocol.h"
-#include <string>
+#include "Logger.h"
 using namespace J_LIB;
 using namespace std;
 
 #define MAX_MSG 300
-
-// 디버깅
-#pragma warning(disable : 4996)
-struct StrLog {
-	char log[1000];
-};
-StrLog lock_info[SECTOR_MAX_Y][SECTOR_MAX_X];
-
-void LOG(const char* str, int x, int y) {
-	sprintf((char*)&lock_info[y][x], "(%d, %d) ", x, y);
-	sprintf((char*)&lock_info[y][x] + strlen((char*)&lock_info[y][x]), "%s" , str);
-}
 
 ChattingServerMulti::ChattingServerMulti() {
 	InitializeSRWLock(&playerMap_lock);
@@ -61,8 +49,6 @@ void ChattingServerMulti::OnClientLeave(SESSION_ID session_id) {
 	// Secter set 삭제
 	if (!p_player->sectorPos.CheckInvalid()) { // Sector 등록여부 판단 (Sector 패킷 받기전까지 등록 X)
 		AcquireSRWLockExclusive(&sector_lock[p_player->sectorPos.y][p_player->sectorPos.x]);
-		//sprintf((char*)&lock_info[p_player->sectorPos.y][p_player->sectorPos.x], "OnClientLeave (%d %d)", p_player->sectorPos.x, p_player->sectorPos.y);
-		LOG("OnClientLeave", p_player->sectorPos.x, p_player->sectorPos.y);
 		sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player); 
 		ReleaseSRWLockExclusive(&sector_lock[p_player->sectorPos.y][p_player->sectorPos.x]);
 	}
@@ -79,16 +65,20 @@ void ChattingServerMulti::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 
 bool ChattingServerMulti::ProcPacket(SESSION_ID session_id, WORD type, PacketBuffer* cs_contentsPacket) {
 	switch (type) {
-		case en_PACKET_CS_CHAT_REQ_LOGIN:
+		case en_PACKET_CS_CHAT_REQ_LOGIN: {
 			return ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(session_id, cs_contentsPacket);
-
-		case en_PACKET_CS_CHAT_REQ_SECTOR_MOVE:
+		}
+		case en_PACKET_CS_CHAT_REQ_SECTOR_MOVE: {
 			return ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(session_id, cs_contentsPacket);
-
-		case en_PACKET_CS_CHAT_REQ_MESSAGE:
+		}
+		case en_PACKET_CS_CHAT_REQ_MESSAGE: {
 			return ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(session_id, cs_contentsPacket);
-
-		default: CRASH();
+		}
+		default: {
+			LOG("ChattingServer-Multi", LOG_LEVEL_WARN, "INVALID Packet type : %d", type);
+			Disconnect(session_id);
+			break;
+		}
 	}
 }
 
@@ -110,7 +100,7 @@ bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID sess
 	}
 
 	// 로그인 응답 패킷 회신
-	PacketBuffer* p_packet = PacketBuffer::Alloc_NetPacket();
+	PacketBuffer* p_packet = PacketBuffer::Alloc();
 	*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
 	*p_packet << (BYTE)p_player->is_login;
 	*p_packet << (INT64)accountNo;
@@ -120,7 +110,7 @@ bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID sess
 	return p_player->is_login;
 }
 
-bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket) {
+bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
 	// Player 검색
 	AcquireSRWLockShared(&playerMap_lock);
 	Player* p_player = player_map.find(session_id)->second;
@@ -140,64 +130,28 @@ bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_I
 	// Sector 등록
 	if (prev_sector.CheckInvalid()) {
 		AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-		LOG("CheckInvalid", cur_x, cur_y);
 		sectors_set[cur_y][cur_x].insert(p_player);
 		ReleaseSRWLockExclusive(&sector_lock[cur_y][cur_x]);
 	}
 	// Sector 이동
 	else if (prev_sector != p_player->sectorPos) {
-		// 수평
-		if (prev_sector.y == cur_y) {
-			if (prev_sector.x < cur_x) {
-				AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-				AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-				sprintf((char*)&lock_info[cur_y][cur_x], "SECTOR_MOVE (%d %d)", cur_x, cur_y);
-				sprintf((char*)&lock_info[prev_sector.y][prev_sector.x], "SECTOR_MOVE (%d %d)", prev_sector.x, prev_sector.y);
-			}
-			else {
-				AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-				AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-				sprintf((char*)&lock_info[cur_y][cur_x], "SECTOR_MOVE (%d %d)", cur_x, cur_y);
-				sprintf((char*)&lock_info[prev_sector.y][prev_sector.x], "SECTOR_MOVE (%d %d)", prev_sector.x, prev_sector.y);
-			}
+		// LOCK 방향성 : LOCK 주소 크기
+		if (&sector_lock[prev_sector.y][prev_sector.x] < &sector_lock[cur_y][cur_x]) {
+			AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
+			AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
 		}
-		// 수직
-		else if (prev_sector.x == cur_x) {
-			if (prev_sector.y < cur_y) {
-				AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-				AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-				sprintf((char*)&lock_info[cur_y][cur_x], "SECTOR_MOVE (%d %d)", cur_x, cur_y);
-				sprintf((char*)&lock_info[prev_sector.y][prev_sector.x], "SECTOR_MOVE (%d %d)", prev_sector.x, prev_sector.y);
-			}
-			else {
-				AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-				AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-				sprintf((char*)&lock_info[cur_y][cur_x], "SECTOR_MOVE (%d %d)", cur_x, cur_y);
-				sprintf((char*)&lock_info[prev_sector.y][prev_sector.x], "SECTOR_MOVE (%d %d)", prev_sector.x, prev_sector.y);
-			}
-		}
-		// 대각
 		else {
-			if (prev_sector.x < cur_x) {
-				AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-				AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-				sprintf((char*)&lock_info[cur_y][cur_x], "SECTOR_MOVE (%d %d)", cur_x, cur_y);
-				sprintf((char*)&lock_info[prev_sector.y][prev_sector.x], "SECTOR_MOVE (%d %d)", prev_sector.x, prev_sector.y);
-			}
-			else {
-				AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-				AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-				sprintf((char*)&lock_info[cur_y][cur_x], "SECTOR_MOVE (%d %d)", cur_x, cur_y);
-				sprintf((char*)&lock_info[prev_sector.y][prev_sector.x], "SECTOR_MOVE (%d %d)", prev_sector.x, prev_sector.y);
-			}
+			AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
+			AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
 		}
+		// Player Sector 이동
 		sectors_set[prev_sector.y][prev_sector.x].erase(p_player);
 		sectors_set[cur_y][cur_x].insert(p_player);
-		ReleaseSRWLockExclusive(&sector_lock[cur_y][cur_x]);
 		ReleaseSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
+		ReleaseSRWLockExclusive(&sector_lock[cur_y][cur_x]);
 	}
 
-	PacketBuffer* p_packet = PacketBuffer::Alloc_NetPacket();
+	PacketBuffer* p_packet = PacketBuffer::Alloc();
 	*p_packet << (WORD)en_PACKET_CS_CHAT_RES_SECTOR_MOVE;
 	*p_packet << (INT64)accountNo;
 	*p_packet << (WORD)cur_x;
@@ -207,7 +161,7 @@ bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_I
 	return true;
 }
 
-bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket){
+bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
 	// Player 검색
 	AcquireSRWLockShared(&playerMap_lock);
 	Player* p_player = player_map.find(session_id)->second;
@@ -223,7 +177,7 @@ bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID se
 	msg[msgLen / 2] = 0;
 
 	// <<
-	PacketBuffer* p_packet = PacketBuffer::Alloc_NetPacket();
+	PacketBuffer* p_packet = PacketBuffer::Alloc();
 	*p_packet << (WORD)en_PACKET_CS_CHAT_RES_MESSAGE;
 	*p_packet << (INT64)accountNo;
 	p_packet->Put_Data((char*)p_player->id, ID_LEN * 2);
@@ -237,14 +191,16 @@ bool ChattingServerMulti::ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID se
 }
 
 void ChattingServerMulti::SendSectorAround(Player* p_player, PacketBuffer* send_packet) {
+	// 9방향 Lock
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
 		AcquireSRWLockShared(&sector_lock[p_player->sectorAround.around[i].y][p_player->sectorAround.around[i].x]);
+	}
+	for (int i = 0; i < p_player->sectorAround.count; i++) {
 		SendSector(send_packet, p_player->sectorAround.around[i]);
+	}
+	// 9방향 Unlock
+	for (int i = 0; i < p_player->sectorAround.count; i++) {
 		ReleaseSRWLockShared(&sector_lock[p_player->sectorAround.around[i].y][p_player->sectorAround.around[i].x]);
-	}
-	for (int i = 0; i < p_player->sectorAround.count; i++) {
-	}
-	for (int i = 0; i < p_player->sectorAround.count; i++) {
 	}
 }
 

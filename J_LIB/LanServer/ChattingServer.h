@@ -5,7 +5,7 @@
 //#include <unordered_set>
 //#include "LFObjectPool.h"
 //#include "LFQueue.h"
-//#include "LanServer.h"
+//#include "NetworkLib"
 //
 //#define SECTOR_MAX_X		50
 //#define SECTOR_MAX_Y		50
@@ -129,10 +129,10 @@
 //	public:
 //		SESSION_ID session_id;
 //		WORD type;
-//		J_LIB::PacketBuffer* p_packet;
+//		PacketBuffer* p_packet;
 //
 //	public:
-//		void Set(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* p_packet = nullptr) {
+//		void Set(SESSION_ID session_id, WORD type, PacketBuffer* p_packet = nullptr) {
 //			this->session_id = session_id;
 //			this->type = type;
 //			this->p_packet = p_packet;
@@ -160,26 +160,26 @@
 //	// Lib callback
 //	bool OnConnectionRequest(in_addr IP, WORD Port);
 //	void OnClientJoin(SESSION_ID session_id);
-//	void OnRecv(SESSION_ID session_id, J_LIB::PacketBuffer* contents_packet);
+//	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 //	void OnClientLeave(SESSION_ID session_id);
 //	void OnError(int errorcode);
 //
 //private:
 //	void UpdateFunc();
 //	void Disconnect_Player(Player* p_player);
-//	void JobQueuing(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* p_packet = nullptr);
+//	void JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet = nullptr);
 //
 //private:
-//	void SendSectorAround(Player* p_player, J_LIB::PacketBuffer* send_packet);
-//	void SendSector(J_LIB::PacketBuffer* send_packet, Sector sector);
+//	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
+//	void SendSector(PacketBuffer* send_packet, Sector sector);
 //
 //private:
 //	// JOB 贸府
-//	bool ProcJob(SESSION_ID session_id, WORD type, J_LIB::PacketBuffer* cs_contentsPacket);
+//	bool ProcJob(SESSION_ID session_id, WORD type, PacketBuffer* cs_contentsPacket);
 //	// 菩哦(JOB) 贸府
-//	bool ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 1
-//	bool ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 3
-//	bool ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, J_LIB::PacketBuffer* cs_contentsPacket);	// 5
+//	bool ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 1
+//	bool ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 3
+//	bool ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 5
 //	// OnFunc(JOB) 贸府
 //	bool ProcJob_ClientJoin(SESSION_ID session_id);  // 100
 //	bool ProcJob_ClientLeave(SESSION_ID session_id); // 101
