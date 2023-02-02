@@ -103,11 +103,13 @@ private:
 	std::thread* workerThread_Pool;
 	std::thread acceptThread;
 
+private:
 	// 모니터링
-	alignas(64) DWORD session_count = 0;
-	alignas(64) DWORD accept_tps = 0;
-	alignas(64) DWORD recvMsg_tps = 0;
-	alignas(64) DWORD sendMsg_tps = 0;
+	alignas(64) DWORD sessionCount = 0;
+	alignas(64) DWORD recvMsgTPS = 0;
+	alignas(64) DWORD sendMsgTPS = 0;
+	DWORD acceptTPS = 0;
+	DWORD acceptTotal = 0;
 
 private:
 	// Set
@@ -160,9 +162,10 @@ public:
 	bool Disconnect(SESSION_ID session_id);
 
 public:
-	// 모니터링 용 Getter
+	// 모니터링 Getter
 	DWORD Get_sessionCount();
 	DWORD Get_acceptTPS();
+	DWORD Get_acceptTotal();
 	DWORD Get_sendTPS();
 	DWORD Get_recvTPS();
 };
@@ -183,20 +186,23 @@ inline void NetworkLib::DisconnectSession(Session* p_session) {
 }
 
 inline DWORD NetworkLib::Get_sessionCount() {
-	return session_count;
+	return sessionCount;
 }
 inline DWORD NetworkLib::Get_acceptTPS() {
-	auto tmp = accept_tps;
-	accept_tps = 0;
+	auto tmp = acceptTPS;
+	acceptTPS = 0;
 	return tmp;
 }
+inline DWORD NetworkLib::Get_acceptTotal(){
+	return acceptTotal;
+}
 inline DWORD NetworkLib::Get_sendTPS() {
-	auto tmp = recvMsg_tps;
-	recvMsg_tps = 0;
+	auto tmp = recvMsgTPS;
+	recvMsgTPS = 0;
 	return tmp;
 }
 inline DWORD NetworkLib::Get_recvTPS() {
-	auto tmp = sendMsg_tps;
-	sendMsg_tps = 0;
+	auto tmp = sendMsgTPS;
+	sendMsgTPS = 0;
 	return tmp;
 }

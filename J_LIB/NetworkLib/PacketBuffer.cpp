@@ -117,7 +117,7 @@ PacketBuffer& PacketBuffer::operator<<(const char& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -128,7 +128,7 @@ PacketBuffer& PacketBuffer::operator<<(const unsigned char& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -139,7 +139,7 @@ PacketBuffer& PacketBuffer::operator<<(const int& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -150,7 +150,7 @@ PacketBuffer& PacketBuffer::operator<<(const unsigned int& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -161,7 +161,7 @@ PacketBuffer& PacketBuffer::operator<<(const long& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -172,7 +172,7 @@ PacketBuffer& PacketBuffer::operator<<(const unsigned long& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -183,7 +183,7 @@ PacketBuffer& PacketBuffer::operator<<(const short& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -194,7 +194,7 @@ PacketBuffer& PacketBuffer::operator<<(const unsigned short& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -205,7 +205,7 @@ PacketBuffer& PacketBuffer::operator<<(const float& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -216,7 +216,7 @@ PacketBuffer& PacketBuffer::operator<<(const double& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -227,7 +227,7 @@ PacketBuffer& PacketBuffer::operator<<(const long long& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -238,7 +238,7 @@ PacketBuffer& PacketBuffer::operator<<(const unsigned long long& data) {
 		write_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -251,7 +251,7 @@ PacketBuffer& PacketBuffer::operator<<(const char* str) {
 		write_pos += size;
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -264,7 +264,7 @@ PacketBuffer& PacketBuffer::operator<<(const wchar_t* str) {
 		write_pos += size;
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 	return *this;
 }
@@ -279,7 +279,7 @@ PacketBuffer& PacketBuffer::operator>>(char& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -290,7 +290,7 @@ PacketBuffer& PacketBuffer::operator>>(unsigned char& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -301,7 +301,7 @@ PacketBuffer& PacketBuffer::operator>>(int& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -312,7 +312,7 @@ PacketBuffer& PacketBuffer::operator>>(unsigned int& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -323,7 +323,7 @@ PacketBuffer& PacketBuffer::operator>>(long& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -334,7 +334,7 @@ PacketBuffer& PacketBuffer::operator>>(unsigned long& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -345,7 +345,7 @@ PacketBuffer& PacketBuffer::operator>>(short& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -356,7 +356,7 @@ PacketBuffer& PacketBuffer::operator>>(unsigned short& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -367,7 +367,7 @@ PacketBuffer& PacketBuffer::operator>>(float& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 
 	return *this;
@@ -379,7 +379,7 @@ PacketBuffer& PacketBuffer::operator>>(double& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -390,7 +390,7 @@ PacketBuffer& PacketBuffer::operator>>(long long& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -401,7 +401,7 @@ PacketBuffer& PacketBuffer::operator>>(unsigned long long& data) {
 		payload_pos += sizeof(data);
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 	return *this;
 }
@@ -416,7 +416,7 @@ void PacketBuffer::Put_Data(const char* src, int size) {
 		write_pos += size;
 	}
 	else {
-		throw;
+		throw PacketException(PUT_ERROR);
 	}
 }
 
@@ -426,6 +426,6 @@ void PacketBuffer::Get_Data(char* dst, int size) {
 		payload_pos += size;
 	}
 	else {
-		throw;
+		throw PacketException(GET_ERROR);
 	}
 }

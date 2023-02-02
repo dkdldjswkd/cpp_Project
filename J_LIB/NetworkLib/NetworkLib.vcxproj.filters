@@ -25,11 +25,11 @@
     <ClCompile Include="RingBuffer.cpp">
       <Filter>00 NetworkLib\include</Filter>
     </ClCompile>
-    <ClCompile Include="ChattingServer.cpp">
-      <Filter>01 Server\01 ChattingServer-Single</Filter>
+    <ClCompile Include="ChattingServer_Single.cpp">
+      <Filter>01 Server\01 ChattingServer_Single</Filter>
     </ClCompile>
-    <ClCompile Include="ChattingServerMulti.cpp">
-      <Filter>01 Server\02 ChattingServer-Multi</Filter>
+    <ClCompile Include="ChattingServer_Multi.cpp">
+      <Filter>01 Server\02 ChattingServer_Multi</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -72,11 +72,11 @@
     <ClInclude Include="Logger.h">
       <Filter>00 NetworkLib\include</Filter>
     </ClInclude>
-    <ClInclude Include="ChattingServer.h">
-      <Filter>01 Server\01 ChattingServer-Single</Filter>
+    <ClInclude Include="ChattingServer_Single.h">
+      <Filter>01 Server\01 ChattingServer_Single</Filter>
     </ClInclude>
-    <ClInclude Include="ChattingServerMulti.h">
-      <Filter>01 Server\02 ChattingServer-Multi</Filter>
+    <ClInclude Include="ChattingServer_Multi.h">
+      <Filter>01 Server\02 ChattingServer_Multi</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -95,14 +95,14 @@
     <Filter Include="01 Server\00 EchoServer">
       <UniqueIdentifier>{8c747a4a-ad5b-4a4d-ac0e-94d41e993cb1}</UniqueIdentifier>
     </Filter>
-    <Filter Include="01 Server\01 ChattingServer-Single">
-      <UniqueIdentifier>{6ab3cf07-bfbf-41e7-b34c-726470395da7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="01 Server\02 ChattingServer-Multi">
-      <UniqueIdentifier>{a830cd96-f1bc-4bce-b1cd-8623e0c0aa77}</UniqueIdentifier>
-    </Filter>
     <Filter Include="01 Server\Protocol">
       <UniqueIdentifier>{3cd1dd1b-21a5-45c6-b2e7-5fc6dd0140d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01 Server\01 ChattingServer_Single">
+      <UniqueIdentifier>{6ab3cf07-bfbf-41e7-b34c-726470395da7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="01 Server\02 ChattingServer_Multi">
+      <UniqueIdentifier>{a830cd96-f1bc-4bce-b1cd-8623e0c0aa77}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

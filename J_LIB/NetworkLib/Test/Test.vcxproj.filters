@@ -4,6 +4,7 @@
     <ClCompile Include="2dArrayLock_TestCode.cpp" />
     <ClCompile Include="LoggerTest.cpp" />
     <ClCompile Include="strncpy_test.cpp" />
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LFObjectPoolTLS.h">

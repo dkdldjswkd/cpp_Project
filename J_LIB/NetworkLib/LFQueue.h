@@ -30,7 +30,7 @@ private:
 	J_LIB::LFObjectPool<Node> node_pool;
 
 private:
-	const DWORD64 node_mask = 0x00007FFFFFFFFFFF; // 노드 추출 목적 (상위 17bit 제거)
+	const DWORD64 node_mask  = 0x00007FFFFFFFFFFF; // 노드 추출 목적 (상위 17bit 제거)
 	const DWORD64 stamp_mask = 0xFFFF800000000000; // 노드 부 제거 (스탬프 추출 목적)
 
 public:

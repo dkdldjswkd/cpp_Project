@@ -2,9 +2,10 @@
 #include <Windows.h>
 #include <timeapi.h>
 #include "EchoServer.h"
-#include "ChattingServer.h"
-#include "ChattingServerMulti.h"
+#include "ChattingServer_Single.h"
+#include "ChattingServer_Multi.h"
 #include "CrashDump.h"
+#include "Logger.h"
 #pragma comment (lib, "Winmm.lib")
 
 #define IP INADDR_ANY
@@ -25,39 +26,64 @@ void StartEchoServer(int maxThread, int releaseThread) {
 	echo_server.CleanUp();
 }
 
-//// CattingServer.cpp, Define 확인
-//void StartChattingServer(int maxThread, int releaseThread) {
-//	ChattingServer	chatting_server;
-//	chatting_server.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
-//	printf("StartChattingServer \n");
-//
-//	for (;;) {
-//		Sleep(1000);
-//		chatting_server.PrintTPS();
-//	}
-//
-//	chatting_server.CleanUp();
-//}
-
+//InterlockedIncrement((LONG*)&cattingPacketCount);
+extern int cattingPacketCount;
 // CattingServer.cpp, Define 확인
-void StartChattingServerMulti(int maxThread, int releaseThread) {
-	ChattingServerMulti	chattingServerMulti;
-	chattingServerMulti.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
+void StartChattingServer_Single(int maxThread, int releaseThread) {
+	ChattingServer_Single server;
+	server.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
 	printf("StartChattingServer Multi \n");
 
 	for (;;) {
 		// 1초 주기 모니터링
 		Sleep(1000);
-		printf("session_count  : %d \n", chattingServerMulti.Get_sessionCount());
-		printf("Packet Count   : %d \n", PacketBuffer::Get_UseCount());
-		printf("accept_tps     : %d \n", chattingServerMulti.Get_acceptTPS());
-		printf("sendMsg_tps    : %d \n", chattingServerMulti.Get_sendTPS());
-		printf("recvMsg_tps    : %d \n", chattingServerMulti.Get_recvTPS());
-		printf("\n\n\n\n\n\n\n\n\n\n \n\n\n\n\n\n\n\n\n\n \n\n\n\n");
+		printf("NetworkLib ---------------------------------------------------- \n");
+		printf("sessionCount    : %d \n", server.Get_sessionCount());
+		printf("PacketCount     : %d \n", PacketBuffer::Get_UseCount());
+		printf("acceptTotal     : %d \n", server.Get_acceptTotal());
+		printf("acceptTPS       : %d \n", server.Get_acceptTPS());
+		printf("sendMsgTPS      : %d \n", server.Get_sendTPS());
+		printf("recvMsgTPS      : %d \n", server.Get_recvTPS());
+		printf("					                                            \n");
+		printf("ChattingServer-Single ----------------------------------------- \n");
+		printf("PlayerCount     : %d \n", server.Get_playerCount());
+		printf("PlayerPoolCount : %d \n", server.Get_playerPoolCount());
+		printf("처리량 -------------------------------------------------------- \n");
+		printf("JobPoolCount    : %d \n", server.Get_JobPoolCount());
+		printf("JobQueueCount   : %d \n", server.Get_JobQueueCount());
+		printf("UpdateTPS       : %d \n", server.Get_updateTPS());
+		printf("디버깅 -------------------------------------------------------- \n");
+		printf("var             : %d \n", 0);
+		printf("\n\n\n\n\n\n\n\n\n\n \n\n");
 	}
 
-	chattingServerMulti.CleanUp();
+	server.CleanUp();
 }
+
+//// CattingServer.cpp, Define 확인
+//void StartChattingServer_Multi(int maxThread, int releaseThread) {
+//	ChattingServer_Multi ChattingServer_Multi;
+//	ChattingServer_Multi.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
+//	printf("StartChattingServer Multi \n");
+//
+//	for (;;) {
+//		// 1초 주기 모니터링
+//		Sleep(1000);
+//		printf("NetworkLib -------------------------------------------------- \n");
+//		printf("sessionCount    : %d \n", ChattingServer_Multi.Get_sessionCount());
+//		printf("PacketCount     : %d \n", PacketBuffer::Get_UseCount());
+//		printf("acceptTotal     : %d \n", ChattingServer_Multi.Get_acceptTotal());
+//		printf("acceptTPS       : %d \n", ChattingServer_Multi.Get_acceptTPS());
+//		printf("sendMsgTPS      : %d \n", ChattingServer_Multi.Get_sendTPS());
+//		printf("recvMsgTPS      : %d \n", ChattingServer_Multi.Get_recvTPS());
+//		printf("ChattingServer-Multi ----------------------------------------- \n");
+//		printf("PlayerCount     : %d \n", ChattingServer_Multi.Get_playerCount());
+//		printf("PlayerPoolCount : %d \n", ChattingServer_Multi.Get_playerPoolCount());
+//		printf("\n\n\n\n\n\n\n\n\n\n \n\n\n\n\n\n\n\n\n");
+//	}
+//
+//	ChattingServer_Multi.CleanUp();
+//}
 
 #define CHATTING
 int main() {
@@ -67,7 +93,7 @@ int main() {
 	cin >> maxThread >> releaseThread;
 
 #ifdef CHATTING
-	StartChattingServerMulti(maxThread, releaseThread);
+	StartChattingServer_Single(maxThread, releaseThread);
 #endif
 #ifndef CHATTING
 	StartEchoServer(maxThread, releaseThread);

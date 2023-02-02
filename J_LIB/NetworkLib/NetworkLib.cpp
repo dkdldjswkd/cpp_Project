@@ -101,6 +101,7 @@ void NetworkLib::AcceptFunc() {
 		// Accept
 		//------------------------------
 		auto accept_sock = accept(listen_sock, (sockaddr*)&client_addr, &addr_len);
+		acceptTotal++;
 		if (accept_sock == INVALID_SOCKET) {
 			LOG("NetworkLib", LOG_LEVEL_DEBUG, "accept() Fail, Error code : %d", WSAGetLastError());
 			continue;
@@ -131,13 +132,13 @@ void NetworkLib::AcceptFunc() {
 		Session* p_accept_session = &session_array[session_id.session_index];
 		p_accept_session->Set(accept_sock, accept_ip, accept_port, session_id);
 		auto ret = NetworkLib::Bind_IOCP(accept_sock, (ULONG_PTR)p_accept_session);
-		accept_tps++;
+		acceptTPS++;
 
 		//------------------------------
 		// 세션 로그인 시 작업
 		//------------------------------
 		OnClientJoin(session_id.session_id);
-		InterlockedIncrement((LONG*)&session_count);
+		InterlockedIncrement((LONG*)&sessionCount);
 
 		//------------------------------
 		// WSARecv
@@ -212,6 +213,8 @@ bool NetworkLib::ReleaseSession(Session* p_session){
 
 	// * release_flag(0), iocount(0) -> release_flag(1), iocount(0)
 	if (0 == InterlockedCompareExchange64((long long*)&p_session->release_flag, 1, 0)) {
+		// 리소스 정리 (소켓, 패킷)
+		closesocket(p_session->sock);
 		PacketBuffer* packet;
 		while (p_session->sendQ.Dequeue(&packet)) {
 			PacketBuffer::Free(packet);
@@ -219,10 +222,13 @@ bool NetworkLib::ReleaseSession(Session* p_session){
 		for (int i = 0; i < p_session->sendPacket_count; i++) {
 			PacketBuffer::Free(p_session->sendPacket_array[i]);
 		}
-		closesocket(p_session->sock);
-		sessionIndex_stack.Push(p_session->session_id.session_index);
-		InterlockedDecrement((LONG*)&session_count);
+
+		// 사용자 리소스 정리
 		OnClientLeave(p_session->session_id);
+
+		// 세션 반환
+		sessionIndex_stack.Push(p_session->session_id.session_index);
+		InterlockedDecrement((LONG*)&sessionCount);
 		return true;
 	}
 	return false;
@@ -233,7 +239,7 @@ void NetworkLib::SendCompletion(Session* p_session){
 	// Send Packet Free
 	for (int i = 0; i < p_session->sendPacket_count; i++) {
 		PacketBuffer::Free(p_session->sendPacket_array[i]);
-		InterlockedIncrement(&sendMsg_tps);
+		InterlockedIncrement(&sendMsgTPS);
 	}
 	p_session->sendPacket_count = 0;
 
@@ -396,7 +402,7 @@ void NetworkLib::RecvCompletion_LAN(Session* p_session){
 
 		// 사용자 패킷 처리
 		OnRecv(p_session->session_id, contents_packet);
-		InterlockedIncrement(&recvMsg_tps);
+		InterlockedIncrement(&recvMsgTPS);
 
 		auto ret = PacketBuffer::Free(contents_packet);
 	}
@@ -438,7 +444,7 @@ void NetworkLib::RecvCompletion_NET(Session* p_session){
 			break;
 		}
 
-		// 암호패킷 생성
+		// Recv Data 패킷 화
 		p_session->recv_buf.Move_Front(NET_HEADER_SIZE);
 		p_session->recv_buf.Dequeue(encrypt_packet->Get_writePos(), payload_len);
 		encrypt_packet->Move_Wp(payload_len);
@@ -447,6 +453,7 @@ void NetworkLib::RecvCompletion_NET(Session* p_session){
 		PacketBuffer* decrypt_packet = PacketBuffer::Alloc();
 		if (!decrypt_packet->DecryptPacket(encrypt_packet)) {
 			PacketBuffer::Free(encrypt_packet);
+			PacketBuffer::Free(decrypt_packet);
 			LOG("NetworkLib", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
 			DisconnectSession(p_session);
 			break;
@@ -454,7 +461,7 @@ void NetworkLib::RecvCompletion_NET(Session* p_session){
 
 		// 사용자 패킷 처리
 		OnRecv(p_session->session_id, decrypt_packet);
-		InterlockedIncrement(&recvMsg_tps);
+		InterlockedIncrement(&recvMsgTPS);
 
 		// 암호패킷, 복호화 패킷 Free
 		PacketBuffer::Free(encrypt_packet);

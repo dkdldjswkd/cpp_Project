@@ -5,12 +5,23 @@
 #include <winnt.h>
 #include "LFObjectPoolTLS.h"
 #include "protocol.h"
+#include <exception>
 
 #define PAYLOAD_SPACE 8000
 #define HEADER_SPACE 10
 
-class NetworkLib;
+struct PacketException : public std::exception {
+public:
+	PacketException(const char* error_code, bool type) : exception(error_code), errorType(type) {}
+	PacketException(bool type) : errorType(type) {}
 
+public:
+	bool errorType;
+#define GET_ERROR 0 // >> Error
+#define PUT_ERROR 1 // << Error
+};
+
+class NetworkLib;
 class PacketBuffer {
 private:
 	PacketBuffer();
