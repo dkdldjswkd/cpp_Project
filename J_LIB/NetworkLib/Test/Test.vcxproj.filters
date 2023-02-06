@@ -13,10 +13,15 @@
     <ClInclude Include="LFObjectPool.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="errmsg.h" />
+    <ClInclude Include="mysql.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{200f8629-8a49-437e-82f0-dcc485a21304}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libmysql.lib" />
   </ItemGroup>
 </Project>

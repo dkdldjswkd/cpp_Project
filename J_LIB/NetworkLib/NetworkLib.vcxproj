@@ -150,6 +150,8 @@
     <ClInclude Include="CommonProtocol.h" />
     <ClInclude Include="CrashDump.h" />
     <ClInclude Include="EchoServer.h" />
+    <ClInclude Include="errmsg.h" />
+    <ClInclude Include="mysql.h" />
     <ClInclude Include="NetworkLib.h" />
     <ClInclude Include="LFObjectPool.h" />
     <ClInclude Include="LFObjectPoolTLS.h" />

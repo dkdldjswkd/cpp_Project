@@ -78,6 +78,12 @@
     <ClInclude Include="ChattingServer_Multi.h">
       <Filter>01 Server\02 ChattingServer_Multi</Filter>
     </ClInclude>
+    <ClInclude Include="errmsg.h">
+      <Filter>00 NetworkLib\include</Filter>
+    </ClInclude>
+    <ClInclude Include="mysql.h">
+      <Filter>00 NetworkLib\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Default">

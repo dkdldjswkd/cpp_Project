@@ -153,8 +153,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="errmsg.h" />
     <ClInclude Include="LFObjectPool.h" />
     <ClInclude Include="LFObjectPoolTLS.h" />
+    <ClInclude Include="mysql.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="libmysql.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
