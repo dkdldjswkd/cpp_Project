@@ -26,7 +26,7 @@ int main() {
 	}
 
 	// Select 쿼리문
-	const char* query = "SELECT * FROM actor";	// From 다음 DB에 존재하는 테이블 명으로 수정하세요
+	const char* query = "SELECT * FROM level";	// From 다음 DB에 존재하는 테이블 명으로 수정하세요
 	query_stat = mysql_query(connection, query);
 	if (query_stat != 0) {
 		printf("Mysql query error : %s", mysql_error(&conn));

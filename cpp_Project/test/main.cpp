@@ -11,6 +11,8 @@ struct B : public A {
 	virtual void f() { printf("B\n"); }
 };
 
+
+
 int main() {
 	A* a;
 	B b;
