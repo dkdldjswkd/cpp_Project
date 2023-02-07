@@ -129,8 +129,6 @@ MYSQL_RES* SendQuery(const char* queryFormat, ...) {
 	// 결과출력
 	return mysql_store_result(connection); // 결과 전체를 미리 가져옴
 	// sql_result=mysql_use_result(connection); // fetch_row 호출시 1개씩 가져옴
-
-
 }
 
 int main() {

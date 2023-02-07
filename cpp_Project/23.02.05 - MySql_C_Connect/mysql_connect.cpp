@@ -19,7 +19,7 @@ int main() {
 	mysql_options(&conn, MYSQL_OPT_SSL_MODE, (const void*)&optssl);
 
 	// DB ¿¬°á
-	connection = mysql_real_connect(&conn, "127.0.0.1", "root", "password", NULL, 3306, (char*)NULL, 0);
+	connection = mysql_real_connect(&conn, "127.0.0.1", "root", "password", "test", 3306, (char*)NULL, 0);
 	if (connection == NULL)	{
 		fprintf(stderr, "Mysql connection error : %s \n", mysql_error(&conn));
 		return 1;
