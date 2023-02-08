@@ -1,0 +1,269 @@
+# Performance Counters
+
+윈도우는 다양한 하드웨어 리소스 (Performance Counters) 를 모니터링 하고 있으며 이 데이터를 제공하고 있습니다.
+제어판 > 관리도구 > 성능모니터 
+에서 보여지는 모니터링 수치의 모든것을 api 를 통해서 수집이 가능 합니다.
+
+'성능모니터' 에서  그래프 창에 오른클릭 후  '카운터 추가'  를 해보시면
+굉장히 다양한 모든 정보를 모니터링 할 수 있습니다.
+
+이는 윈도우에서 자체적으로 수집하는 항목이며 
+각각의 하드웨어 드라이버들은 Performance Counters 에 데이터를 제공하는 것을 원칙으로 하고 있습니다.
+
+
+# Performance Data Helper (PDH) interface,
+
+우리는 Performance Counters 의 데이터를 PDH API 를 통해서 데이터를 수집할 수 있습니다.
+'성능모니터' 에서 보여지는 모든 항목들은 우리가 프로그래밍을 통해서 얻어낼 수 있습니다.
+
+
+간단한 샘플 예제
+
+#include <stdio.h>
+#include <Pdh.h>
+
+#pragma comment(lib,"Pdh.lib")
+
+int main(void)
+{
+	// PDH 쿼리 핸들 생성
+	PDH_HQUERY cpuQuery;
+	PdhOpenQuery(NULL, NULL, &cpuQuery);
+
+	// PDH 리소스 카운터 생성 (여러개 수집시 이를 여러개 생성)
+	PDH_HCOUNTER cpuTotal;
+	PdhAddCounter(cpuQuery, L"\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
+
+
+	// 첫 갱신
+	PdhCollectQueryData(cpuQuery);
+
+  
+	while(true)
+	{
+		Sleep(1000);	
+
+		// 1초마다 갱신
+		PdhCollectQueryData(cpuQuery);
+
+		// 갱신 데이터 얻음
+		PDH_FMT_COUNTERVALUE counterVal;
+		PdhGetFormattedCounterValue(cpuTotal, PDH_FMT_DOUBLE, NULL, &counterVal);
+
+		// 얻은 데이터 사용
+		wprintf(L"CPU Usage : %f%%\n", counterVal.doubleValue);
+	}
+
+	return 0;
+}
+
+
+
+위 코드로 CPU 사용율을 얻어볼 수 있습니다.
+
+
+* PdhOpenQuery
+
+pdh 는 검색 대상의 정보를 문자열로 등록하여 요청합니다.
+그리고 이를 쿼리라고 표현하고 있고요.
+
+그래서 먼저 pdh 쿼리 핸들을 만들어야 합니다.
+
+PDH_FUNCTION PdhOpenQueryA(
+  LPCSTR     szDataSource,
+  DWORD_PTR  dwUserData,
+  PDH_HQUERY *phQuery
+);
+
+1 param : 실시간 데이터를 얻을 것이므로 null
+2 param : 카운터 추가정보를 등록하는 인자, 너무 복잡하여 미사용
+3 param : 쿼리 핸들 out 인자
+
+
+
+* PdhAddCounter
+
+이제 수집하고자 하는 쿼리를 하나하나 PDH_HQUERY 에 등록하면 됩니다.
+수집 대상 당 카운터 핸들이 1개씩 나오며  몇개를 등록하든 상관 없습니다.
+
+PDH_HCOUNTER cpuTotal;
+PdhAddCounter(cpuQuery, L"\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
+
+cpu 사용율 1개의 카운터를 등록 했습니다.
+
+하나의 PDH_HQUERY  에  여러개의 카운터 쿼리를 등록하고자 한다면 여러번 반복 등록 하면 됩니다.
+
+* PdhCollectQueryData(cpuQuery);
+
+위 함수를 사용해서  등록한 카운터의 정보를 갱신 합니다.
+우리는 이 함수를 1초마다 주기적으로 호출하여 갱신 합니다.
+
+
+* PdhGetFormattedCounterValue
+
+등록된 카운터의 값을 얻어냅니다.
+
+PDH_FMT_COUNTERVALUE counterVal;
+PdhGetFormattedCounterValue(cpuTotal, PDH_FMT_DOUBLE, NULL, &counterVal);
+
+PDH_FMT_COUNTERVALUE  값을 통해서 받게 됩니다.
+이 안에는 double, long, long long, string 등 다양한 타입의 변수가 존재하며
+이중 원하는 타입으로 값을 받을 수 있습니다.
+
+지금 예제는 DOUBLE 타입만 얻도록 지정 했습니다.
+
+3번째 인자의 Type 은 얻고자 하는 데이터의 종류 입니다.  delta, max, min, avr 등의 값이 들어갈 수 있으나
+우리는 그냥 현재 값을 얻고자 하는 것이므로  넣지 않습니다.
+
+
+위 코드대로 호출하고 나면  counterVal.doubleValue  안에 해당 수치가 들어있게 됩니다.
+
+
+
+
+----------------------------------------------------------------
+
+pdh 사용법 자체는 간단합니다.  문제는 쿼리 스트링이며  몇몇 스트링을 살펴보면
+
+CPU 전체 사용률 		: "\\Processor(_Total)\\% Processor Time"
+
+CPU 코어 사용률 		: "\\Processor(0)\\% Processor Time"
+CPU 코어 사용률 		: "\\Processor(1)\\% Processor Time"
+CPU 코어 사용률 		: "\\Processor(2)\\% Processor Time"
+CPU 코어 사용률 		: "\\Processor(3)\\% Processor Time"
+
+프로세스 CPU 유저 사용률 : "\\Process(NAME)\\% User Time"
+프로세스 CPU 전체 사용률 : "\\Process(NAME)\\% Processor Time"
+
+CPU 사용량은 OS 에 따라서 정상적으로 얻어지지 않는 경우가 발생함
+직접 사용시간을 구해서 사용하도록 함
+
+프로세스 핸들 수 	: "\\Process(NAME)\\Handle Count"
+프로세스 스레드 수 	: "\\Process(NAME)\\Thread Count"
+
+프로세스 가상메모리 사용	: "\\Process(NAME)\\Virtual Bytes"
+ㄴ 이는 가상메모리 테이블의 주소 용량으로 실제 사용메모리와는 무관
+
+프로세스 유저할당 메모리 : "\\Process(NAME)\\Private Bytes"
+ㄴ 이것이 우리가 사용한 실제 유저 메모리 사용량
+   프로세스 공용메모리/커널메모리 제외
+
+프로세스 작업 메모리 	: "\\Process(NAME)\\Working Set"
+ㄴ 현재 물리 메모리에 사용되는 크기일 뿐 할당 용량은 아닐 수 있음.
+   
+프로세스 논페이지 메모리 : "\\Process(NAME)\\Pool Nonpaged Bytes"
+
+사용가능 메모리 : L"\\Memory\\Available MBytes"
+
+논페이지드 메모리 : L"\\Memory\\Pool Nonpaged Bytes"
+
+
+이런식의 쿼리 스트링들이 존재 합니다.
+
+모니터링이 필요한 쿼리 스트링을 미리 준비하여 하드코딩으로 구현 됩니다.
+
+
+* 쿼리 스트링 알아내기
+
+쿼리 스트링은 msdn 등에서 제공되지 않으며  이 역시 api 함수를 통해 얻어낼 수 있습니다.
+
+PdhBrowseCounters
+
+위 함수가 그 기능을 해주는 함수이며,  위 함수를 실제로 호출 해보면  다이알로그가 뜹니다.
+해당 다이알로그에서 원하는 모니터링 대상을 지정하면  쿼리를 얻어주는 방식 입니다.
+
+해당 다이알로그는  성능 모니터링의 카운터 추가시 뜨는  다이알로그의 기능중 하나 입니다.
+
+https://docs.microsoft.com/ko-kr/windows/win32/perfctrs/browsing-performance-counters
+
+msdn 에서 Browsing Performance Counters 의 샘플 코드를 그대로 제공하고 있습니다.
+
+더 다양한 쿼리 스트링을 알고자 한다면 위 url 의 샘플 코드를 그대로 복붙하여 실행시켜 보시기 바랍니다.
+
+
+샘플코드에서 변경사항 :  BrowseDlgData.bSingleCounterPerAdd = FALSE;
+
+
+
+# CPU 사용율
+
+이상하게도 윈도우 8 부터  pdh 를 통한 cpu 사용률 수집이 비정상적인 데이터가 자주 나타납니다.
+원인은 파악되지 않지만  실제 cpu 사용율과는 조금 차이가 있는것으로 생각 됩니다.
+
+그래서 cpu 사용율은  직접 구현하여  구하도록 할 것입니다.
+
+
+관련 코드는 별도 pdf 로 드립니다.
+
+
+
+cpu 구하기에서 몇몇 중요 사항만 전달 드립니다.
+
+
+cpu 사용률이란 ?
+
+"4GHz cpu 에서 2GHz 만 사용했으니 50% 사용률이다"  라는건 말이 안됩니다.
+클럭을 절반만 쓰는건 없으니까요,   cpu 사용률이란 결국  '샘플링 시간동안  cpu 사용시간이 얼마인가?'   라는 것입니다.
+
+그래서 사용시간을 구하는 것이  cpu 사용률을 구하는 것이 됩니다.
+
+
+우리가 직접 cpu 사용시간을 계산하는건 불가능 합니다.  OS 가 제공을 해줘야 합니다.
+윈도우,리눅스 모든 OS 가 이런 기능은 기본으로 제공 합니다.
+
+GetSystemTimes
+
+위 함수가  cpu 의 사용 시간을 구해줍니다.   우리는 이 함수를 사용해서  프로세서의 사용률을 계산할 수 있습니다.
+
+
+프로세서 사용률과  프로세스 사용률은 조금 다릅니다.
+위 GetSystemTimes 는  프로세서 자체의 사용시간을 구해주며,  프로세스의 cpu 사용시간을 얻기 위해선
+
+GetProcessTimes
+
+를 사용합니다.
+
+위 함수는 인자가 좀 많은데  해당 프로세스의 시작시간, 전체 가동시간 인자가 있어서 이런 부분은 사용하지 않을 것입니다.
+뒤 인자로 커널사용 시간, 유저사용 시간을 얻어볼 수 있습니다.
+
+위 함수들이 주는 FILETIME 이라는 구조체는 64bit 형 시간 자료형으로 LARGE_INTEGER 와 동일합니다.
+다만 FILETIME 이라고 표현하는 시간값은 100 nano second 를 기준으로 하는 시간 값을 의미 합니다.
+
+
+
+* 특이점
+
+cpu 사용율 구하기 코드를 보시면  프로세서 개수를 얻어서  나누기를 합니다.
+
+
+듀얼코어에서  1초 동안  내 프로세스(프로그램) 의 사용시간이 1초 였다면,  사용율은 50% 가 되어야 하므로 / 2 를 하는 개념 입니다.
+멀티 스레드로  2개의 cpu (코어) 를  모두 사용했다면  1초 동안  cpu 사용 시간은 2초가 나옵니다.
+
+그래서 항상 프로세서 개수 (논리 프로세서 개수, 하이퍼 스레딩 개수 포함) 로 나누기를 하여 사용률을 구하게 됩니다.
+
+
+
+
+제가 확인한 바로는 제공해드린 cpu 사용률이 가장 정확하게 표현되는 것으로 확인 되어  이 방식을 사용중입니다.
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+제공해드린 자료들을 사용해서  모니터링 클래스를 만들어 주세요.
+
+
+필수적인 모니터링 항목은
+
+* cpu total 사용률
+* cpu process 사용률
+* 프로세스 유저할당 메모리 
+* 프로세스 논페이지 메모리 
+* 사용가능 메모리 
+* 논페이지드 메모리
+
++ 네트워크 사용량
+
+네트워크 사용량은 한번 해보시면 아시겠지만 뭔가 좀 애매합니다.
+이 부분에 대해선 차후에  수업시간에 안내 드리겠습니다.
+
