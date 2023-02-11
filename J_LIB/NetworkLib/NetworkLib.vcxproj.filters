@@ -17,6 +17,9 @@
       <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="NetworkLib.cpp" />
+    <ClCompile Include="DBConnector.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RingBuffer.h">
@@ -54,6 +57,9 @@
     </ClInclude>
     <ClInclude Include="protocol.h" />
     <ClInclude Include="NetworkLib.h" />
+    <ClInclude Include="DBConnector.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
