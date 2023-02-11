@@ -1,114 +1,63 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="NetworkLib.cpp">
-      <Filter>00 NetworkLib</Filter>
-    </ClCompile>
-    <ClCompile Include="EchoServer.cpp">
-      <Filter>01 Server\00 EchoServer</Filter>
-    </ClCompile>
     <ClCompile Include="PacketBuffer.cpp">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="CrashDump.cpp">
-      <Filter>00 NetworkLib\include</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>Default</Filter>
+      <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="MemoryLogger.cpp">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="RingBuffer.cpp">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClCompile>
-    <ClCompile Include="ChattingServer_Single.cpp">
-      <Filter>01 Server\01 ChattingServer_Single</Filter>
-    </ClCompile>
-    <ClCompile Include="ChattingServer_Multi.cpp">
-      <Filter>01 Server\02 ChattingServer_Multi</Filter>
-    </ClCompile>
+    <ClCompile Include="NetworkLib.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="NetworkLib.h">
-      <Filter>00 NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="EchoServer.h">
-      <Filter>01 Server\00 EchoServer</Filter>
-    </ClInclude>
-    <ClInclude Include="protocol.h">
-      <Filter>00 NetworkLib</Filter>
-    </ClInclude>
     <ClInclude Include="RingBuffer.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="PacketBuffer.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="LFQueue.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="LFObjectPool.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="CrashDump.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="LFObjectPoolTLS.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="LFStack.h">
-      <Filter>00 NetworkLib\include</Filter>
-    </ClInclude>
-    <ClInclude Include="CommonProtocol.h">
-      <Filter>01 Server\Protocol</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="MemoryLogger.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h">
-      <Filter>00 NetworkLib\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ChattingServer_Single.h">
-      <Filter>01 Server\01 ChattingServer_Single</Filter>
-    </ClInclude>
-    <ClInclude Include="ChattingServer_Multi.h">
-      <Filter>01 Server\02 ChattingServer_Multi</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="errmsg.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="mysql.h">
-      <Filter>00 NetworkLib\include</Filter>
+      <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="protocol.h" />
+    <ClInclude Include="NetworkLib.h" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Default">
-      <UniqueIdentifier>{a5174fdc-b667-4d6b-91e2-5d8252ed74b1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="00 NetworkLib">
-      <UniqueIdentifier>{292b5930-a574-4a99-88a6-4039b9406535}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="00 NetworkLib\include">
+    <Filter Include="include">
       <UniqueIdentifier>{17ec244e-fb86-4f45-9f4e-be80c3afd2c1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="01 Server">
-      <UniqueIdentifier>{acbc4098-1b14-44f4-a2cc-9e5dea7a01af}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="01 Server\00 EchoServer">
-      <UniqueIdentifier>{8c747a4a-ad5b-4a4d-ac0e-94d41e993cb1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="01 Server\Protocol">
-      <UniqueIdentifier>{3cd1dd1b-21a5-45c6-b2e7-5fc6dd0140d3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="01 Server\01 ChattingServer_Single">
-      <UniqueIdentifier>{6ab3cf07-bfbf-41e7-b34c-726470395da7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="01 Server\02 ChattingServer_Multi">
-      <UniqueIdentifier>{a830cd96-f1bc-4bce-b1cd-8623e0c0aa77}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

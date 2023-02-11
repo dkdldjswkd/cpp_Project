@@ -47,7 +47,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -133,23 +133,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ChattingServer_Single.cpp" />
-    <ClCompile Include="ChattingServer_Multi.cpp" />
     <ClCompile Include="CrashDump.cpp" />
-    <ClCompile Include="EchoServer.cpp" />
     <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="MemoryLogger.cpp" />
     <ClCompile Include="PacketBuffer.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChattingServer_Single.h" />
-    <ClInclude Include="ChattingServer_Multi.h" />
-    <ClInclude Include="CommonProtocol.h" />
     <ClInclude Include="CrashDump.h" />
-    <ClInclude Include="EchoServer.h" />
     <ClInclude Include="errmsg.h" />
     <ClInclude Include="mysql.h" />
     <ClInclude Include="NetworkLib.h" />
