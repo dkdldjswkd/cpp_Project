@@ -161,6 +161,7 @@
     <ClInclude Include="NetworkLib\RingBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="NetworkLib\mysql\lib\libmysql.lib" />
     <Library Include="NetworkLib\NetworkLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

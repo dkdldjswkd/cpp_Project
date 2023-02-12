@@ -10,8 +10,16 @@ using namespace std;
 #define IP INADDR_ANY
 #define PORT 30000
 
+#define DB_IP		"127.0.0.1"
+#define DB_PORT 
+#define DB_ID		"root"
+#define DB_PASSWORD "password"
+#define DB_SCHEMA	"password"
+#define DB_LOGTIME	200
+
+
 void StartLoginServer(int maxThread, int releaseThread) {
-	LoginServer loginServer;
+	LoginServer loginServer(DB_IP, );
 	loginServer.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, 10000);
 	printf("StartLoginServer \n");
 

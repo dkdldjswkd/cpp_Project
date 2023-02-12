@@ -59,5 +59,8 @@
     <Library Include="NetworkLib\NetworkLib.lib">
       <Filter>NetworkLib</Filter>
     </Library>
+    <Library Include="NetworkLib\mysql\lib\libmysql.lib">
+      <Filter>NetworkLib</Filter>
+    </Library>
   </ItemGroup>
 </Project>

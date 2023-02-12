@@ -3,10 +3,10 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
-#include "NetworkLib\LFObjectPool.h"
-#include "NetworkLib\LFQueue.h"
-#include "NetworkLib\NetworkLib.h"
-#include "NetworkLib\DBConnector.h"
+#include "NetworkLib/LFObjectPool.h"
+#include "NetworkLib/LFQueue.h"
+#include "NetworkLib/NetworkLib.h"
+#include "NetworkLib/DBConnectorTLS.h"
 
 struct Player {
 public:
@@ -19,18 +19,21 @@ public:
 	char	SessionKey[64];
 
 public:
-	void Set() {}
+	void Set(SESSION_ID session_id) {
+		this->session_id = session_id;
+	}
 	void Reset() {}
 };
 
 class LoginServer : public NetworkLib {
 public:
-	LoginServer();
+	LoginServer(const char* dbAddr, const char* loginID, const char* password, const char* schema, const int port, unsigned short loggingTime = INFINITE);
 	~LoginServer();
 
 private:
 	J_LIB::LFObjectPool<Player> playerPool;
 	std::unordered_map<SESSION_ID, Player*> playerMap;
+	DBConnectorTLS connecterTLS;
 
 private:
 	// Lib callback
