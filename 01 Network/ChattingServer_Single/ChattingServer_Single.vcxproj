@@ -145,23 +145,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChattingServer_Single.h" />
-    <ClInclude Include="NetworkLib\CrashDump.h" />
-    <ClInclude Include="NetworkLib\errmsg.h" />
-    <ClInclude Include="NetworkLib\LFObjectPool.h" />
-    <ClInclude Include="NetworkLib\LFObjectPoolTLS.h" />
-    <ClInclude Include="NetworkLib\LFQueue.h" />
-    <ClInclude Include="NetworkLib\LFStack.h" />
-    <ClInclude Include="NetworkLib\Logger.h" />
-    <ClInclude Include="NetworkLib\MemoryLogger.h" />
-    <ClInclude Include="NetworkLib\mysql.h" />
-    <ClInclude Include="NetworkLib\NetworkLib.h" />
-    <ClInclude Include="NetworkLib\ObjectPool.h" />
-    <ClInclude Include="NetworkLib\PacketBuffer.h" />
-    <ClInclude Include="NetworkLib\protocol.h" />
-    <ClInclude Include="NetworkLib\RingBuffer.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="NetworkLib\NetworkLib.lib" />
+    <Library Include="NetworkLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,8 +2,8 @@
 #include <Windows.h>
 #include <timeapi.h>
 #include "EchoServer.h"
-#include "NetworkLib\CrashDump.h"
-#include "NetworkLib\Logger.h"
+#include "../NetworkLib/CrashDump.h"
+#include "../NetworkLib/Logger.h"
 #pragma comment (lib, "Winmm.lib")
 
 #define IP INADDR_ANY

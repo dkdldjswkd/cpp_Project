@@ -7,4 +7,7 @@
   <ItemGroup>
     <ClInclude Include="DBConnector.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="mysql\lib\libmysql.lib" />
+  </ItemGroup>
 </Project>

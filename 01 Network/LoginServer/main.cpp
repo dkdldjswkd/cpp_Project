@@ -1,8 +1,8 @@
 #include <iostream>
 #include <Windows.h>
 #include <timeapi.h>
-#include "NetworkLib\CrashDump.h"
-#include "NetworkLib\Logger.h"
+#include "../NetworkLib/CrashDump.h"
+#include "../NetworkLib/Logger.h"
 #include "LoginServer.h"
 #pragma comment (lib, "Winmm.lib")
 using namespace std;
@@ -11,15 +11,14 @@ using namespace std;
 #define PORT 30000
 
 #define DB_IP		"127.0.0.1"
-#define DB_PORT 
+#define DB_PORT		3306
 #define DB_ID		"root"
 #define DB_PASSWORD "password"
 #define DB_SCHEMA	"password"
 #define DB_LOGTIME	200
 
-
 void StartLoginServer(int maxThread, int releaseThread) {
-	LoginServer loginServer(DB_IP, );
+	LoginServer loginServer(DB_IP, DB_PORT, DB_ID, DB_PASSWORD, DB_SCHEMA);
 	loginServer.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, 10000);
 	printf("StartLoginServer \n");
 

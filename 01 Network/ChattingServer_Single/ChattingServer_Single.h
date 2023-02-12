@@ -3,9 +3,9 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
-#include "NetworkLib/LFObjectPool.h"
-#include "NetworkLib/LFQueue.h"
-#include "NetworkLib/NetworkLib.h"
+#include "../NetworkLib/LFObjectPool.h"
+#include "../NetworkLib/LFQueue.h"
+#include "../NetworkLib/NetworkLib.h"
 
 #define SECTOR_MAX_X		50
 #define SECTOR_MAX_Y		50

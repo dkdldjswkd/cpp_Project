@@ -3,10 +3,10 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
-#include "NetworkLib/LFObjectPool.h"
-#include "NetworkLib/LFQueue.h"
-#include "NetworkLib/NetworkLib.h"
-#include "NetworkLib/DBConnectorTLS.h"
+#include "../NetworkLib/LFObjectPool.h"
+#include "../NetworkLib/LFQueue.h"
+#include "../NetworkLib/NetworkLib.h"
+#include "../NetworkLib/DBConnectorTLS.h"
 
 struct Player {
 public:
@@ -27,7 +27,7 @@ public:
 
 class LoginServer : public NetworkLib {
 public:
-	LoginServer(const char* dbAddr, const char* loginID, const char* password, const char* schema, const int port, unsigned short loggingTime = INFINITE);
+	LoginServer(const char* dbAddr, const int port, const char* loginID, const char* password, const char* schema,  const unsigned short loggingTime = INFINITE);
 	~LoginServer();
 
 private:

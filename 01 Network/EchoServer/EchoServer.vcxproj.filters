@@ -6,48 +6,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EchoServer.h" />
-    <ClInclude Include="NetworkLib\CrashDump.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\errmsg.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\LFObjectPool.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\LFObjectPoolTLS.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\LFQueue.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\LFStack.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\Logger.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\MemoryLogger.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\mysql.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\NetworkLib.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\ObjectPool.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\PacketBuffer.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\protocol.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
-    <ClInclude Include="NetworkLib\RingBuffer.h">
-      <Filter>NetworkLib</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="NetworkLib">

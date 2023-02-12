@@ -1,6 +1,6 @@
 #include "ChattingServer_Single.h"
 #include "CommonProtocol.h"
-#include "NetworkLib/Logger.h"
+#include "../NetworkLib/Logger.h"
 using namespace J_LIB;
 using namespace std;
 

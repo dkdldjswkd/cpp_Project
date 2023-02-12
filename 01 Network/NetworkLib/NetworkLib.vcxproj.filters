@@ -1,75 +1,72 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="PacketBuffer.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
+    <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="CrashDump.cpp">
       <Filter>include</Filter>
     </ClCompile>
-    <ClCompile Include="MemoryLogger.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="Logger.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="RingBuffer.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="DBConnector.cpp">
       <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="DBConnectorTLS.cpp">
       <Filter>include</Filter>
     </ClCompile>
+    <ClCompile Include="Logger.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryLogger.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketBuffer.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="RingBuffer.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="RingBuffer.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="PacketBuffer.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="LFQueue.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="LFObjectPool.h">
-      <Filter>include</Filter>
-    </ClInclude>
+    <ClInclude Include="protocol.h" />
+    <ClInclude Include="NetworkLib.h" />
     <ClInclude Include="CrashDump.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="LFObjectPoolTLS.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="LFStack.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryLogger.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="errmsg.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="mysql.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="protocol.h" />
-    <ClInclude Include="NetworkLib.h" />
     <ClInclude Include="DBConnector.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="DBConnectorTLS.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="LFObjectPool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="LFObjectPoolTLS.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="LFQueue.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="LFStack.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="Logger.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="MemoryLogger.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectPool.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketBuffer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="RingBuffer.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>{17ec244e-fb86-4f45-9f4e-be80c3afd2c1}</UniqueIdentifier>
+      <UniqueIdentifier>{66c03727-0529-4cc6-bfbc-7cb5750d6a71}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

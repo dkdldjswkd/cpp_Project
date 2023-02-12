@@ -1,5 +1,5 @@
 #pragma once
-#include "NetworkLib\NetworkLib.h"
+#include "../NetworkLib/NetworkLib.h"
 
 class EchoServer : public NetworkLib {
 public:

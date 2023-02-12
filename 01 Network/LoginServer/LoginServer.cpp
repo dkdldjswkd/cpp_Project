@@ -1,11 +1,14 @@
 #include "LoginServer.h"
 #include "CommonProtocol.h"
-#include "NetworkLib/Logger.h"
+#include "../NetworkLib/Logger.h"
 using namespace J_LIB;
 using namespace std;
 
-LoginServer::LoginServer(const char* dbAddr, const char* loginID, const char* password, const char* schema, const int port, unsigned short loggingTime)
-	: connecterTLS(dbAddr, loginID, password, schema, port, loggingTime) {
+//------------------------------
+// LoginServer
+//------------------------------
+LoginServer::LoginServer(const char* dbAddr, const int port, const char* loginID, const char* password, const char* schema, const unsigned short loggingTime)
+	: connecterTLS(dbAddr, port, loginID, password, schema, loggingTime) {
 }
 
 LoginServer::~LoginServer(){
