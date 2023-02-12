@@ -147,6 +147,8 @@
     <ClInclude Include="LoginServer.h" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="DBConnector.lib" />
+    <Library Include="libmysql.lib" />
     <Library Include="NetworkLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

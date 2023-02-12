@@ -48,7 +48,7 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	}
 
 	// DB Á¶È¸
-
+	//connecterTLS.Query();
 }
 
 void LoginServer::OnClientLeave(SESSION_ID session_id){

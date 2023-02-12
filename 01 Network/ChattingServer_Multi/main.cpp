@@ -38,10 +38,14 @@ void StartChattingServer_Multi(int maxThread, int releaseThread) {
 
 #define CHATTING
 int main() {
-	int maxThread;
-	int releaseThread;
-	printf("max & release Thread num >> ");
-	cin >> maxThread >> releaseThread;
+	//int maxThread;
+	//int releaseThread;
+	//printf("max & release Thread num >> ");
+	//cin >> maxThread >> releaseThread;
 
-	StartChattingServer_Multi(maxThread, releaseThread);
+	//StartChattingServer_Multi(maxThread, releaseThread);
+
+	// ---
+
+	thread_id = pthread_self();
 }

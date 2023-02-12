@@ -6,7 +6,7 @@
 #include "../NetworkLib/LFObjectPool.h"
 #include "../NetworkLib/LFQueue.h"
 #include "../NetworkLib/NetworkLib.h"
-#include "../NetworkLib/DBConnectorTLS.h"
+#include "../DBConnector/DBConnectorTLS.h"
 
 struct Player {
 public:
@@ -32,7 +32,7 @@ public:
 
 private:
 	J_LIB::LFObjectPool<Player> playerPool;
-	std::unordered_map<SESSION_ID, Player*> playerMap;
+	std::unordered_map<DWORD64, Player*> playerMap;
 	DBConnectorTLS connecterTLS;
 
 private:
