@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Default</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Default</Filter>
+    </ClCompile>
+    <ClCompile Include="Server.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Character.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="MakePacket.cpp">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="Sector.cpp">
+      <Filter>Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Default">
+      <UniqueIdentifier>{be764f78-af6a-4837-a439-e1e956f629b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Network">
+      <UniqueIdentifier>{e1a71066-e1dd-4401-9745-9714f8bfcf12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Debug">
+      <UniqueIdentifier>{d6017540-427b-4a4f-8725-76ca76589ed9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{485f613f-759a-4d1c-9cf4-86a63e02c4da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Content">
+      <UniqueIdentifier>{78b96e38-9cd7-4edd-8d87-8195a23987d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{d10286fd-eaff-41e8-8f1c-4a6ed57a45ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="~ Document">
+      <UniqueIdentifier>{77d53f46-4da6-4130-a731-c5c6da228d41}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Default</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Server.h">
+      <Filter>Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Protocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Character.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Sector.h">
+      <Filter>Content</Filter>
+    </ClInclude>
+    <ClInclude Include="MakePacket.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Define.h">
+      <Filter>Default</Filter>
+    </ClInclude>
+    <ClInclude Include="Log.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="작업문서.txt">
+      <Filter>~ Document</Filter>
+    </Text>
+    <Text Include="profile_log.txt">
+      <Filter>~ Document</Filter>
+    </Text>
+    <Text Include="MMO LOG.txt">
+      <Filter>~ Document</Filter>
+    </Text>
+  </ItemGroup>
+</Project>
