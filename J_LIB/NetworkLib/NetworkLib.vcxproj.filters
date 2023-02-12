@@ -20,6 +20,9 @@
     <ClCompile Include="DBConnector.cpp">
       <Filter>include</Filter>
     </ClCompile>
+    <ClCompile Include="DBConnectorTLS.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RingBuffer.h">
@@ -58,6 +61,9 @@
     <ClInclude Include="protocol.h" />
     <ClInclude Include="NetworkLib.h" />
     <ClInclude Include="DBConnector.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="DBConnectorTLS.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

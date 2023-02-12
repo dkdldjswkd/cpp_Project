@@ -3,7 +3,7 @@
 #include <Windows.h>
 #include <timeapi.h>
 #include "mysql/include/errmsg.h"
-#pragma comment(lib, "mysql/lib/libmysql.lib")
+//#pragma comment(lib, "mysql/lib/libmysql.lib")
 #pragma comment(lib, "Winmm.lib")
 
 DBConnector::DBConnector(const char* dbAddr, const char* loginID, const char* password, const char* schema, int port, unsigned short loggingTime){

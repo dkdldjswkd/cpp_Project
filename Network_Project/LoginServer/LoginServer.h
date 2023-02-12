@@ -6,6 +6,7 @@
 #include "NetworkLib\LFObjectPool.h"
 #include "NetworkLib\LFQueue.h"
 #include "NetworkLib\NetworkLib.h"
+#include "NetworkLib\DBConnector.h"
 
 struct Player {
 public:
@@ -14,53 +15,22 @@ public:
 
 public:
 	SESSION_ID session_id = INVALID_SESSION_ID;
-	bool is_connect = false;
-	bool is_login = false;
+	INT64	accountNo;
+	char	SessionKey[64];
 
 public:
-	WCHAR id[ID_LEN];
-	WCHAR nickname[NICKNAME_LEN];
-	char sessionKey[64]; // 인증토큰
-
-public:
-	inline void Set_Connect(SESSION_ID session_id) {
-		this->session_id = session_id;
-		is_connect = true;
-		sectorPos.x = -2;
-		sectorPos.y = -2;
-		sectorAround.count = 0;
-	}
-	inline void Set_Login() {
-		is_login = true;
-	}
-	inline void Set_ID(WCHAR* id) {
-#pragma warning(suppress : 4996)
-		wcsncpy(this->id, id, ID_LEN);
-		this->id[ID_LEN] = 0;
-	}
-	inline void Set_Nickname(WCHAR* nickname) {
-#pragma warning(suppress : 4996)
-		wcsncpy(this->nickname, nickname, NICKNAME_LEN);
-		this->nickname[NICKNAME_LEN] = 0;
-	}
-	inline void Set_SessionKey(char* key) {
-#pragma warning(suppress : 4996)
-		strncpy(sessionKey, key, 64);
-	}
-	inline void Set_Sector(Sector sectorPos) {
-		this->sectorPos = sectorPos;
-		Set_SectorAround();
-	}
-	inline void Reset() {
-		is_connect = false;
-		is_login = false;
-	}
+	void Set() {}
+	void Reset() {}
 };
 
 class LoginServer : public NetworkLib {
 public:
 	LoginServer();
 	~LoginServer();
+
+private:
+	J_LIB::LFObjectPool<Player> playerPool;
+	std::unordered_map<SESSION_ID, Player*> playerMap;
 
 private:
 	// Lib callback

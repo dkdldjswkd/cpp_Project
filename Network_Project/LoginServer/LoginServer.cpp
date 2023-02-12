@@ -15,7 +15,9 @@ bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
 	return true;
 }
 
-void LoginServer::OnClientJoin(SESSION_ID session_id){
+void LoginServer::OnClientJoin(SESSION_ID session_id) {
+	Player* p_player = playerPool.Alloc();
+	playerMap.insert({ session_id, p_player });
 }
 
 void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
@@ -30,13 +32,14 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	}
 
 	// INVALID Packet type
-	if (type == en_PACKET_CS_LOGIN_REQ_LOGIN) { // 1, 3, 5
+	if (type == en_PACKET_CS_LOGIN_REQ_LOGIN) { // 메시지 타입은 하나만 존재
 		LOG("LoginServer", LOG_LEVEL_WARN, "OnRecv() : INVALID Packet type (%d)", type);
 		Disconnect(session_id);
 		return;
 	}
 
 	// DB 조회
+
 }
 
 void LoginServer::OnClientLeave(SESSION_ID session_id){

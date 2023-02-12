@@ -135,6 +135,7 @@
   <ItemGroup>
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="DBConnector.cpp" />
+    <ClCompile Include="DBConnectorTLS.cpp" />
     <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MemoryLogger.cpp" />
@@ -144,6 +145,7 @@
   <ItemGroup>
     <ClInclude Include="CrashDump.h" />
     <ClInclude Include="DBConnector.h" />
+    <ClInclude Include="DBConnectorTLS.h" />
     <ClInclude Include="errmsg.h" />
     <ClInclude Include="mysql.h" />
     <ClInclude Include="NetworkLib.h" />
