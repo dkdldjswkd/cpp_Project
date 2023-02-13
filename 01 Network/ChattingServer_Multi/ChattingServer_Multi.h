@@ -6,6 +6,7 @@
 #include "../NetworkLib/LFObjectPool.h"
 #include "../NetworkLib/LFQueue.h"
 #include "../NetworkLib/NetworkLib.h"
+#include "../NetworkLib/RecursiveLock.h"
 
 #define SECTOR_MAX_X		50
 #define SECTOR_MAX_Y		50
@@ -157,9 +158,9 @@ private:
 private:
 	// Player
 	J_LIB::LFObjectPool<Player> playerPool;
-	SRWLOCK playerMap_lock;
+	RecursiveLock playerMap_lock;
 	std::unordered_map<DWORD64, Player*> player_map;			
-	SRWLOCK sector_lock[SECTOR_MAX_Y][SECTOR_MAX_X];
+	RecursiveLock sector_lock[SECTOR_MAX_Y][SECTOR_MAX_X];
 	std::unordered_set<Player*> sectors_set[SECTOR_MAX_Y][SECTOR_MAX_X];
 
 private:

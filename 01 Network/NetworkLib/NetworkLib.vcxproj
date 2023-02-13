@@ -138,6 +138,7 @@
     <ClCompile Include="MemoryLogger.cpp" />
     <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="PacketBuffer.cpp" />
+    <ClCompile Include="RecursiveLock.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -152,6 +153,7 @@
     <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="PacketBuffer.h" />
     <ClInclude Include="protocol.h" />
+    <ClInclude Include="RecursiveLock.h" />
     <ClInclude Include="RingBuffer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

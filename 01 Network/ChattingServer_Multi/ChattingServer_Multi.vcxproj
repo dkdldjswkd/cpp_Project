@@ -141,15 +141,13 @@
   <ItemGroup>
     <ClCompile Include="ChattingServer_Multi.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="RecursiveLock.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChattingServer_Multi.h" />
     <ClInclude Include="CommonProtocol.h" />
-    <ClInclude Include="RecursiveLock.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="NetworkLib.lib" />
+    <Library Include="..\NetworkLib\NetworkLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,12 +7,6 @@ using namespace std;
 #define MAX_MSG 300
 
 ChattingServer_Multi::ChattingServer_Multi() {
-	InitializeSRWLock(&playerMap_lock);
-	for (int i = 0; i < SECTOR_MAX_Y; i++) {
-		for (int j = 0; j < SECTOR_MAX_X; j++) {
-			InitializeSRWLock(&sector_lock[i][j]);
-		}
-	}
 }
 
 ChattingServer_Multi::~ChattingServer_Multi(){
@@ -30,29 +24,29 @@ void ChattingServer_Multi::OnClientJoin(SESSION_ID session_id) {
 
 	p_player->Set_Connect(session_id);
 
-	AcquireSRWLockExclusive(&playerMap_lock);
+	playerMap_lock.Lock_Exclusive();	
 	player_map.insert({ session_id, p_player });
 	playerCount++;
-	ReleaseSRWLockExclusive(&playerMap_lock);
+	playerMap_lock.Unlock_Exclusive();
 }
 
 // Session Release 후 호출 (Worker)
 void ChattingServer_Multi::OnClientLeave(SESSION_ID session_id) {
 	// Player map 삭제
-	AcquireSRWLockExclusive(&playerMap_lock);
+	playerMap_lock.Lock_Exclusive();
 	auto iter = player_map.find(session_id);
 	Player* p_player = iter->second;
 	player_map.erase(iter);
 	playerCount--;
-	ReleaseSRWLockExclusive(&playerMap_lock);
+	playerMap_lock.Unlock_Exclusive();
 
 	p_player->Reset(); // connect, login = false;
 
 	// Secter set 삭제
 	if (!p_player->sectorPos.CheckInvalid()) { // Sector 등록여부 판단 (Sector 패킷 받기전까지 등록 X)
-		AcquireSRWLockExclusive(&sector_lock[p_player->sectorPos.y][p_player->sectorPos.x]);
+		sector_lock[p_player->sectorPos.y][p_player->sectorPos.x].Lock_Exclusive();
 		sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player); 
-		ReleaseSRWLockExclusive(&sector_lock[p_player->sectorPos.y][p_player->sectorPos.x]);
+		sector_lock[p_player->sectorPos.y][p_player->sectorPos.x].Unlock_Exclusive();
 	}
 
 	// Player 반환
@@ -86,9 +80,9 @@ bool ChattingServer_Multi::ProcPacket(SESSION_ID session_id, WORD type, PacketBu
 
 bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
 	// Player 검색
-	AcquireSRWLockShared(&playerMap_lock);
+	playerMap_lock.Lock_Shared();
 	Player* p_player = player_map.find(session_id)->second;
-	ReleaseSRWLockShared(&playerMap_lock);
+	playerMap_lock.Unlock_Shared();
 
 	INT64 accountNo;
 	*cs_contentsPacket >> accountNo;
@@ -114,9 +108,9 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID ses
 
 bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
 	// Player 검색
-	AcquireSRWLockShared(&playerMap_lock);
+	playerMap_lock.Lock_Shared();
 	Player* p_player = player_map.find(session_id)->second;
-	ReleaseSRWLockShared(&playerMap_lock);
+	playerMap_lock.Unlock_Shared();
 
 	INT64 accountNo;
 	WORD cur_x;
@@ -131,26 +125,26 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_
 
 	// Sector 등록
 	if (prev_sector.CheckInvalid()) {
-		AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
+		sector_lock[cur_y][cur_x].Lock_Exclusive();
 		sectors_set[cur_y][cur_x].insert(p_player);
-		ReleaseSRWLockExclusive(&sector_lock[cur_y][cur_x]);
+		sector_lock[cur_y][cur_x].Unlock_Exclusive();
 	}
 	// Sector 이동
 	else if (prev_sector != p_player->sectorPos) {
 		// LOCK 방향성 : LOCK 주소 크기
 		if (&sector_lock[prev_sector.y][prev_sector.x] < &sector_lock[cur_y][cur_x]) {
-			AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-			AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
+			sector_lock[prev_sector.y][prev_sector.x].Lock_Exclusive();
+			sector_lock[cur_y][cur_x].Lock_Exclusive();
 		}
 		else {
-			AcquireSRWLockExclusive(&sector_lock[cur_y][cur_x]);
-			AcquireSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
+			sector_lock[cur_y][cur_x].Lock_Exclusive();
+			sector_lock[prev_sector.y][prev_sector.x].Lock_Exclusive();
 		}
 		// Player Sector 이동
 		sectors_set[prev_sector.y][prev_sector.x].erase(p_player);
 		sectors_set[cur_y][cur_x].insert(p_player);
-		ReleaseSRWLockExclusive(&sector_lock[prev_sector.y][prev_sector.x]);
-		ReleaseSRWLockExclusive(&sector_lock[cur_y][cur_x]);
+		sector_lock[prev_sector.y][prev_sector.x].Unlock_Exclusive();
+		sector_lock[cur_y][cur_x].Unlock_Exclusive();
 	}
 
 	PacketBuffer* p_packet = PacketBuffer::Alloc();
@@ -165,9 +159,9 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_
 
 bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
 	// Player 검색
-	AcquireSRWLockShared(&playerMap_lock);
+	playerMap_lock.Lock_Shared();
 	Player* p_player = player_map.find(session_id)->second;
-	ReleaseSRWLockShared(&playerMap_lock);
+	playerMap_lock.Unlock_Shared();
 
 	// >>
 	INT64	accountNo;
@@ -195,14 +189,14 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID s
 void ChattingServer_Multi::SendSectorAround(Player* p_player, PacketBuffer* send_packet) {
 	// 9방향 Lock
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
-		AcquireSRWLockShared(&sector_lock[p_player->sectorAround.around[i].y][p_player->sectorAround.around[i].x]);
+		sector_lock[p_player->sectorAround.around[i].y][p_player->sectorAround.around[i].x].Lock_Shared();
 	}
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
 		SendSector(send_packet, p_player->sectorAround.around[i]);
 	}
 	// 9방향 Unlock
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
-		ReleaseSRWLockShared(&sector_lock[p_player->sectorAround.around[i].y][p_player->sectorAround.around[i].x]);
+		sector_lock[p_player->sectorAround.around[i].y][p_player->sectorAround.around[i].x].Unlock_Shared();
 	}
 }
 

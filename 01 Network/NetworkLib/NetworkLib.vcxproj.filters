@@ -17,6 +17,9 @@
     <ClCompile Include="RingBuffer.cpp">
       <Filter>include</Filter>
     </ClCompile>
+    <ClCompile Include="RecursiveLock.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h" />
@@ -49,6 +52,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="RingBuffer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="RecursiveLock.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
