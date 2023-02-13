@@ -4,6 +4,19 @@
 using namespace J_LIB;
 using namespace std;
 
+void UTF8ToUTF16(const char* src, std::wstring& dst) {
+	int size = MultiByteToWideChar(CP_UTF8, 0, src, -1, nullptr, 0);
+	if (0 == size) {
+		return;
+	}
+	dst.resize(size - 1);
+	MultiByteToWideChar(CP_UTF8, 0, src, -1, (LPWSTR)dst.c_str(), size);
+}
+
+void UTF8ToUTF16(const char* src, const wchar_t* dst) {
+	MultiByteToWideChar(CP_UTF8, 0, src, -1, (LPWSTR)dst, strlen(src) + 1);
+}
+
 //------------------------------
 // LoginServer
 //------------------------------
@@ -26,10 +39,12 @@ void LoginServer::OnClientJoin(SESSION_ID session_id) {
 }
 
 void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
+	MYSQL_RES* sql_result;
+	MYSQL_ROW sql_row;
+
 	WORD type;
 	INT64 accountNo;
 	char sessionKey[64];
-
 	try {
 		*contents_packet >> type;
 		// INVALID Packet type
@@ -48,13 +63,44 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	}
 
 	// DB 조회
-	MYSQL_RES*  sql_result = connecterTLS.Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
-	for (;;) {
-		MYSQL_ROW sql_row = mysql_fetch_row(sql_result);
-		if (NULL == sql_row) break;
+	sql_result = connecterTLS.Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
+	sql_row = mysql_fetch_row(sql_result);
+	if (NULL == sql_row) return;
+	// DB token과 Packet의 token이 일치하는지 확인 (지금은 일치한다고 판단)
+	// if strcmp(sessionKey[64], sql_row[0]) 
+	mysql_free_result(sql_result);
 
-		printf("%2s %2s %s\n", sql_row[0], sql_row[1], sql_row[2]);
-	}
+	// DB 조회
+	sql_result = connecterTLS.Query("SELECT userid, usernick FROM account WHERE accountno=%d", accountNo);
+	sql_row = mysql_fetch_row(sql_result);
+	WCHAR id[20];
+	UTF8ToUTF16(sql_row[0], id);
+	WCHAR nickname[20];
+	UTF8ToUTF16(sql_row[1], nickname);
+	mysql_free_result(sql_result);
+
+	// Set IP, PORT
+	WCHAR	GameServerIP[16] = { 0, };
+	UTF8ToUTF16("127.0.0.1", GameServerIP);
+	WCHAR	ChatServerIP[16] = { 0, };
+	UTF8ToUTF16("127.0.0.1", ChatServerIP);
+	USHORT	GameServerPort = 2000;
+	USHORT	ChatServerPort = 12001;
+
+	// 로그인 응답 패킷 회신
+	PacketBuffer* p_packet = PacketBuffer::Alloc();
+	*p_packet << (WORD)en_PACKET_CS_LOGIN_RES_LOGIN;
+	*p_packet << (INT64)accountNo;
+	*p_packet << (BYTE)dfLOGIN_STATUS_OK;
+	p_packet->Put_Data((char*)id, 40);
+	p_packet->Put_Data((char*)nickname, 40);
+	p_packet->Put_Data((char*)GameServerIP, 32);
+	*p_packet << (USHORT)GameServerPort;
+	p_packet->Put_Data((char*)ChatServerIP, 32);
+	*p_packet << (USHORT)ChatServerPort;
+
+	SendPacket(session_id, p_packet);
+	PacketBuffer::Free(p_packet);
 }
 
 void LoginServer::OnClientLeave(SESSION_ID session_id){

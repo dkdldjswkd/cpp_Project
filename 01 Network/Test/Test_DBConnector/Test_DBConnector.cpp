@@ -26,4 +26,5 @@ int main() {
 
 		printf("%s %s \n", sql_row[0], sql_row[1]);
 	}
+	mysql_free_result(sql_res);
 }

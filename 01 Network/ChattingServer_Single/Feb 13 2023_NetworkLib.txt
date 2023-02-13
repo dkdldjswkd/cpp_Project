@@ -1,0 +1,1 @@
+[NetworkLib] [Feb 13 2023 00:34:07 / DEBUG] WSASend() Fail, Error code : 10054

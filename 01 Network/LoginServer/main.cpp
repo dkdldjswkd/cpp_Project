@@ -15,7 +15,7 @@ using namespace std;
 #define DB_PORT		3306
 #define DB_ID		"root"
 #define DB_PASSWORD "password"
-#define DB_SCHEMA	"password"
+#define DB_SCHEMA	"accountdb"
 #define DB_LOGTIME	200
 
 void StartLoginServer(int maxThread, int releaseThread) {
