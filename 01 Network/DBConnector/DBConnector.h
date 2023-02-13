@@ -34,4 +34,6 @@ private:
 
 public:
 	MYSQL_RES* Query(const char* queryFormat, ...);
+private:
+	MYSQL_RES* DoQuery(const char* query);
 };

@@ -1,10 +1,20 @@
-#include <windows.h>
-#include <tchar.h>
-#include <stdio.h>
+#include <iostream>
+#include <cstdarg>
 
-int _tmain(int argc, _TCHAR* argv[])
-{
-    DWORD thread_id = GetCurrentThreadId();
-    _tprintf(_T("The thread ID is %u\n"), thread_id);
+int find_sum(int sentinel, ...) {
+    int sum = 0;
+    va_list args;
+    va_start(args, sentinel);
+    int arg = va_arg(args, int);
+    while (arg != sentinel) {
+        sum += arg;
+        arg = va_arg(args, int);
+    }
+    va_end(args);
+    return sum;
+}
+
+int main() {
+    std::cout << find_sum(1) << std::endl;
     return 0;
 }

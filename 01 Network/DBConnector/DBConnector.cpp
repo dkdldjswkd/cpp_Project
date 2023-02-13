@@ -31,12 +31,15 @@ MYSQL_RES* DBConnector::Query(const char* queryFormat, ...) {
 	va_list var_list;
 	va_start(var_list, queryFormat);
 	vsnprintf((char*)query, MAX_QUERY - 1, queryFormat, var_list);
-	va_end(var_list);
 	query[MAX_QUERY - 1] = 0;
+	va_end(var_list);
 
+	return DoQuery(query);
+}
+
+MYSQL_RES* DBConnector::DoQuery(const char* query){
 	auto start = timeGetTime();
 	if (0 != mysql_query(connection, (char*)query)) {
-		// Äõ¸® ½ÇÆÐ
 		throw DBException(mysql_errno(connection), mysql_error(connection));
 	}
 	auto queryTime = timeGetTime() - start;

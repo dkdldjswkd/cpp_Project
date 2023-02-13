@@ -6,7 +6,7 @@
 #define DB_PORT		3306
 #define DB_ID		"root"
 #define DB_PASSWORD "password"
-#define DB_SCHEMA	"test"
+#define DB_SCHEMA	"accountdb"
 #define DB_LOGTIME	200
 
 int main() {
@@ -19,11 +19,11 @@ int main() {
 		DB_LOGTIME
 	);
 
-	MYSQL_RES* sql_res = dbSession.Query("SELECT * FROM level");
+	MYSQL_RES* sql_res = dbSession.Query("SELECT accountno, usernick FROM account where accountno = %d", 10);
 	for (;;) {
 		MYSQL_ROW sql_row = mysql_fetch_row(sql_res);
 		if (NULL == sql_row) break;
 
-		printf("%2s %2s %s\n", sql_row[0], sql_row[1], sql_row[2]);
+		printf("%s %s \n", sql_row[0], sql_row[1]);
 	}
 }

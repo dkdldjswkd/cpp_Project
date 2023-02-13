@@ -24,6 +24,7 @@
     <ProjectGuid>{ccb4e189-b3eb-4e7a-a219-081dbf63e745}</ProjectGuid>
     <RootNamespace>ChattingServerMulti</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>02 ChattingServer_Multi</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -24,6 +24,7 @@
     <ProjectGuid>{4a84366e-5349-4737-89fe-8274d36017ab}</ProjectGuid>
     <RootNamespace>LoginServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>00 LoginServer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -147,9 +148,9 @@
     <ClInclude Include="LoginServer.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="DBConnector.lib" />
-    <Library Include="libmysql.lib" />
-    <Library Include="NetworkLib.lib" />
+    <Library Include="..\DBConnector\DBConnector.lib" />
+    <Library Include="..\DBConnector\libmysql.lib" />
+    <Library Include="..\NetworkLib\NetworkLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

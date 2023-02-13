@@ -7,8 +7,9 @@
 #pragma comment (lib, "Winmm.lib")
 using namespace std;
 
-#define IP INADDR_ANY
-#define PORT 30000
+#define IP			INADDR_ANY
+#define PORT		30000
+#define MAX_SESSION 10000
 
 #define DB_IP		"127.0.0.1"
 #define DB_PORT		3306
@@ -19,7 +20,7 @@ using namespace std;
 
 void StartLoginServer(int maxThread, int releaseThread) {
 	LoginServer loginServer(DB_IP, DB_PORT, DB_ID, DB_PASSWORD, DB_SCHEMA);
-	loginServer.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, 10000);
+	loginServer.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION);
 	printf("StartLoginServer \n");
 
 	for (;;) {

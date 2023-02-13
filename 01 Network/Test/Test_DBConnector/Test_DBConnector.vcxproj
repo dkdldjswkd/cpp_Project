@@ -142,7 +142,7 @@
     <ClCompile Include="Test_DBConnector.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="DBConnector.lib" />
+    <Library Include="..\..\DBConnector\DBConnector.lib" />
     <Library Include="libmysql.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

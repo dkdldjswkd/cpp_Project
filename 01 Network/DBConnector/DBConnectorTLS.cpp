@@ -1,4 +1,5 @@
 #include "DBConnectorTLS.h"
+#include <stdio.h>
 
 DBConnectorTLS::DBConnectorTLS(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime)
 	: tlsIndex(TlsAlloc()), dbAddr(dbAddr), port(port), loginID(loginID), password(password), schema(schema), loggingTime(loggingTime) {
@@ -21,9 +22,12 @@ MYSQL_RES* DBConnectorTLS::Query(const char* queryFormat, ...) {
 	}
 
 	// 해당 스레드 connector->Query() call
+	char query[MAX_QUERY];
 	va_list var_list;
 	va_start(var_list, queryFormat);
-	auto ret = p_connector->Query(queryFormat, var_list);
+	vsnprintf((char*)query, MAX_QUERY - 1, queryFormat, var_list);
+	query[MAX_QUERY - 1] = 0;
 	va_end(var_list);
-	return ret;
+
+	return p_connector->DoQuery(query);
 }

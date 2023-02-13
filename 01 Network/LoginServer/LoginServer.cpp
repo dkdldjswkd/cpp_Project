@@ -33,7 +33,7 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	try {
 		*contents_packet >> type;
 		// INVALID Packet type
-		if (type == en_PACKET_CS_LOGIN_REQ_LOGIN) { // 메시지 타입은 하나만 존재
+		if (type != en_PACKET_CS_LOGIN_REQ_LOGIN) { // 메시지 타입은 하나만 존재
 			LOG("LoginServer", LOG_LEVEL_WARN, "OnRecv() : INVALID Packet type (%d)", type);
 			Disconnect(session_id);
 			return;
@@ -48,7 +48,13 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	}
 
 	// DB 조회
-	//connecterTLS.Query();
+	MYSQL_RES*  sql_result = connecterTLS.Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
+	for (;;) {
+		MYSQL_ROW sql_row = mysql_fetch_row(sql_result);
+		if (NULL == sql_row) break;
+
+		printf("%2s %2s %s\n", sql_row[0], sql_row[1], sql_row[2]);
+	}
 }
 
 void LoginServer::OnClientLeave(SESSION_ID session_id){

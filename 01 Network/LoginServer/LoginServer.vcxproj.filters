@@ -9,19 +9,19 @@
     <ClInclude Include="CommonProtocol.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="NetworkLib.lib">
-      <Filter>include</Filter>
-    </Library>
-    <Library Include="libmysql.lib">
-      <Filter>include</Filter>
-    </Library>
-    <Library Include="DBConnector.lib">
-      <Filter>include</Filter>
-    </Library>
-  </ItemGroup>
-  <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{7fb21f41-b926-4bf5-a9ec-a657525c4bde}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\DBConnector\DBConnector.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="..\DBConnector\libmysql.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="..\NetworkLib\NetworkLib.lib">
+      <Filter>include</Filter>
+    </Library>
   </ItemGroup>
 </Project>
