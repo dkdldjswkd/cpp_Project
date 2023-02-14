@@ -7,6 +7,7 @@
 #include "../NetworkLib/LFQueue.h"
 #include "../NetworkLib/NetworkLib.h"
 #include "../DBConnector/DBConnectorTLS.h"
+#include "../NetworkLib/RecursiveLock.h"
 
 struct Player {
 public:
@@ -32,6 +33,7 @@ public:
 
 private:
 	J_LIB::LFObjectPool<Player> playerPool;
+	RecursiveLock playerMap_lock;
 	std::unordered_map<DWORD64, Player*> playerMap;
 	DBConnectorTLS connecterTLS;
 
@@ -41,4 +43,17 @@ private:
 	void OnClientJoin(SESSION_ID session_id);
 	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 	void OnClientLeave(SESSION_ID session_id);
+
+public:
+	// 모니터링
+	DWORD Get_playerCount();
+	DWORD Get_playerPoolCount();
 };
+
+inline DWORD LoginServer::Get_playerCount() {
+	return playerMap.size();
+}
+
+inline DWORD LoginServer::Get_playerPoolCount() {
+	return playerPool.Get_UseCount();
+}

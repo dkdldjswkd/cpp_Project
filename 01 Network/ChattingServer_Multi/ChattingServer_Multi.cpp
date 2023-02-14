@@ -26,7 +26,6 @@ void ChattingServer_Multi::OnClientJoin(SESSION_ID session_id) {
 
 	playerMap_lock.Lock_Exclusive();	
 	player_map.insert({ session_id, p_player });
-	playerCount++;
 	playerMap_lock.Unlock_Exclusive();
 }
 
@@ -37,7 +36,6 @@ void ChattingServer_Multi::OnClientLeave(SESSION_ID session_id) {
 	auto iter = player_map.find(session_id);
 	Player* p_player = iter->second;
 	player_map.erase(iter);
-	playerCount--;
 	playerMap_lock.Unlock_Exclusive();
 
 	p_player->Reset(); // connect, login = false;

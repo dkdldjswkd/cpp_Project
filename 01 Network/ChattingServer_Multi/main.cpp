@@ -14,7 +14,7 @@ CrashDump dump;
 // CattingServer.cpp, Define »Æ¿Œ
 void StartChattingServer_Multi(int maxThread, int releaseThread) {
 	ChattingServer_Multi ChattingServer_Multi;
-	ChattingServer_Multi.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
+	ChattingServer_Multi.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000, false, 3000, 3000);
 	printf("StartChattingServer Multi \n");
 
 	for (;;) {

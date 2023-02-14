@@ -146,7 +146,7 @@
     <ClInclude Include="EchoServer.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="NetworkLib\NetworkLib.lib" />
+    <Library Include="..\NetworkLib\NetworkLib.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

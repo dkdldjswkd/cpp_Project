@@ -24,7 +24,7 @@
     <ProjectGuid>{4a84366e-5349-4737-89fe-8274d36017ab}</ProjectGuid>
     <RootNamespace>LoginServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>00 LoginServer</ProjectName>
+    <ProjectName>LoginServer</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -14,7 +14,7 @@ CrashDump dump;
 // EchoServer.cpp, Define »Æ¿Œ
 void StartEchoServer(int maxThread, int releaseThread) {
 	EchoServer server;
-	server.StartUp(NetworkArea::LAN, INADDR_ANY, 6000, maxThread, releaseThread, true, 10000);
+	server.StartUp(NetworkArea::LAN, INADDR_ANY, 6000, maxThread, releaseThread, true, 10000, 10000, 10000);
 	printf("StartEchoServer \n");
 
 	for (;;) {

@@ -1,11 +1,13 @@
 #include <WS2tcpip.h>
 #include <WinSock2.h>
 #include <memory.h>
+#include <timeapi.h>
 #include "NetworkLib.h"
 #include "protocol.h"
 #include "MemoryLogger.h"
 #include "Logger.h"
 #pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "Winmm.lib")
 
 using namespace std;
 using namespace J_LIB;
@@ -21,11 +23,13 @@ bool NetworkLib::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
 	return h_iocp == CreateIoCompletionPort((HANDLE)h_file, h_iocp, completionKey, 0);
 }
 
-void NetworkLib::Init(WORD maxWorkerNum, WORD concurrentWorkerNum, WORD port, DWORD max_session){
+void NetworkLib::Init(WORD maxWorkerNum, WORD concurrentWorkerNum, WORD port, DWORD max_session, DWORD timeOutCycle, DWORD timeOut){
 	this->maxWorkerNum = maxWorkerNum;
 	this->concurrentWorkerNum = concurrentWorkerNum;
 	this->server_port = port;
 	this->max_session = max_session;
+	this->timeOutCycle = timeOutCycle;
+	this->timeOut = timeOut;
 
 	// set session array
 	session_array = new Session[max_session];
@@ -35,7 +39,7 @@ void NetworkLib::Init(WORD maxWorkerNum, WORD concurrentWorkerNum, WORD port, DW
 		sessionIndex_stack.Push(max_session - 1 - i);
 }
 
-void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorkerNum, WORD concurrentWorkerNum, bool nagle, DWORD maxSession) {
+void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorkerNum, WORD concurrentWorkerNum, bool nagle, DWORD maxSession, bool timeOut_flag,DWORD timeOutCycle, DWORD timeOut) {
 	// CHECK INVALID_PARAMETER
 	if (maxWorkerNum < concurrentWorkerNum) CRASH();
 	networkArea = area;
@@ -49,7 +53,7 @@ void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorkerNu
 			break;
 	}
 
-	Init(maxWorkerNum, concurrentWorkerNum, port, maxSession);
+	Init(maxWorkerNum, concurrentWorkerNum, port, maxSession, timeOutCycle, timeOut);
 
 	WSADATA wsaData;
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
@@ -86,6 +90,9 @@ void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorkerNu
 	workerThread_Pool = new thread[maxWorkerNum];
 	for (int i = 0; i < maxWorkerNum; i++) {
 		workerThread_Pool[i] = thread([this] {WorkerFunc(); });
+	}
+	if (timeOut_flag) {
+		timeOutThread = thread([this] {TimeOutFunc(); });
 	}
 
 	printf("Server Start \n");
@@ -151,6 +158,38 @@ void NetworkLib::AcceptFunc() {
 	printf("End Accept Thread \n");
 }
 
+void NetworkLib::TimeOutFunc() {
+	for (;;) {
+		Sleep(timeOutCycle);
+		INT64 cur_time = timeGetTime();
+		for (int i = 0; i < max_session; i++) {
+			Session* p_session = &session_array[i];
+			SESSION_ID id = p_session->session_id;
+
+			// 타임아웃 처리 대상 아님 (Interlocked 연산 최소화하기 위해)
+			if (session_array[i].release_flag || (timeOut > cur_time - session_array[i].lastRecvTime))
+				continue;
+
+			// 타임아웃 처리 대상일 수 있음
+			IncrementIOCount(p_session);
+			// 릴리즈 세션인지 판단.
+			if (true == p_session->release_flag) {
+				DecrementIOCount(p_session);
+				continue;
+			}
+			// 타임아웃 조건 판단.
+			if (timeOut > cur_time - session_array[i].lastRecvTime) {
+				DecrementIOCount(p_session);
+				continue;
+			}
+
+			// 타임아웃 처리
+			DisconnectSession(p_session);
+			DecrementIOCount(p_session);
+		}
+	}
+}
+
 void NetworkLib::WorkerFunc() {
 	printf("Start Worker Thread \n");
 	for (;;) {
@@ -176,6 +215,7 @@ void NetworkLib::WorkerFunc() {
 		if (&p_session->recv_overlapped == p_overlapped) {
 			if (ret_GQCS) {
 				p_session->recv_buf.Move_Rear(io_size);
+				p_session->lastRecvTime = timeGetTime();
 				// 내부 통신 외부 통신 구분
 				if (NetworkArea::LAN == networkArea) {
 					RecvCompletion_LAN(p_session);
@@ -582,6 +622,7 @@ void Session::Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id){
 	send_flag = false;
 	disconnect_flag = false;
 	sendPacket_count = 0;
+	lastRecvTime = timeGetTime();
 
 	// 생성하자 마자 릴리즈 되는것을 방지
 	InterlockedIncrement(&io_count);

@@ -20,6 +20,12 @@
     <ClCompile Include="RecursiveLock.cpp">
       <Filter>include</Filter>
     </ClCompile>
+    <ClCompile Include="StringUtils.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="FileUtils.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h" />
@@ -55,6 +61,12 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="RecursiveLock.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="StringUtils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="FileUtils.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

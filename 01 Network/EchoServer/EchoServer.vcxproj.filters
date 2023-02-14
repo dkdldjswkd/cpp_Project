@@ -13,7 +13,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="NetworkLib\NetworkLib.lib">
+    <Library Include="..\NetworkLib\NetworkLib.lib">
       <Filter>NetworkLib</Filter>
     </Library>
   </ItemGroup>

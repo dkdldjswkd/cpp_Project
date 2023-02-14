@@ -1,21 +1,9 @@
 #include "LoginServer.h"
 #include "CommonProtocol.h"
 #include "../NetworkLib/Logger.h"
+#include "../NetworkLib/StringUtils.h"
 using namespace J_LIB;
 using namespace std;
-
-void UTF8ToUTF16(const char* src, std::wstring& dst) {
-	int size = MultiByteToWideChar(CP_UTF8, 0, src, -1, nullptr, 0);
-	if (0 == size) {
-		return;
-	}
-	dst.resize(size - 1);
-	MultiByteToWideChar(CP_UTF8, 0, src, -1, (LPWSTR)dst.c_str(), size);
-}
-
-void UTF8ToUTF16(const char* src, const wchar_t* dst) {
-	MultiByteToWideChar(CP_UTF8, 0, src, -1, (LPWSTR)dst, strlen(src) + 1);
-}
 
 //------------------------------
 // LoginServer
@@ -35,7 +23,10 @@ bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
 void LoginServer::OnClientJoin(SESSION_ID session_id) {
 	Player* p_player = playerPool.Alloc();
 	p_player->Set(session_id);
+
+	playerMap_lock.Lock_Exclusive();
 	playerMap.insert({ session_id, p_player });
+	playerMap_lock.Unlock_Exclusive();
 }
 
 void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
@@ -104,4 +95,11 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 }
 
 void LoginServer::OnClientLeave(SESSION_ID session_id){
+	// Player map »èÁ¦
+	playerMap_lock.Lock_Exclusive();
+	auto iter = playerMap.find(session_id);
+	Player* p_player = iter->second;
+	playerMap.erase(iter);
+	playerMap_lock.Unlock_Exclusive();
+	playerPool.Free(p_player);
 }

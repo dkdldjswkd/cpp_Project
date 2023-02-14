@@ -24,7 +24,7 @@
     <ProjectGuid>{fe4739e7-7447-476a-ad9d-6548f4549676}</ProjectGuid>
     <RootNamespace>LanServer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>01 NetworkLib</ProjectName>
+    <ProjectName>NetworkLib</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -134,15 +134,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CrashDump.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MemoryLogger.cpp" />
     <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="PacketBuffer.cpp" />
     <ClCompile Include="RecursiveLock.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
+    <ClCompile Include="StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CrashDump.h" />
+    <ClInclude Include="FileUtils.h" />
     <ClInclude Include="LFObjectPool.h" />
     <ClInclude Include="LFObjectPoolTLS.h" />
     <ClInclude Include="LFQueue.h" />
@@ -155,6 +158,7 @@
     <ClInclude Include="protocol.h" />
     <ClInclude Include="RecursiveLock.h" />
     <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="StringUtils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

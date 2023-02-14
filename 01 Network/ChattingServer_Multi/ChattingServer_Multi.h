@@ -177,10 +177,6 @@ private:
 	void OnError(int errorcode);
 
 private:
-	// 모니터링
-	int playerCount = 0;
-
-private:
 	void Disconnect_Player(Player* p_player);
 
 private:
@@ -202,7 +198,7 @@ public:
 };
 
 inline DWORD ChattingServer_Multi::Get_playerCount() {
-	return playerCount;
+	return player_map.size();
 }
 
 inline DWORD ChattingServer_Multi::Get_playerPoolCount(){

@@ -20,7 +20,7 @@ using namespace std;
 
 void StartLoginServer(int maxThread, int releaseThread) {
 	LoginServer loginServer(DB_IP, DB_PORT, DB_ID, DB_PASSWORD, DB_SCHEMA);
-	loginServer.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION);
+	loginServer.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION, false, 5000, 5000);
 	printf("StartLoginServer \n");
 
 	for (;;) {
@@ -34,8 +34,8 @@ void StartLoginServer(int maxThread, int releaseThread) {
 		printf("sendMsgTPS      : %d \n", loginServer.Get_sendTPS());
 		printf("recvMsgTPS      : %d \n", loginServer.Get_recvTPS());
 		printf("LoginServer ------------------------------------------------- \n");
-		printf("var             : %d \n", 0);
-		printf("var             : %d \n", 0);
+		printf("PlayerCount     : %d \n", loginServer.Get_playerCount());
+		printf("PlayerPoolCount : %d \n", loginServer.Get_playerPoolCount());
 		printf("\n\n\n\n\n\n\n\n\n\n \n\n\n\n\n\n\n\n\n");
 	}
 	loginServer.CleanUp();

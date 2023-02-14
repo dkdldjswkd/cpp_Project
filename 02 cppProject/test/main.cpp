@@ -1,22 +1,20 @@
 #include <iostream>
 #include <Windows.h>
 #include <thread>
+#include <string>
 using namespace std;
 
-struct A {
-	virtual void f() { printf("A\n"); }
+struct SystemParser {
+public:
+    SystemParser();
+    ~SystemParser();
+
+public:
+    static struct SystemData {
+        char name[100];
+
+    };
+
+public:
+
 };
-
-struct B : public A {
-	virtual void f() { printf("B\n"); }
-};
-
-
-
-int main() {
-	A* a;
-	B b;
-
-	a = &b;
-	a->f();
-}

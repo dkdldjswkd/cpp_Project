@@ -58,7 +58,7 @@ public:
 	bool disconnect_flag = false;
 
 	// 세션 레퍼런스 카운트 역할 (release_flag, io_count가 같은 캐시라인에 위치하게 의도)
-	alignas(64) BOOL release_flag = false;
+	alignas(64) BOOL release_flag = true;
 	LONG io_count = 0;
 
 	PacketBuffer* sendPacket_array[MAX_SEND_MSG];
@@ -68,6 +68,7 @@ public:
 	OVERLAPPED send_overlapped = { 0, };
 	RingBuffer recv_buf;
 	LFQueue<PacketBuffer*> sendQ;
+	DWORD lastRecvTime;
 
 public:
 	void Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id);
@@ -97,9 +98,13 @@ private:
 	// 스레드
 	WORD maxWorkerNum;
 	WORD concurrentWorkerNum;
-
 	std::thread* workerThread_Pool;
 	std::thread acceptThread;
+	std::thread timeOutThread;
+
+	// 타임아웃
+	DWORD timeOutCycle;
+	DWORD timeOut;
 
 private:
 	// 모니터링
@@ -111,12 +116,13 @@ private:
 
 private:
 	// Set
-	void Init(WORD maxWorker, WORD releaseWorker, WORD port, DWORD max_session);
+	void Init(WORD maxWorker, WORD releaseWorker, WORD port, DWORD max_session, DWORD timeOutCycle, DWORD timeOut);
 	bool Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey);
 
 	// 스레드
 	void WorkerFunc();
 	void AcceptFunc();
+	void TimeOutFunc();
 
 	// IO 완료 통지 루틴
 	void (NetworkLib::* RecvCompletion)(Session* p_session);
@@ -151,7 +157,7 @@ protected:
 	// virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
 
 public:
-	void StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorker, WORD releaseWorker, bool nagle, DWORD maxSession);
+	void StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorker, WORD releaseWorker, bool nagle, DWORD maxSession, bool timeOut_flag,DWORD timeOutCycle, DWORD timeOut);
 	void CleanUp();
 
 public:
