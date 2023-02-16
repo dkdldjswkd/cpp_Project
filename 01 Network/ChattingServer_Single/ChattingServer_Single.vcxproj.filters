@@ -8,6 +8,19 @@
     <ClInclude Include="ChattingServer_Single.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="NetworkLib.lib" />
+    <Library Include="..\Redis\tacopie.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="..\Redis\cpp_redis.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="..\NetworkLib\NetworkLib.lib">
+      <Filter>include</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{6aaaa404-2b16-4bfd-b91a-d63cc30a18c8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

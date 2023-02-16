@@ -1,19 +1,17 @@
 #include <iostream>
-#include <Windows.h>
-#include <timeapi.h>
 #include "ChattingServer_Single.h"
 #include "../NetworkLib/CrashDump.h"
-#include "../NetworkLib/Logger.h"
-#pragma comment (lib, "Winmm.lib")
 using namespace std;
 
-#define IP INADDR_ANY
+#define IP			INADDR_ANY
+#define PORT		12001
+#define MAX_SESSION 10000
 
 CrashDump dump;
 
 void StartChattingServer_Single(int maxThread, int releaseThread) {
 	ChattingServer_Single server;
-	server.StartUp(NetworkArea::NET, INADDR_ANY, 12001, maxThread, releaseThread, true, 10000);
+	server.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION, false, 0,0);
 	printf("StartChattingServer Multi \n");
 
 	for (;;) {

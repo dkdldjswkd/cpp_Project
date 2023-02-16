@@ -30,3 +30,56 @@ inline void RecursiveLock::Unlock_Shared() {
 // s->e 데드락 0, but 다른 스레드들도 들어갈 수 들어가면 안됨. 로직 오류
 // e->e 데드락 0, 재귀락 허용해야함
 // e->s 데드락 0, 로직 오류, 애매함
+
+// 아래 코드 고민
+//class RecursiveSRWLock {
+//public:
+//    RecursiveSRWLock() {
+//        InitializeSRWLock(&srwlock_);
+//        owner_thread_id_ = 0;
+//        recursion_count_ = 0;
+//    }
+//
+//    void lock_shared() {
+//        DWORD thread_id = GetCurrentThreadId();
+//        if (owner_thread_id_ == thread_id) {
+//            ++recursion_count_;
+//            return;
+//        }
+//
+//        AcquireSRWLockShared(&srwlock_);
+//        owner_thread_id_ = thread_id;
+//        recursion_count_ = 1;
+//    }
+//
+//    void unlock_shared() {
+//        if (--recursion_count_ == 0) {
+//            owner_thread_id_ = 0;
+//            ReleaseSRWLockShared(&srwlock_);
+//        }
+//    }
+//
+//    void lock() {
+//        DWORD thread_id = GetCurrentThreadId();
+//        if (owner_thread_id_ == thread_id) {
+//            ++recursion_count_;
+//            return;
+//        }
+//
+//        AcquireSRWLockExclusive(&srwlock_);
+//        owner_thread_id_ = thread_id;
+//        recursion_count_ = 1;
+//    }
+//
+//    void unlock() {
+//        if (--recursion_count_ == 0) {
+//            owner_thread_id_ = 0;
+//            ReleaseSRWLockExclusive(&srwlock_);
+//        }
+//    }
+//
+//private:
+//    SRWLOCK srwlock_;
+//    DWORD owner_thread_id_;
+//    int recursion_count_;
+//};

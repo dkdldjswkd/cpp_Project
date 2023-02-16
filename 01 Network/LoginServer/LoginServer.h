@@ -1,4 +1,5 @@
 #pragma once
+#include <cpp_redis/cpp_redis>
 #include <Windows.h>
 #include <thread>
 #include <unordered_map>
@@ -16,8 +17,6 @@ public:
 
 public:
 	SESSION_ID session_id = INVALID_SESSION_ID;
-	INT64	accountNo;
-	char	SessionKey[64];
 
 public:
 	void Set(SESSION_ID session_id) {
@@ -35,7 +34,11 @@ private:
 	J_LIB::LFObjectPool<Player> playerPool;
 	RecursiveLock playerMap_lock;
 	std::unordered_map<DWORD64, Player*> playerMap;
+
+public:
+	// DB
 	DBConnectorTLS connecterTLS;
+	cpp_redis::client connectorRedis;
 
 private:
 	// Lib callback

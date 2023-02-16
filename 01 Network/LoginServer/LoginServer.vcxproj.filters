@@ -23,5 +23,11 @@
     <Library Include="..\NetworkLib\NetworkLib.lib">
       <Filter>include</Filter>
     </Library>
+    <Library Include="..\Redis\cpp_redis.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="..\Redis\tacopie.lib">
+      <Filter>include</Filter>
+    </Library>
   </ItemGroup>
 </Project>

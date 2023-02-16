@@ -1,10 +1,6 @@
 #include <iostream>
-#include <Windows.h>
-#include <timeapi.h>
-#include "../NetworkLib/CrashDump.h"
-#include "../NetworkLib/Logger.h"
 #include "LoginServer.h"
-#pragma comment (lib, "Winmm.lib")
+#include "../NetworkLib/CrashDump.h"
 using namespace std;
 
 #define IP			INADDR_ANY
@@ -49,3 +45,37 @@ int main() {
 	cin >> maxThread >> releaseThread;
 	StartLoginServer(maxThread, releaseThread);
 }
+
+//#include <cpp_redis/cpp_redis>
+//#include <iostream>
+//#pragma comment (lib, "ws2_32.lib")
+//int main() {
+//	WORD version = MAKEWORD(2, 2);
+//	WSADATA data;
+//	WSAStartup(version, &data);
+//
+//
+//	cpp_redis::client client;
+//
+//	client.connect();
+//
+//	//std::string a;
+//	struct Token {
+//		char a[64];
+//	};
+//	Token a;
+//
+//	client.set("hello", "42");
+//	client.get("hello", [&a](cpp_redis::reply& reply) {
+//		if (reply.is_string()) {
+//			#pragma warning(suppress : 4996)
+//			strncpy((char*)& a, reply.as_string().c_str(), 64);
+//			//printf("a");
+//		}
+//		});
+//	client.sync_commit();
+//	printf("%s \n", a);
+//	//! also support std::future
+//	//! std::future<cpp_redis::reply> get_reply = client.get("hello");
+//	//! or client.commit(); for asynchronous call}
+//}

@@ -1,4 +1,5 @@
 #include "LoginServer.h"
+#include <string>
 #include "CommonProtocol.h"
 #include "../NetworkLib/Logger.h"
 #include "../NetworkLib/StringUtils.h"
@@ -10,6 +11,7 @@ using namespace std;
 //------------------------------
 LoginServer::LoginServer(const char* dbAddr, const int port, const char* loginID, const char* password, const char* schema, const unsigned short loggingTime)
 	: connecterTLS(dbAddr, port, loginID, password, schema, loggingTime) {
+	connectorRedis.connect();
 }
 
 LoginServer::~LoginServer(){
@@ -53,15 +55,14 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 		return;
 	}
 
-	// DB 조회
+	// DB 조회 (유저가 가져온 token과 DB의 token이 일치한지 판단)
 	sql_result = connecterTLS.Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
 	sql_row = mysql_fetch_row(sql_result);
 	if (NULL == sql_row) return;
-	// DB token과 Packet의 token이 일치하는지 확인 (지금은 일치한다고 판단)
-	// if strcmp(sessionKey[64], sql_row[0]) 
+	// if strcmp(sessionKey[64], sql_row[0]), DB token과 Packet의 token이 일치하는지 확인 (지금은 일치한다고 판단, sql_row[0] == null)
 	mysql_free_result(sql_result);
 
-	// DB 조회
+	// DB 조회 (유저 ID, Nickname Send 하기위해 조회)
 	sql_result = connecterTLS.Query("SELECT userid, usernick FROM account WHERE accountno=%d", accountNo);
 	sql_row = mysql_fetch_row(sql_result);
 	WCHAR id[20];
@@ -78,7 +79,7 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	USHORT	GameServerPort = 2000;
 	USHORT	ChatServerPort = 12001;
 
-	// 로그인 응답 패킷 회신
+	// 로그인 응답 패킷 생성
 	PacketBuffer* p_packet = PacketBuffer::Alloc();
 	*p_packet << (WORD)en_PACKET_CS_LOGIN_RES_LOGIN;
 	*p_packet << (INT64)accountNo;
@@ -89,6 +90,15 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	*p_packet << (USHORT)GameServerPort;
 	p_packet->Put_Data((char*)ChatServerIP, 32);
 	*p_packet << (USHORT)ChatServerPort;
+
+	// Redis에 유저 토큰 추가
+	char chattingKey[100]; // 채팅서버에서 조회할 key
+	char GameKey[100];		// 게임서버에서 조회할 key
+	snprintf(chattingKey, 100, "%d.chatting", accountNo);
+	snprintf(GameKey, 100, "%d.game", accountNo);
+	connectorRedis.setex(chattingKey, 10, sessionKey);
+	connectorRedis.setex(GameKey, 10, sessionKey);
+	connectorRedis.commit();
 
 	SendPacket(session_id, p_packet);
 	PacketBuffer::Free(p_packet);

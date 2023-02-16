@@ -8,7 +8,10 @@ using namespace std;
 
 ChattingServer_Single::ChattingServer_Single() {
 	updateEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	updateThread = thread([this]{UpdateFunc(); });
+	tokenEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	updateThread = thread([this] {UpdateFunc(); });
+	tokenThread = thread([this] {TokenAuthFunc(); });
+	connectorRedis.connect();
 }
 
 ChattingServer_Single::~ChattingServer_Single(){
@@ -32,7 +35,7 @@ void ChattingServer_Single::OnClientLeave(SESSION_ID session_id) {
 // Player 객체 생성 (로그인 상태 X)
 void ChattingServer_Single::ProcJob_ClientJoin(SESSION_ID session_id) {
 	Player* p_player = playerPool.Alloc();
-	p_player->Set_Connect(session_id);
+	p_player->Set(session_id);
 	player_map.insert({ session_id, p_player });
 }
 
@@ -52,6 +55,22 @@ void ChattingServer_Single::ProcJob_ClientLeave(SESSION_ID session_id) {
 	// Player 반환
 	p_player->Reset();
 	playerPool.Free(p_player);
+}
+
+void ChattingServer_Single::ProcJob_ClientLoginSuccess(SESSION_ID session_id) {
+	Player* p_player = player_map.find(session_id)->second;
+	if (nullptr == p_player) return;
+
+	// 로그인 성공
+	p_player->is_login = true;
+
+	// 로그인 응답 패킷 회신
+	PacketBuffer* p_packet = PacketBuffer::Alloc();
+	*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
+	*p_packet << (BYTE)p_player->is_login;
+	*p_packet << (INT64)p_player->accountNo;
+	SendPacket(session_id, p_packet);
+	PacketBuffer::Free(p_packet);
 }
 
 void ChattingServer_Single::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
@@ -89,6 +108,38 @@ void ChattingServer_Single::UpdateFunc() {
 	}
 }
 
+void ChattingServer_Single::TokenAuthFunc(){
+	for (;;) {
+		WaitForSingleObject(tokenEvent, INFINITE);
+		while (!tokenQ.empty()) {
+			AccountToken* p_at = tokenQ.front();
+			tokenQ.pop();
+
+			char chattingKey[100];
+			snprintf(chattingKey, 100, "%d.chatting", p_at->accountNo);
+			Token redisToken;
+			connectorRedis.get(chattingKey, [&redisToken](cpp_redis::reply& reply) {
+				if (reply.is_string()) {
+					#pragma warning(suppress : 4996)
+					strncpy((char*)&redisToken, reply.as_string().c_str(), 64);
+				}
+				});
+			connectorRedis.del({ chattingKey });
+			connectorRedis.sync_commit();
+
+			// 유효 세션
+			if (0 == strncmp(redisToken.buf, p_at->token.buf, 64)) {
+				JobQueuing(p_at->sessionID, JOB_TYPE_CLIENT_LOGIN_SUCCESS);
+			}
+			// 유효하지 않은 세션
+			else {
+				Disconnect(p_at->sessionID);
+			}
+			tokenPool.Free(p_at);
+		}
+	}
+}
+
 void ChattingServer_Single::ProcJob(SESSION_ID session_id, WORD type, PacketBuffer* cs_contentsPacket) {
 	switch (type) {
 		// 패킷처리
@@ -114,6 +165,9 @@ void ChattingServer_Single::ProcJob(SESSION_ID session_id, WORD type, PacketBuff
 		case JOB_TYPE_CLIENT_LEAVE:
 			return ProcJob_ClientLeave(session_id);
 
+		case JOB_TYPE_CLIENT_LOGIN_SUCCESS:
+			return ProcJob_ClientLoginSuccess(session_id);
+
 		default: {
 			LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "ProcJob INVALID Packet type : %d", type);
 			Disconnect(session_id);
@@ -122,51 +176,42 @@ void ChattingServer_Single::ProcJob(SESSION_ID session_id, WORD type, PacketBuff
 	}
 }
 
-bool ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
-	INT64 accountNo;
-
-	auto iter = player_map.find(session_id);
-	if (player_map.end() == iter) CRASH();
-	Player* p_player = iter->second;
-	//Player* p_player = player_map.find(session_id)->second;
+void ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
+	Player* p_player = player_map.find(session_id)->second;
+	if (nullptr == p_player)
+		return;
 
 	// 이미 로그인 된 플레이어
 	if (p_player->is_login) {
 		LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Already login!!");
 		Disconnect(session_id);
-		return false;
-	}
-	else {
-		p_player->Set_Login();
-		try {
-			*cs_contentsPacket >> accountNo;
-			cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
-			cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
-			cs_contentsPacket->Get_Data((char*)p_player->sessionKey, 64); // 인증키 확인해야함
-		}
-		catch (const PacketException& e) {
-			LOG("ChattingServer-Single", LOG_LEVEL_WARN, "impossible : >> Login packet");
-			Disconnect(session_id);
-			return false;
-		}
+		return;
 	}
 
-	// 로그인 응답 패킷 회신
-	PacketBuffer* p_packet = PacketBuffer::Alloc();
-	*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
-	*p_packet << (BYTE)p_player->is_login;
-	*p_packet << (INT64)accountNo;
-	SendPacket(session_id, p_packet);
-	PacketBuffer::Free(p_packet);
+	AccountToken* p_at = tokenPool.Alloc();
+	p_at->sessionID = session_id;
+	try {
+		cs_contentsPacket->Get_Data((char*)&p_at->accountNo, sizeof(ACCOUNT_NO));
+		cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
+		cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
+		cs_contentsPacket->Get_Data((char*)&p_at->token, 64);
+	}
+	catch (const PacketException& e) {
+		LOG("ChattingServer-Single", LOG_LEVEL_WARN, "impossible : >> Login packet");
+		tokenPool.Free(p_at);
+		Disconnect(session_id);
+		return;
+	}
 
-	return p_player->is_login;
+	p_player->accountNo = p_at->accountNo;
+	tokenQ.push(p_at);
+	SetEvent(tokenEvent);
 }
 
 bool ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
-	auto iter = player_map.find(session_id);
-	if (player_map.end() == iter) CRASH();
-	Player* p_player = iter->second;
-	//Player* p_player = player_map.find(session_id)->second;
+	Player* p_player = player_map.find(session_id)->second;
+	if (nullptr == p_player)
+		return false;
 
 	// 로그인 상태가 아닌 플레이어
 	if (!p_player->is_login) {
@@ -213,10 +258,9 @@ bool ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID
 }
 
 bool ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
-	auto iter = player_map.find(session_id);
-	if (player_map.end() == iter) CRASH();
-	Player* p_player = iter->second;
-	//Player* p_player = player_map.find(session_id)->second;
+	Player* p_player = player_map.find(session_id)->second;
+	if (nullptr == p_player)
+		return false;
 
 	// 로그인 상태가 아닌 플레이어
 	if (!p_player->is_login) {
@@ -258,6 +302,13 @@ bool ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID ses
 void ChattingServer_Single::JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet) {
 	Job* p_job = jobPool.Alloc();
 	p_job->Set(session_id, type, p_packet);
+	jobQ.Enqueue(p_job);
+	SetEvent(updateEvent);
+}
+
+void ChattingServer_Single::JobQueuing(SESSION_ID session_id, WORD type){
+	Job* p_job = jobPool.Alloc();
+	p_job->Set(session_id, type);
 	jobQ.Enqueue(p_job);
 	SetEvent(updateEvent);
 }

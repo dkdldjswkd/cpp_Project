@@ -1,37 +1,45 @@
 #pragma once
+#include <cpp_redis/cpp_redis>
 #include <Windows.h>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+#include <queue>
 #include "../NetworkLib/LFObjectPool.h"
 #include "../NetworkLib/LFQueue.h"
 #include "../NetworkLib/NetworkLib.h"
 
+// Sector
 #define SECTOR_MAX_X		50
 #define SECTOR_MAX_Y		50
 
+// Player
 #define ID_LEN				20
 #define NICKNAME_LEN		20
-
-#define JOB_TYPE_CLIENT_JOIN  100
-#define JOB_TYPE_CLIENT_LEAVE 101
-
 typedef INT64 ACCOUNT_NO;
 
-static struct Sector {
+// JOB
+#define JOB_TYPE_CLIENT_JOIN			100
+#define JOB_TYPE_CLIENT_LEAVE			101
+#define JOB_TYPE_CLIENT_LOGIN_SUCCESS	102
+
+struct Token {
+	char buf[64];
+};
+
+struct AccountToken {
+	SESSION_ID sessionID;
+	ACCOUNT_NO accountNo;
+	Token token;
+};
+
+struct Sector {
 public:
 	short x;
 	short y;
 
 public:
-	// true 반환 시 INVALID
-	inline bool Is_Invalid() {
-		if (0 > x || 0 > y)
-			return true;
-		if (SECTOR_MAX_X <= x || SECTOR_MAX_Y <= y)
-			return true;
-		return false;
-	}
+	bool Is_Invalid();
 };
 
 struct Player {
@@ -47,76 +55,25 @@ private:
 
 public:
 	SESSION_ID session_id = INVALID_SESSION_ID;
-	bool is_connect = false;
+	ACCOUNT_NO accountNo;
 	bool is_login = false;
 
 public:
 	WCHAR id[ID_LEN];
 	WCHAR nickname[NICKNAME_LEN];
-	char sessionKey[64]; // 인증토큰
+	Token token;
 
 public:
 	Sector sectorPos;
 	SectorAround sectorAround;
 
 private:
-	void Set_SectorAround() {
-		sectorAround.count = 0;
-
-		if (true == sectorPos.Is_Invalid())
-			return;
-
-		int sector_x = sectorPos.x - 1;
-		int sector_y = sectorPos.y - 1;
-		for (int y = 0; y < 3; y++) {
-			if (sector_y + y < 0 || sector_y + y >= SECTOR_MAX_Y)
-				continue;
-
-			for (int x = 0; x < 3; x++) {
-				if (sector_x + x < 0 || sector_x + x >= SECTOR_MAX_X)
-					continue;
-
-				sectorAround.around[sectorAround.count].x = sector_x + x;
-				sectorAround.around[sectorAround.count].y = sector_y + y;
-				sectorAround.count++;
-			}
-		}
-	}
+	void Set_SectorAround();
 
 public:
-	inline void Set_Connect(SESSION_ID session_id) {
-		this->session_id = session_id;
-		is_connect = true;
-		sectorPos.x = -2;
-		sectorPos.y = -2;
-		sectorAround.count = 0;
-	}
-	inline void Set_Login() {
-		is_login = true;
-	}
-	inline void Set_ID(WCHAR* id) {
-			#pragma warning(suppress : 4996)
-			wcsncpy(this->id, id, ID_LEN);
-			this->id[ID_LEN] = 0;
-	}
-	inline void Set_Nickname(WCHAR* nickname) {
-			#pragma warning(suppress : 4996)
-			wcsncpy(this->nickname, nickname, NICKNAME_LEN);
-			this->nickname[NICKNAME_LEN] = 0;
-	}
-	inline void Set_SessionKey(char* key) {
-			#pragma warning(suppress : 4996)
-			strncpy(sessionKey, key, 64);
-	}
-	inline void Set_Sector(Sector sectorPos) {
-		this->sectorPos = sectorPos;
-		Set_SectorAround();
-	}
-	inline void Reset() {
-		// 세션에 대한 경합이 있다면 일괄처리 되어야함
-		is_connect = false;
-		is_login = false;
-	}
+	inline void Set(SESSION_ID session_id);
+	inline void Set_Sector(Sector sectorPos);
+	inline void Reset();
 };
 
 class ChattingServer_Single: public NetworkLib {
@@ -132,7 +89,11 @@ private:
 		PacketBuffer* p_packet;
 
 	public:
-		void Set(SESSION_ID session_id, WORD type, PacketBuffer* p_packet = nullptr) {
+		void Set(SESSION_ID session_id, WORD type) {
+			this->session_id = session_id;
+			this->type = type;
+		}
+		void Set(SESSION_ID session_id, WORD type, PacketBuffer* p_packet) {
 			this->session_id = session_id;
 			this->type = type;
 			this->p_packet = p_packet;
@@ -153,6 +114,14 @@ private:
 	std::thread updateThread;
 
 private:
+	// DB
+	J_LIB::LFObjectPool<AccountToken> tokenPool;
+	std::queue<AccountToken*> tokenQ;
+	cpp_redis::client connectorRedis;
+	std::thread tokenThread;
+	HANDLE tokenEvent;
+
+private:
 	// Lib callback
 	bool OnConnectionRequest(in_addr IP, WORD Port);
 	void OnClientJoin(SESSION_ID session_id);
@@ -162,7 +131,9 @@ private:
 
 private:
 	void UpdateFunc();
-	void JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet = nullptr);
+	void TokenAuthFunc();
+	void JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet);
+	void JobQueuing(SESSION_ID session_id, WORD type);
 
 private:
 	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
@@ -172,13 +143,13 @@ private:
 	// JOB 처리
 	void ProcJob(SESSION_ID session_id, WORD type, PacketBuffer* cs_contentsPacket);
 	// 패킷(JOB) 처리
-	bool ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 1
+	void ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 1
 	bool ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 3
 	bool ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 5
 	// OnFunc(JOB) 처리
 	void ProcJob_ClientJoin(SESSION_ID session_id);  // 100
 	void ProcJob_ClientLeave(SESSION_ID session_id); // 101
-
+	void ProcJob_ClientLoginSuccess(SESSION_ID session_id); // 102
 private:
 	// 모니터링
 	int playerCount = 0;
@@ -213,4 +184,58 @@ inline DWORD ChattingServer_Single::Get_updateTPS(){
 	auto tmp = updateTPS;
 	updateTPS = 0;
 	return tmp;
+}
+
+//////////////////////////////
+// Sector
+//////////////////////////////
+
+// true 반환 시 INVALID
+inline bool Sector::Is_Invalid() {
+	if (0 > x || 0 > y)
+		return true;
+	if (SECTOR_MAX_X <= x || SECTOR_MAX_Y <= y)
+		return true;
+	return false;
+}
+
+//////////////////////////////
+// Player
+//////////////////////////////
+
+inline void Player::Set_SectorAround() {
+	sectorAround.count = 0;
+
+	if (true == sectorPos.Is_Invalid())
+		return;
+
+	int sector_x = sectorPos.x - 1;
+	int sector_y = sectorPos.y - 1;
+	for (int y = 0; y < 3; y++) {
+		if (sector_y + y < 0 || sector_y + y >= SECTOR_MAX_Y)
+			continue;
+
+		for (int x = 0; x < 3; x++) {
+			if (sector_x + x < 0 || sector_x + x >= SECTOR_MAX_X)
+				continue;
+
+			sectorAround.around[sectorAround.count].x = sector_x + x;
+			sectorAround.around[sectorAround.count].y = sector_y + y;
+			sectorAround.count++;
+		}
+	}
+}
+
+inline void Player::Set(SESSION_ID session_id) {
+	this->session_id = session_id;
+	sectorPos.x = -2;
+	sectorPos.y = -2;
+	sectorAround.count = 0;
+}
+inline void Player::Set_Sector(Sector sectorPos) {
+	this->sectorPos = sectorPos;
+	Set_SectorAround();
+}
+inline void Player::Reset() {
+	is_login = false;
 }

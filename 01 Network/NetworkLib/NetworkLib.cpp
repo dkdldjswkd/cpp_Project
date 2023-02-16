@@ -16,7 +16,11 @@ using namespace J_LIB;
 // Server Func
 //------------------------------
 
-NetworkLib::NetworkLib() {}
+NetworkLib::NetworkLib() {
+	WSADATA wsaData;
+	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
+		CRASH();
+}
 NetworkLib::~NetworkLib() {}
 
 bool NetworkLib::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
@@ -54,10 +58,6 @@ void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorkerNu
 	}
 
 	Init(maxWorkerNum, concurrentWorkerNum, port, maxSession, timeOutCycle, timeOut);
-
-	WSADATA wsaData;
-	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
-		CRASH();
 
 	listen_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == listen_sock) CRASH();
