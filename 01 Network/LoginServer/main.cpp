@@ -16,7 +16,7 @@ using namespace std;
 
 void StartLoginServer(int maxThread, int releaseThread) {
 	LoginServer loginServer(DB_IP, DB_PORT, DB_ID, DB_PASSWORD, DB_SCHEMA);
-	loginServer.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION, false, 5000, 5000);
+	loginServer.StartUp(NetType::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION, false, 5000, 5000);
 	printf("StartLoginServer \n");
 
 	for (;;) {

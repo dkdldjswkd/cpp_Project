@@ -134,18 +134,17 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CrashDump.cpp" />
-    <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MemoryLogger.cpp" />
     <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="PacketBuffer.cpp" />
+    <ClCompile Include="Parser.cpp" />
     <ClCompile Include="RecursiveLock.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CrashDump.h" />
-    <ClInclude Include="FileUtils.h" />
     <ClInclude Include="LFObjectPool.h" />
     <ClInclude Include="LFObjectPoolTLS.h" />
     <ClInclude Include="LFQueue.h" />
@@ -155,6 +154,7 @@
     <ClInclude Include="NetworkLib.h" />
     <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="PacketBuffer.h" />
+    <ClInclude Include="Parser.h" />
     <ClInclude Include="protocol.h" />
     <ClInclude Include="RecursiveLock.h" />
     <ClInclude Include="RingBuffer.h" />

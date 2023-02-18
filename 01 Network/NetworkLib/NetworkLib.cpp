@@ -15,60 +15,36 @@ using namespace J_LIB;
 //------------------------------
 // Server Func
 //------------------------------
+NetworkLib::NetworkLib(const char* systemFile, const char* server) {
+	// Read SystemFile
+	parser.LoadFile(systemFile);
+	parser.GetValue(server, "NET_TYPE", (int*)&netType);
+	parser.GetValue(server, "PORT", (int*)&server_port);
+	parser.GetValue(server, "MAX_SESSION", (int*)&max_session);
+	parser.GetValue(server, "NAGLE", (int*)&nagle_flag);
+	parser.GetValue(server, "TIME_OUT_FLAG", (int*)&timeOut_flag);
+	parser.GetValue(server, "TIME_OUT", (int*)&timeOut);
+	parser.GetValue(server, "TIME_OUT_CYCLE", (int*)&timeOutCycle);
+	parser.GetValue(server, "MAX_WORKER", (int*)&maxWorker);
+	parser.GetValue(server, "ACTIVE_WORKER", (int*)&activeWorker);
 
-NetworkLib::NetworkLib() {
+	// Check system
+	if (maxWorker < activeWorker) CRASH();
+	if (1 < (BYTE)netType) CRASH();
+
+	//////////////////////////////
+	// Set Server
+	//////////////////////////////
+
 	WSADATA wsaData;
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
 		CRASH();
-}
-NetworkLib::~NetworkLib() {}
-
-bool NetworkLib::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
-	return h_iocp == CreateIoCompletionPort((HANDLE)h_file, h_iocp, completionKey, 0);
-}
-
-void NetworkLib::Init(WORD maxWorkerNum, WORD concurrentWorkerNum, WORD port, DWORD max_session, DWORD timeOutCycle, DWORD timeOut){
-	this->maxWorkerNum = maxWorkerNum;
-	this->concurrentWorkerNum = concurrentWorkerNum;
-	this->server_port = port;
-	this->max_session = max_session;
-	this->timeOutCycle = timeOutCycle;
-	this->timeOut = timeOut;
-
-	// set session array
-	session_array = new Session[max_session];
-
-	// set index stack
-	for (int i = 0; i < max_session; i++)
-		sessionIndex_stack.Push(max_session - 1 - i);
-}
-
-void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorkerNum, WORD concurrentWorkerNum, bool nagle, DWORD maxSession, bool timeOut_flag,DWORD timeOutCycle, DWORD timeOut) {
-	// CHECK INVALID_PARAMETER
-	if (maxWorkerNum < concurrentWorkerNum) CRASH();
-	networkArea = area;
-	switch (networkArea)	{
-		case NetworkArea::LAN:
-			break;
-		case NetworkArea::NET:
-			break;
-		default:
-			CRASH();
-			break;
-	}
-
-	Init(maxWorkerNum, concurrentWorkerNum, port, maxSession, timeOutCycle, timeOut);
 
 	listen_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == listen_sock) CRASH();
 
-	SOCKADDR_IN	server_addr;
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(port);
-	server_addr.sin_addr.s_addr = IP;
-
 	// Set nagle
-	if (false == nagle) {
+	if (!nagle_flag) {
 		int opt_val = TRUE;
 		setsockopt(listen_sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&opt_val, sizeof(opt_val));
 	}
@@ -77,24 +53,41 @@ void NetworkLib::StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorkerNu
 	LINGER linger = { 1, 0 };
 	setsockopt(listen_sock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof linger);
 
-	// Create IOCP
-	h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, concurrentWorkerNum);
-	if(INVALID_HANDLE_VALUE == h_iocp) CRASH();
-
-	// bind & listen
+	// bind 
+	SOCKADDR_IN	server_addr;
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(server_port);
+	server_addr.sin_addr.s_addr = INADDR_ANY;
 	if (0 != bind(listen_sock, (SOCKADDR*)&server_addr, sizeof(SOCKADDR_IN))) CRASH();
+
+	// Set Session
+	session_array = new Session[max_session];
+	for (int i = 0; i < max_session; i++)
+		sessionIndex_stack.Push(max_session - 1 - i);
+
+	// Create IOCP
+	h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, activeWorker);
+	if (INVALID_HANDLE_VALUE == h_iocp) CRASH();
+}
+NetworkLib::~NetworkLib() {}
+
+bool NetworkLib::Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey) {
+	return h_iocp == CreateIoCompletionPort((HANDLE)h_file, h_iocp, completionKey, 0);
+}
+
+void NetworkLib::StartUp() {
+	// listen
 	if (0 != listen(listen_sock, SOMAXCONN_HINT(65535))) CRASH();
 
 	// Create Thread
 	acceptThread = thread([this] {AcceptFunc(); });
-	workerThread_Pool = new thread[maxWorkerNum];
-	for (int i = 0; i < maxWorkerNum; i++) {
+	workerThread_Pool = new thread[maxWorker];
+	for (int i = 0; i < maxWorker; i++) {
 		workerThread_Pool[i] = thread([this] {WorkerFunc(); });
 	}
 	if (timeOut_flag) {
 		timeOutThread = thread([this] {TimeOutFunc(); });
 	}
-
 	printf("Server Start \n");
 }
 
@@ -112,6 +105,9 @@ void NetworkLib::AcceptFunc() {
 		if (accept_sock == INVALID_SOCKET) {
 			LOG("NetworkLib", LOG_LEVEL_DEBUG, "accept() Fail, Error code : %d", WSAGetLastError());
 			continue;
+		}
+		if (max_session <= sessionCount) {
+			closesocket(accept_sock);
 		}
 
 		//------------------------------
@@ -217,7 +213,7 @@ void NetworkLib::WorkerFunc() {
 				p_session->recv_buf.Move_Rear(io_size);
 				p_session->lastRecvTime = timeGetTime();
 				// 내부 통신 외부 통신 구분
-				if (NetworkArea::LAN == networkArea) {
+				if (NetType::LAN == netType) {
 					RecvCompletion_LAN(p_session);
 				}
 				else {
@@ -304,7 +300,7 @@ void NetworkLib::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 	}
 
 	// LAN, NET 구분
-	if (NetworkArea::LAN == networkArea) {
+	if (NetType::LAN == netType) {
 		send_packet->Set_LanHeader();
 		send_packet->Increment_refCount();
 	}
@@ -344,7 +340,7 @@ bool NetworkLib::SendPost(Session* p_session) {
 int NetworkLib::AsyncSend(Session* p_session) {
 	WSABUF wsaBuf[MAX_SEND_MSG];
 
-	if (NetworkArea::LAN == networkArea) {
+	if (NetType::LAN == netType) {
 		for (int i = 0; i < MAX_SEND_MSG; i++) {
 			if (p_session->sendQ.GetUseCount() <= 0) {
 				p_session->sendPacket_count = i;
@@ -551,7 +547,7 @@ void NetworkLib::CleanUp() {
 
 	// WorkerThread 종료
 	//PostQueuedCompletionStatus(h_iocp, 0, 0, 0);
-	for (int i = 0; i < maxWorkerNum; i++) {
+	for (int i = 0; i < maxWorker; i++) {
 		if (workerThread_Pool[i].joinable()) {
 			workerThread_Pool[i].join();
 		}

@@ -9,9 +9,9 @@ using namespace std;
 
 CrashDump dump;
 
-void StartChattingServer_Single(int maxThread, int releaseThread) {
-	ChattingServer_Single server;
-	server.StartUp(NetworkArea::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION, false, 0,0);
+void StartChattingServer_Single() {
+	ChattingServer_Single server("../ServerConfig.ini", "ChattingServer_Single");
+	server.StartUp();
 	printf("StartChattingServer Multi \n");
 
 	for (;;) {
@@ -41,10 +41,6 @@ void StartChattingServer_Single(int maxThread, int releaseThread) {
 }
 
 int main() {
-	int maxThread;
-	int releaseThread;
-	printf("max & release Thread num >> ");
-	cin >> maxThread >> releaseThread;
-
-	StartChattingServer_Single(maxThread, releaseThread);
+	StartChattingServer_Single();
+	Sleep(INFINITE);
 }

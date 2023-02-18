@@ -6,7 +6,7 @@ using namespace std;
 
 #define MAX_MSG 300
 
-ChattingServer_Single::ChattingServer_Single() {
+ChattingServer_Single::ChattingServer_Single(const char* systemFile, const char* server) : NetworkLib(systemFile, server) {
 	updateEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	tokenEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	updateThread = thread([this] {UpdateFunc(); });

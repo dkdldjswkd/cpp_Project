@@ -78,7 +78,7 @@ public:
 
 class ChattingServer_Single: public NetworkLib {
 public:
-	ChattingServer_Single();
+	ChattingServer_Single(const char* systemFile, const char* server);
 	~ChattingServer_Single();
 
 private:

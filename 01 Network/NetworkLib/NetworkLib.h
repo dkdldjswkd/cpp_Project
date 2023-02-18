@@ -1,5 +1,5 @@
 #pragma once
-// 오후 6:46 2023-02-11
+// 오전 3:44 2023-02-19
 #include <Windows.h>
 #include <thread>
 #include <mutex>
@@ -7,14 +7,15 @@
 #include "RingBuffer.h"
 #include "LFQueue.h"
 #include "LFStack.h"
+#include "Parser.h"
 
 #define				MAX_SEND_MSG		100
 constexpr UINT64	INVALID_SESSION_ID = -1;
 
-enum class NetworkArea : BYTE {
-	NONE,
+enum class NetType : BYTE {
 	LAN,
 	NET,
+	NONE,
 };
 
 //------------------------------
@@ -49,26 +50,34 @@ public:
 	~Session();
 
 public:
+	// 세션 정보
 	SOCKET sock = INVALID_SOCKET;
 	in_addr ip;
 	WORD port;
 	SESSION_ID	session_id = INVALID_SESSION_ID;
 
+	// flag
 	bool send_flag = false;
 	bool disconnect_flag = false;
+
+	// Send
+	LFQueue<PacketBuffer*> sendQ;
+	PacketBuffer* sendPacket_array[MAX_SEND_MSG];
+	LONG sendPacket_count = 0;
+
+	// Recv
+	RingBuffer recv_buf;
+
+	// TimeOut
+	DWORD lastRecvTime;
+
+	// Overlapped
+	OVERLAPPED recv_overlapped = { 0, };
+	OVERLAPPED send_overlapped = { 0, };
 
 	// 세션 레퍼런스 카운트 역할 (release_flag, io_count가 같은 캐시라인에 위치하게 의도)
 	alignas(64) BOOL release_flag = true;
 	LONG io_count = 0;
-
-	PacketBuffer* sendPacket_array[MAX_SEND_MSG];
-	LONG sendPacket_count = 0;
-
-	OVERLAPPED recv_overlapped = { 0, };
-	OVERLAPPED send_overlapped = { 0, };
-	RingBuffer recv_buf;
-	LFQueue<PacketBuffer*> sendQ;
-	DWORD lastRecvTime;
 
 public:
 	void Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id);
@@ -80,12 +89,12 @@ typedef Session* PSession;
 //------------------------------
 class NetworkLib {
 public:
-	NetworkLib();
+	NetworkLib(const char* systemFile, const char* server);
 	virtual ~NetworkLib();
 
 private:
 	// 네트워크
-	NetworkArea networkArea;
+	NetType netType;
 	SOCKET listen_sock = INVALID_SOCKET;
 	HANDLE h_iocp = INVALID_HANDLE_VALUE;
 	WORD server_port = 0;
@@ -96,15 +105,22 @@ private:
 	LFStack<DWORD> sessionIndex_stack;
 
 	// 스레드
-	WORD maxWorkerNum;
-	WORD concurrentWorkerNum;
+	WORD maxWorker;
+	WORD activeWorker;
 	std::thread* workerThread_Pool;
 	std::thread acceptThread;
 	std::thread timeOutThread;
 
+	// 옵션
+	bool nagle_flag;
+	bool timeOut_flag;
+
 	// 타임아웃
 	DWORD timeOutCycle;
 	DWORD timeOut;
+
+	// 유틸
+	Parser parser;
 
 private:
 	// 모니터링
@@ -116,7 +132,6 @@ private:
 
 private:
 	// Set
-	void Init(WORD maxWorker, WORD releaseWorker, WORD port, DWORD max_session, DWORD timeOutCycle, DWORD timeOut);
 	bool Bind_IOCP(SOCKET h_file, ULONG_PTR completionKey);
 
 	// 스레드
@@ -157,7 +172,7 @@ protected:
 	// virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
 
 public:
-	void StartUp(NetworkArea area, DWORD IP, WORD port, WORD maxWorker, WORD releaseWorker, bool nagle, DWORD maxSession, bool timeOut_flag,DWORD timeOutCycle, DWORD timeOut);
+	void StartUp();
 	void CleanUp();
 
 public:
