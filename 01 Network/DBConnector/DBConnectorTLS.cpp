@@ -1,8 +1,24 @@
 #include "DBConnectorTLS.h"
 #include <stdio.h>
+#include <iostream>
 
 DBConnectorTLS::DBConnectorTLS(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime)
-	: tlsIndex(TlsAlloc()), dbAddr(dbAddr), port(port), loginID(loginID), password(password), schema(schema), loggingTime(loggingTime) {
+	: tlsIndex(TlsAlloc()), port(port), loggingTime(loggingTime) {
+	#pragma warning(suppress : 4996)
+	strncpy(this->dbAddr, dbAddr, 50);
+	this->dbAddr[SCHEMA_LEN-1] = 0;
+
+	#pragma warning(suppress : 4996)
+	strncpy(this->loginID, loginID, 50);
+	this->loginID[SCHEMA_LEN - 1] = 0;
+
+	#pragma warning(suppress : 4996)
+	strncpy(this->password, password, 50);
+	this->password[SCHEMA_LEN - 1] = 0;
+
+	#pragma warning(suppress : 4996)
+	strncpy(this->schema, schema, 50);
+	this->schema[SCHEMA_LEN - 1] = 0;
 }
 
 DBConnectorTLS::~DBConnectorTLS() {

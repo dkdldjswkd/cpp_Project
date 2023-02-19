@@ -7,8 +7,6 @@ using namespace std;
 #define PORT		12001
 #define MAX_SESSION 10000
 
-CrashDump dump;
-
 void StartChattingServer_Single() {
 	ChattingServer_Single server("../ServerConfig.ini", "ChattingServer_Single");
 	server.StartUp();
@@ -41,6 +39,7 @@ void StartChattingServer_Single() {
 }
 
 int main() {
+	static CrashDump dump;
 	StartChattingServer_Single();
 	Sleep(INFINITE);
 }

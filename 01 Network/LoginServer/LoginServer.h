@@ -27,7 +27,7 @@ public:
 
 class LoginServer : public NetworkLib {
 public:
-	LoginServer(const char* dbAddr, const int port, const char* loginID, const char* password, const char* schema,  const unsigned short loggingTime = INFINITE);
+	LoginServer(const char* systemFile, const char* server);
 	~LoginServer();
 
 private:
@@ -37,7 +37,7 @@ private:
 
 public:
 	// DB
-	DBConnectorTLS connecterTLS;
+	DBConnectorTLS* p_connecterTLS;
 	cpp_redis::client connectorRedis;
 
 private:

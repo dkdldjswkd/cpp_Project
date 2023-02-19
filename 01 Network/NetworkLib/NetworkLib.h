@@ -119,9 +119,6 @@ private:
 	DWORD timeOutCycle;
 	DWORD timeOut;
 
-	// 유틸
-	Parser parser;
-
 private:
 	// 모니터링
 	alignas(64) DWORD sessionCount = 0;
@@ -170,6 +167,10 @@ protected:
 	// virtual void OnSend(SessionID, int sendsize) = 0;           // 패킷 송신 완료 후
 	// virtual void OnWorkerThreadBegin() = 0;                    // 워커스레드 GQCS 바로 하단에서 호출
 	// virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
+
+public:
+	// 유틸
+	Parser parser;
 
 public:
 	void StartUp();

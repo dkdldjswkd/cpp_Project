@@ -9,12 +9,27 @@ using namespace std;
 //------------------------------
 // LoginServer
 //------------------------------
-LoginServer::LoginServer(const char* dbAddr, const int port, const char* loginID, const char* password, const char* schema, const unsigned short loggingTime)
-	: connecterTLS(dbAddr, port, loginID, password, schema, loggingTime) {
+LoginServer::LoginServer(const char* systemFile, const char* server) : NetworkLib(systemFile, server){
+	char dbAddr[50];
+	int port;
+	char loginID[50];
+	char password[50];
+	char schema[50];
+	int loggingTime;
+
+	parser.GetValue(server, "DB_IP", dbAddr);
+	parser.GetValue(server, "DB_PORT", &port);
+	parser.GetValue(server, "DB_ID", loginID);
+	parser.GetValue(server, "DB_PASSWORD", password);
+	parser.GetValue(server, "DB_SCHEMA", schema);
+	parser.GetValue(server, "DB_LOGTIME", &loggingTime);
+
+	p_connecterTLS = new DBConnectorTLS(dbAddr, port, loginID, password, schema, loggingTime);
 	connectorRedis.connect();
 }
 
 LoginServer::~LoginServer(){
+	//delete(p_connecterTLS);
 }
 
 bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
@@ -56,14 +71,14 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	}
 
 	// DB 조회 (유저가 가져온 token과 DB의 token이 일치한지 판단)
-	sql_result = connecterTLS.Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
+	sql_result = p_connecterTLS->Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
 	sql_row = mysql_fetch_row(sql_result);
 	if (NULL == sql_row) return;
 	// if strcmp(sessionKey[64], sql_row[0]), DB token과 Packet의 token이 일치하는지 확인 (지금은 일치한다고 판단, sql_row[0] == null)
 	mysql_free_result(sql_result);
 
 	// DB 조회 (유저 ID, Nickname Send 하기위해 조회)
-	sql_result = connecterTLS.Query("SELECT userid, usernick FROM account WHERE accountno=%d", accountNo);
+	sql_result = p_connecterTLS->Query("SELECT userid, usernick FROM account WHERE accountno=%d", accountNo);
 	sql_row = mysql_fetch_row(sql_result);
 	WCHAR id[20];
 	UTF8ToUTF16(sql_row[0], id);
@@ -98,7 +113,7 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	snprintf(GameKey, 100, "%d.game", accountNo);
 	connectorRedis.setex(chattingKey, 10, sessionKey);
 	connectorRedis.setex(GameKey, 10, sessionKey);
-	connectorRedis.commit();
+	connectorRedis.sync_commit();
 
 	SendPacket(session_id, p_packet);
 	PacketBuffer::Free(p_packet);

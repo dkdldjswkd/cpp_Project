@@ -1,6 +1,7 @@
 // 오전 12:39 2023-02-13
 #pragma once
 #include "DBConnector.h"
+#define SCHEMA_LEN 50
 
 #define MAX_CONNECTOR 100
 
@@ -15,12 +16,12 @@ private:
 	int handleIndex = -1;
 
 private:
-	const char* const dbAddr;
-	const char* const loginID;
-	const char* const password;
-	const char* const schema;
-	const int port;
-	const unsigned short loggingTime; // 쿼리 중 해당 시간 초과 시 로깅
+	char dbAddr[50];
+	char loginID[50];
+	char password[50];
+	char schema[50];
+	int port;
+	int loggingTime; // 쿼리 중 해당 시간 초과 시 로깅
 
 public:
 	MYSQL_RES* Query(const char* queryFormat, ...);

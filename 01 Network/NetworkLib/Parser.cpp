@@ -125,8 +125,6 @@ bool Parser::LoadFile(const char* file) {
     fread(fileBegin, 1, fileSize, fp);
     fileBegin[fileSize] = '\0';
     fclose(fp);
-
-    printf("%s", fileBegin);
     return true;
 }
 

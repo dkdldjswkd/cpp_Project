@@ -3,20 +3,9 @@
 #include "../NetworkLib/CrashDump.h"
 using namespace std;
 
-#define IP			INADDR_ANY
-#define PORT		30000
-#define MAX_SESSION 10000
-
-#define DB_IP		"127.0.0.1"
-#define DB_PORT		3306
-#define DB_ID		"root"
-#define DB_PASSWORD "password"
-#define DB_SCHEMA	"accountdb"
-#define DB_LOGTIME	200
-
-void StartLoginServer(int maxThread, int releaseThread) {
-	LoginServer loginServer(DB_IP, DB_PORT, DB_ID, DB_PASSWORD, DB_SCHEMA);
-	loginServer.StartUp(NetType::NET, IP, PORT, maxThread, releaseThread, true, MAX_SESSION, false, 5000, 5000);
+void StartLoginServer() {
+	LoginServer loginServer("../ServerConfig.ini", "LoginServer");
+	loginServer.StartUp();
 	printf("StartLoginServer \n");
 
 	for (;;) {
@@ -39,11 +28,7 @@ void StartLoginServer(int maxThread, int releaseThread) {
 
 int main() {
 	static CrashDump dump;
-	int maxThread;
-	int releaseThread;
-	printf("max & release Thread num >> ");
-	cin >> maxThread >> releaseThread;
-	StartLoginServer(maxThread, releaseThread);
+	StartLoginServer();
 }
 
 //#include <cpp_redis/cpp_redis>
