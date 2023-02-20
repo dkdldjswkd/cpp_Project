@@ -155,11 +155,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChattingServer_Single.h" />
+    <ClInclude Include="CommonProtocol.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\NetworkLib\NetworkLib.lib" />
     <Library Include="..\Redis\cpp_redis.lib" />
     <Library Include="..\Redis\tacopie.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

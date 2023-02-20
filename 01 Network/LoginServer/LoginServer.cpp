@@ -46,26 +46,36 @@ void LoginServer::OnClientJoin(SESSION_ID session_id) {
 	playerMap_lock.Unlock_Exclusive();
 }
 
+void LoginServer::OnClientLeave(SESSION_ID session_id) {
+	// Player map 삭제
+	playerMap_lock.Lock_Exclusive();
+	auto iter = playerMap.find(session_id);
+	Player* p_player = iter->second;
+	playerMap.erase(iter);
+	playerMap_lock.Unlock_Exclusive();
+	playerPool.Free(p_player);
+}
+
 void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	MYSQL_RES* sql_result;
 	MYSQL_ROW sql_row;
 
 	WORD type;
 	INT64 accountNo;
-	char sessionKey[64];
+	Token token;
 	try {
 		*contents_packet >> type;
 		// INVALID Packet type
 		if (type != en_PACKET_CS_LOGIN_REQ_LOGIN) { // 메시지 타입은 하나만 존재
-			LOG("LoginServer", LOG_LEVEL_WARN, "OnRecv() : INVALID Packet type (%d)", type);
+			LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
 			Disconnect(session_id);
 			return;
 		}
 		*contents_packet >> accountNo;
-		contents_packet->Get_Data(sessionKey, 64);
+		contents_packet->Get_Data((char*)&token, sizeof(Token));
 	}
 	catch (const PacketException& e) {
-		LOG("LoginServer", LOG_LEVEL_WARN, "impossible : >> type");
+		LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // impossible : >> type");
 		Disconnect(session_id);
 		return;
 	}
@@ -111,20 +121,11 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	char GameKey[100];		// 게임서버에서 조회할 key
 	snprintf(chattingKey, 100, "%d.chatting", accountNo);
 	snprintf(GameKey, 100, "%d.game", accountNo);
-	connectorRedis.setex(chattingKey, 10, sessionKey);
-	connectorRedis.setex(GameKey, 10, sessionKey);
+	connectorRedis.setex(chattingKey, 10, (char*)&token);
+	connectorRedis.setex(GameKey, 10, (char*)&token);
 	connectorRedis.sync_commit();
+	LOG("LoginServer", LOG_LEVEL_DEBUG, "Set Token // accountNo(%d) Token(%.*s)", accountNo, sizeof(Token), (char*)&token);
 
 	SendPacket(session_id, p_packet);
 	PacketBuffer::Free(p_packet);
-}
-
-void LoginServer::OnClientLeave(SESSION_ID session_id){
-	// Player map 삭제
-	playerMap_lock.Lock_Exclusive();
-	auto iter = playerMap.find(session_id);
-	Player* p_player = iter->second;
-	playerMap.erase(iter);
-	playerMap_lock.Unlock_Exclusive();
-	playerPool.Free(p_player);
 }

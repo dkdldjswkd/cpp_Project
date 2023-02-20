@@ -6,6 +6,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ChattingServer_Single.h" />
+    <ClInclude Include="CommonProtocol.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\Redis\tacopie.lib">
@@ -22,5 +23,8 @@
     <Filter Include="include">
       <UniqueIdentifier>{6aaaa404-2b16-4bfd-b91a-d63cc30a18c8}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini" />
   </ItemGroup>
 </Project>

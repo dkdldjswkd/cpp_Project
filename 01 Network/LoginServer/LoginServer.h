@@ -10,6 +10,10 @@
 #include "../DBConnector/DBConnectorTLS.h"
 #include "../NetworkLib/RecursiveLock.h"
 
+struct Token {
+	char buf[64];
+};
+
 struct Player {
 public:
 	Player() {}

@@ -3,14 +3,10 @@
 #include "../NetworkLib/CrashDump.h"
 using namespace std;
 
-#define IP			INADDR_ANY
-#define PORT		12001
-#define MAX_SESSION 10000
-
 void StartChattingServer_Single() {
 	ChattingServer_Single server("../ServerConfig.ini", "ChattingServer_Single");
 	server.StartUp();
-	printf("StartChattingServer Multi \n");
+	printf("StartChattingServer Single \n");
 
 	for (;;) {
 		// 1초 주기 모니터링
@@ -30,8 +26,8 @@ void StartChattingServer_Single() {
 		printf("JobPoolCount    : %d \n", server.Get_JobPoolCount());
 		printf("JobQueueCount   : %d \n", server.Get_JobQueueCount());
 		printf("UpdateTPS       : %d \n", server.Get_updateTPS());
-		printf("디버깅 -------------------------------------------------------- \n");
-		printf("var             : %d \n", 0);
+		printf("디버깅 -------------------------------------------------------- \n"); extern int failCount;
+		printf("failCount       : %d \n", failCount);
 		printf("\n\n\n\n\n\n\n\n\n\n \n\n");
 	}
 

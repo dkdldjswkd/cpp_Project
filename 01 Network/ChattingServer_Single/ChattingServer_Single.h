@@ -9,6 +9,9 @@
 #include "../NetworkLib/LFQueue.h"
 #include "../NetworkLib/NetworkLib.h"
 
+// Login On/Off
+#define ON_LOGIN
+
 // Sector
 #define SECTOR_MAX_X		50
 #define SECTOR_MAX_Y		50
@@ -22,6 +25,7 @@ typedef INT64 ACCOUNT_NO;
 #define JOB_TYPE_CLIENT_JOIN			100
 #define JOB_TYPE_CLIENT_LEAVE			101
 #define JOB_TYPE_CLIENT_LOGIN_SUCCESS	102
+#define JOB_TYPE_CLIENT_LOGIN_FAIL		103
 
 struct Token {
 	char buf[64];
@@ -31,6 +35,11 @@ struct AccountToken {
 	SESSION_ID sessionID;
 	ACCOUNT_NO accountNo;
 	Token token;
+
+public:
+	void Set() {
+		ZeroMemory(this, sizeof(AccountToken));
+	}
 };
 
 struct Sector {
@@ -116,13 +125,13 @@ private:
 private:
 	// DB
 	J_LIB::LFObjectPool<AccountToken> tokenPool;
-	std::queue<AccountToken*> tokenQ;
+	LFQueue<AccountToken*> tokenQ;
 	cpp_redis::client connectorRedis;
 	std::thread tokenThread;
 	HANDLE tokenEvent;
 
 private:
-	// Lib callback
+	// Lib callback (NetLib Override)
 	bool OnConnectionRequest(in_addr IP, WORD Port);
 	void OnClientJoin(SESSION_ID session_id);
 	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
@@ -144,12 +153,13 @@ private:
 	void ProcJob(SESSION_ID session_id, WORD type, PacketBuffer* cs_contentsPacket);
 	// 패킷(JOB) 처리
 	void ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 1
-	bool ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 3
+	void ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 3
 	bool ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 5
 	// OnFunc(JOB) 처리
 	void ProcJob_ClientJoin(SESSION_ID session_id);  // 100
 	void ProcJob_ClientLeave(SESSION_ID session_id); // 101
 	void ProcJob_ClientLoginSuccess(SESSION_ID session_id); // 102
+	void ProcJob_ClientLoginFail(SESSION_ID session_id); // 103
 private:
 	// 모니터링
 	int playerCount = 0;

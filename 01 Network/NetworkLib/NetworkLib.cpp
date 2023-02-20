@@ -88,7 +88,9 @@ void NetworkLib::StartUp() {
 	if (timeOut_flag) {
 		timeOutThread = thread([this] {TimeOutFunc(); });
 	}
-	printf("Server Start \n");
+
+	// LOG
+	LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Server !");
 }
 
 void NetworkLib::AcceptFunc() {
