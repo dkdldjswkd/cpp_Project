@@ -272,7 +272,6 @@ bool NetworkLib::ReleaseSession(Session* p_session){
 	return false;
 }
 
-
 void NetworkLib::SendCompletion(Session* p_session){
 	// Send Packet Free
 	for (int i = 0; i < p_session->sendPacket_count; i++) {

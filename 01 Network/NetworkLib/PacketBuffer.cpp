@@ -1,4 +1,5 @@
 #include "PacketBuffer.h"
+#include "NetworkLib.h"
 
 LFObjectPoolTLS<PacketBuffer>  PacketBuffer::packetPool;
 
@@ -54,7 +55,7 @@ void PacketBuffer::Set_NetHeader() {
 	char* encryptPos = payload_pos - 1;		// 암호화'될' 주소
 	short encrypt_len = netHeader.len + 1;	// 암호화될 길이
 	BYTE RK = netHeader.randKey;			// 랜덤 키
-	BYTE K = CONST_KEY;						// 고정 키
+	BYTE K = PRIVATE_KEY;						// 고정 키
 	BYTE P = 0, E = 0;						// 암호화 변수
 
 	// 암호화
@@ -73,7 +74,7 @@ bool PacketBuffer::DecryptPacket(PacketBuffer* encryptPacket) {
 	char* encryptPos = packetPos_encrypt + (NET_HEADER_SIZE - 1);			// 암호 주소
 	const short encrypt_len = ((NET_HEADER*)packetPos_encrypt)->len + 1;	// 암호 길이
 	BYTE RK = ((NET_HEADER*)packetPos_encrypt)->randKey;	// 랜덤 키
-	BYTE K = CONST_KEY;										// 고정 키
+	BYTE K = PRIVATE_KEY;										// 고정 키
 	BYTE P = 0, LP = 0, LE = 0;								// 복호화 변수
 
 	// 복호화

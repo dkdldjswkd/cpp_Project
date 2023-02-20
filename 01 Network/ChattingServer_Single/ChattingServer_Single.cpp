@@ -137,7 +137,7 @@ void ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID sessi
 		return;
 	}
 
-#ifdef ON_LOGIN
+#if ON_LOGIN
 	AccountToken* p_at = tokenPool.Alloc();
 	p_at->sessionID = session_id;
 	try {
@@ -155,8 +155,7 @@ void ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID sessi
 	p_player->accountNo = p_at->accountNo;
 	tokenQ.Enqueue(p_at);
 	SetEvent(tokenEvent);
-#endif
-#ifndef ON_LOGIN
+#else ON_LOGIN
 	p_player->Set(session_id);
 	try {
 		*cs_contentsPacket >> p_player->accountNo;

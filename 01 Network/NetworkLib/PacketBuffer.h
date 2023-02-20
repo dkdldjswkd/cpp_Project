@@ -31,6 +31,8 @@ public:
 private:
 	friend NetworkLib;
 	friend LFObjectPoolTLS<PacketBuffer>;
+
+private:
 	static LFObjectPoolTLS<PacketBuffer> packetPool;
 
 private:

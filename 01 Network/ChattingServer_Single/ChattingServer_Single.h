@@ -10,7 +10,7 @@
 #include "../NetworkLib/NetworkLib.h"
 
 // Login On/Off
-#define ON_LOGIN
+#define ON_LOGIN	0
 
 // Sector
 #define SECTOR_MAX_X		50

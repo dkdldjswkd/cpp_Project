@@ -1,5 +1,9 @@
 #include <cpp_redis/cpp_redis>
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <crtdbg.h>  // For _CrtSetReportMode
+#include <errno.h>
 #include "../../DBConnector/DBConnector.h"
 #include "../../NetworkLib/Parser.h"
 #include "../../NetworkLib/CrashDump.h"
@@ -25,27 +29,8 @@ struct Token {
 //}
 
 void main() {
-	WORD version = MAKEWORD(2, 2);
-	WSADATA data;
-	WSAStartup(version, &data);
-
-	cpp_redis::client connectorRedis;
-
-	connectorRedis.connect();
-
-
-	char chattingKey[100];
-	snprintf(chattingKey, 100, "%d.chatting", 3);
-	Token redisToken;
-	connectorRedis.get(chattingKey, [&redisToken](cpp_redis::reply& reply) {
-		if (reply.is_string()) {
-			#pragma warning(suppress : 4996)
-			strncpy((char*)&redisToken, reply.as_string().c_str(), 64);
-
-		}
-		});
-	connectorRedis.sync_commit();
-	connectorRedis.del({ chattingKey });
-	connectorRedis.sync_commit();
-	cout << (char*)&redisToken << endl;
+	char chattingServerIP[5] = { '1' , '1' ,'1' , '1' ,'1' };
+	char src[100] = "12";
+	strncpy_s(chattingServerIP, sizeof(chattingServerIP), src, 2);
+	cout << chattingServerIP << endl;
 }

@@ -17,12 +17,19 @@ LoginServer::LoginServer(const char* systemFile, const char* server) : NetworkLi
 	char schema[50];
 	int loggingTime;
 
+	// Set DB
 	parser.GetValue(server, "DB_IP", dbAddr);
 	parser.GetValue(server, "DB_PORT", &port);
 	parser.GetValue(server, "DB_ID", loginID);
 	parser.GetValue(server, "DB_PASSWORD", password);
 	parser.GetValue(server, "DB_SCHEMA", schema);
 	parser.GetValue(server, "DB_LOGTIME", &loggingTime);
+
+	// Set Other Server IP, Port (임시방편, 나중에 시스템 파일에서 전부 긁어올것)
+	strncpy_s(chattingServerIP, 20, "127.0.0.1", strlen("127.0.0.1"));
+	strncpy_s(gameServerIP, 20, "127.0.0.1", strlen("127.0.0.1"));
+	parser.GetValue("ChattingServer_Single", "PORT", (int*)&chattingServerPort);
+	gameServerPort = 2000;
 
 	p_connecterTLS = new DBConnectorTLS(dbAddr, port, loginID, password, schema, loggingTime);
 	connectorRedis.connect();
@@ -53,6 +60,7 @@ void LoginServer::OnClientLeave(SESSION_ID session_id) {
 	Player* p_player = iter->second;
 	playerMap.erase(iter);
 	playerMap_lock.Unlock_Exclusive();
+
 	playerPool.Free(p_player);
 }
 
@@ -98,11 +106,11 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 
 	// Set IP, PORT
 	WCHAR	GameServerIP[16] = { 0, };
-	UTF8ToUTF16("127.0.0.1", GameServerIP);
 	WCHAR	ChatServerIP[16] = { 0, };
-	UTF8ToUTF16("127.0.0.1", ChatServerIP);
-	USHORT	GameServerPort = 2000;
-	USHORT	ChatServerPort = 12001;
+	UTF8ToUTF16(this->gameServerIP, GameServerIP);
+	UTF8ToUTF16(this->chattingServerIP, ChatServerIP);
+	USHORT	GameServerPort = this->gameServerPort;
+	USHORT	ChatServerPort = this->chattingServerPort;
 
 	// 로그인 응답 패킷 생성
 	PacketBuffer* p_packet = PacketBuffer::Alloc();
@@ -118,13 +126,13 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 
 	// Redis에 유저 토큰 추가
 	char chattingKey[100]; // 채팅서버에서 조회할 key
-	char GameKey[100];		// 게임서버에서 조회할 key
+	char GameKey[100]; // 게임서버에서 조회할 key
 	snprintf(chattingKey, 100, "%d.chatting", accountNo);
 	snprintf(GameKey, 100, "%d.game", accountNo);
 	connectorRedis.setex(chattingKey, 10, (char*)&token);
 	connectorRedis.setex(GameKey, 10, (char*)&token);
 	connectorRedis.sync_commit();
-	LOG("LoginServer", LOG_LEVEL_DEBUG, "Set Token // accountNo(%d) Token(%.*s)", accountNo, sizeof(Token), (char*)&token);
+	//LOG("LoginServer", LOG_LEVEL_DEBUG, "Set Token // accountNo(%d) Token(%.*s)", accountNo, sizeof(Token), (char*)&token);
 
 	SendPacket(session_id, p_packet);
 	PacketBuffer::Free(p_packet);

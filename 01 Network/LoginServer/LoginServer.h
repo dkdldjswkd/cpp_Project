@@ -35,9 +35,16 @@ public:
 	~LoginServer();
 
 private:
-	J_LIB::LFObjectPool<Player> playerPool;
+	// Player
 	RecursiveLock playerMap_lock;
 	std::unordered_map<DWORD64, Player*> playerMap;
+	J_LIB::LFObjectPool<Player> playerPool;
+
+	// Other Server IP, Port
+	char chattingServerIP[20];
+	char gameServerIP[20];
+	DWORD chattingServerPort;
+	DWORD gameServerPort;
 
 public:
 	// DB
