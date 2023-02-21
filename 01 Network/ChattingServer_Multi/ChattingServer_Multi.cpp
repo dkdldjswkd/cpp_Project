@@ -52,7 +52,14 @@ void ChattingServer_Multi::OnClientLeave(SESSION_ID session_id) {
 
 void ChattingServer_Multi::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
 	WORD type;
-	*cs_contentsPacket >> type;
+	try {
+		*cs_contentsPacket >> type;
+	}
+	catch (const PacketException& e) {
+		LOG("ChattingServer_Multi", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
+		Disconnect(session_id);
+		return;
+	}
 	ProcPacket(session_id, type, cs_contentsPacket);
 }
 
@@ -82,15 +89,29 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID ses
 	playerMap_lock.Unlock_Shared();
 
 	INT64 accountNo;
-	*cs_contentsPacket >> accountNo;
+	try {
+		*cs_contentsPacket >> accountNo;
+	}
+	catch (const PacketException& e) {
+		LOG("ChattingServer_Multi", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
+		Disconnect(session_id);
+		return false;
+	}
 
+	// 로그인 성공
 	if (false == p_player->is_login) {
-		// 로그인 성공
-		cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
-		cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
-		Token token; // 사용하지 않음
-		cs_contentsPacket->Get_Data((char*)&token, 64);
-		p_player->is_login = true;
+		try {
+			cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
+			cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
+			Token token; // 사용하지 않음
+			cs_contentsPacket->Get_Data((char*)&token, 64);
+			p_player->is_login = true;
+		}
+		catch (const PacketException& e) {
+			LOG("ChattingServer_Multi", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
+			Disconnect(session_id);
+			return false;
+		}
 	}
 
 	// 로그인 응답 패킷 회신
@@ -113,9 +134,17 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_
 	INT64 accountNo;
 	WORD cur_x;
 	WORD cur_y;
-	*cs_contentsPacket >> accountNo;
-	*cs_contentsPacket >> cur_x;
-	*cs_contentsPacket >> cur_y;
+
+	try {
+		*cs_contentsPacket >> accountNo;
+		*cs_contentsPacket >> cur_x;
+		*cs_contentsPacket >> cur_y;
+	}
+	catch (const PacketException& e) {
+		LOG("ChattingServer_Multi", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
+		Disconnect(session_id);
+		return false;
+	}
 
 	Sector prev_sector = p_player->sectorPos;
 	Sector cur_sector = { cur_x, cur_y };
@@ -165,10 +194,17 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_MESSAGE(SESSION_ID s
 	INT64	accountNo;
 	WORD	msgLen;
 	WCHAR	msg[MAX_MSG]; // null 미포함
-	*cs_contentsPacket >> accountNo;
-	*cs_contentsPacket >> msgLen;
-	cs_contentsPacket->Get_Data((char*)msg, msgLen);
-	msg[msgLen / 2] = 0;
+	try {
+		*cs_contentsPacket >> accountNo;
+		*cs_contentsPacket >> msgLen;
+		cs_contentsPacket->Get_Data((char*)msg, msgLen);
+		msg[msgLen / 2] = 0;
+	}
+	catch (const PacketException& e) {
+		LOG("ChattingServer_Multi", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
+		Disconnect(session_id);
+		return false;
+	}
 
 	// <<
 	PacketBuffer* p_packet = PacketBuffer::Alloc();
