@@ -156,7 +156,6 @@ void ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID sessi
 	tokenQ.Enqueue(p_at);
 	SetEvent(tokenEvent);
 #else ON_LOGIN
-	p_player->Set(session_id);
 	try {
 		*cs_contentsPacket >> p_player->accountNo;
 		cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);

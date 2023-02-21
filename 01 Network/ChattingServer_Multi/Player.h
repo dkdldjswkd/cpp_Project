@@ -74,6 +74,7 @@ inline void Player::Set(SESSION_ID session_id) {
 	sectorPos.x = -2;
 	sectorPos.y = -2;
 	sectorAround.count = 0;
+	is_login = true;
 }
 
 inline void Player::Set_Sector(Sector sectorPos) {

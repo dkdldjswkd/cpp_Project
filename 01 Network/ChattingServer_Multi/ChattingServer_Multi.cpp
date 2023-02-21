@@ -21,7 +21,6 @@ bool ChattingServer_Multi::OnConnectionRequest(in_addr ip, WORD port) {
 // Session 할당 후 호출 (Accept 스레드)
 void ChattingServer_Multi::OnClientJoin(SESSION_ID session_id) {
 	Player* p_player = playerPool.Alloc(); // 다른 스레드에서 사용가능성 x
-
 	p_player->Set(session_id);
 
 	playerMap_lock.Lock_Exclusive();	
@@ -87,11 +86,11 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID ses
 
 	if (false == p_player->is_login) {
 		// 로그인 성공
-		p_player->Set(session_id);
 		cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
 		cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
 		Token token; // 사용하지 않음
 		cs_contentsPacket->Get_Data((char*)&token, 64);
+		p_player->is_login = true;
 	}
 
 	// 로그인 응답 패킷 회신
