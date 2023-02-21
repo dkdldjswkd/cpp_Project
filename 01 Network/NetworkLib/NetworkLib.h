@@ -95,6 +95,7 @@ public:
 private:
 	enum class PQCS_TYPE : BYTE {
 		SEND_POST = 1,
+		DECREMENT_IO = 2,
 	};
 
 private:

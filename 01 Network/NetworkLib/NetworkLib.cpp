@@ -209,9 +209,19 @@ void NetworkLib::WorkerFunc() {
 			goto Decrement_IOCount;
 		}
 		// PQCS
-		if (PQCS_TYPE::SEND_POST == (PQCS_TYPE)((byte)p_overlapped)) {
-			SendPost(p_session);
-			goto Decrement_IOCount;
+		if ((PQCS_TYPE)((byte)p_overlapped) <= PQCS_TYPE::DECREMENT_IO) {
+			switch ((PQCS_TYPE)((byte)p_overlapped)) {
+				case PQCS_TYPE::SEND_POST:
+					SendPost(p_session);
+					goto Decrement_IOCount;
+
+				case PQCS_TYPE::DECREMENT_IO:
+					goto Decrement_IOCount;
+
+				default:
+					LOG("NetworkLib", LOG_LEVEL_FATAL, "PQCS Default");
+					break;
+			}
 		}
 
 		// recv 완료통지
@@ -301,7 +311,7 @@ void NetworkLib::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 		return;
 
 	if (p_session->disconnect_flag) {
-		DecrementIOCount(p_session);
+		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::DECREMENT_IO);
 		return;
 	}
 
@@ -540,7 +550,7 @@ bool NetworkLib::Disconnect(SESSION_ID session_id) {
 	Session* p_session = Check_InvalidSession(session_id);
 	if (nullptr == p_session) return true;
 	DisconnectSession(p_session);
-	DecrementIOCount(p_session);
+	PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::DECREMENT_IO);
 	return true;
 }
 
