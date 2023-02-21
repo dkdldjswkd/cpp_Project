@@ -8,13 +8,16 @@
     <ClInclude Include="EchoServer.h" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="NetworkLib">
+    <Filter Include="include">
       <UniqueIdentifier>{73df1ba0-7a86-4cea-a237-06dd92174c1f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\NetworkLib\NetworkLib.lib">
-      <Filter>NetworkLib</Filter>
-    </Library>
+    <None Include="..\ServerConfig.ini">
+      <Filter>include</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\NetworkLib\NetworkLib.lib" />
   </ItemGroup>
 </Project>

@@ -1,21 +1,49 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="ChattingServer_Multi.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="ChattingServer_Multi.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChattingServer_Multi.h" />
-    <ClInclude Include="CommonProtocol.h" />
+    <ClInclude Include="Player.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Sector.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="ChattingServer_Multi.h">
+      <Filter>Server</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{5d943658-a340-4fe8-bb26-dcc63f46f34f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{cc1c8350-1971-4d58-8752-b4a8ba5980d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server">
+      <UniqueIdentifier>{34ae5d88-c12f-4abc-95a2-1e800f217de9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{6b0da137-3fec-431b-9ac2-a6efebd67c72}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\NetworkLib\NetworkLib.lib">
       <Filter>include</Filter>
     </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini">
+      <Filter>include</Filter>
+    </None>
   </ItemGroup>
 </Project>

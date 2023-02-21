@@ -6,7 +6,7 @@ using namespace std;
 
 #define MAX_MSG 300
 
-ChattingServer_Multi::ChattingServer_Multi() {
+ChattingServer_Multi::ChattingServer_Multi(const char* systemFile, const char* server) : NetworkLib(systemFile, server) {
 }
 
 ChattingServer_Multi::~ChattingServer_Multi(){
@@ -22,7 +22,7 @@ bool ChattingServer_Multi::OnConnectionRequest(in_addr ip, WORD port) {
 void ChattingServer_Multi::OnClientJoin(SESSION_ID session_id) {
 	Player* p_player = playerPool.Alloc(); // 다른 스레드에서 사용가능성 x
 
-	p_player->Set_Connect(session_id);
+	p_player->Set(session_id);
 
 	playerMap_lock.Lock_Exclusive();	
 	player_map.insert({ session_id, p_player });
@@ -87,10 +87,11 @@ bool ChattingServer_Multi::ProcPacket_en_PACKET_CS_CHAT_REQ_LOGIN(SESSION_ID ses
 
 	if (false == p_player->is_login) {
 		// 로그인 성공
-		p_player->Set_Login();
+		p_player->Set(session_id);
 		cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
 		cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
-		cs_contentsPacket->Get_Data((char*)p_player->sessionKey, 64); // 인증키 확인해야함
+		Token token; // 사용하지 않음
+		cs_contentsPacket->Get_Data((char*)&token, 64);
 	}
 
 	// 로그인 응답 패킷 회신
@@ -201,7 +202,7 @@ void ChattingServer_Multi::SendSectorAround(Player* p_player, PacketBuffer* send
 void ChattingServer_Multi::SendSector(PacketBuffer* send_packet, Sector sector) {
 	for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); iter++) {
 		Player* p_player = *iter;
-		if (p_player->is_connect) {
+		if (p_player->is_login) {
 			SendPacket(p_player->session_id, send_packet);
 		}
 	}

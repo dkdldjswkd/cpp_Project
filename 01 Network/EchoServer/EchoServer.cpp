@@ -1,10 +1,12 @@
 #include "EchoServer.h"
-using namespace J_LIB;
 
-// 오전 12:45 2023 - 01 - 25
+// 오후 5:29 2023-02-21
 
-#define ECHO_ON
-#ifdef ECHO_ON
+EchoServer::EchoServer(const char* systemFile, const char* server) : NetworkLib(systemFile, server){
+}
+
+EchoServer::~EchoServer() {
+}
 
 void EchoServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
 	//------------------------------
@@ -64,5 +66,3 @@ void EchoServer::OnClientLeave(SESSION_ID session_id){
 
 void EchoServer::OnError(int errorcode){
 }
-
-#endif

@@ -1,20 +1,12 @@
 #include <iostream>
-#include <Windows.h>
-#include <timeapi.h>
 #include "EchoServer.h"
 #include "../NetworkLib/CrashDump.h"
-#include "../NetworkLib/Logger.h"
-#pragma comment (lib, "Winmm.lib")
-
-#define IP INADDR_ANY
-
 using namespace std;
-CrashDump dump;
 
 // EchoServer.cpp, Define È®ÀÎ
-void StartEchoServer(int maxThread, int releaseThread) {
-	EchoServer server;
-	server.StartUp(NetworkArea::LAN, INADDR_ANY, 6000, maxThread, releaseThread, true, 10000, 10000, 10000);
+void StartEchoServer() {
+	EchoServer server("../ServerConfig.ini", "EchoServer");
+	server.StartUp();
 	printf("StartEchoServer \n");
 
 	for (;;) {
@@ -34,10 +26,7 @@ void StartEchoServer(int maxThread, int releaseThread) {
 }
 
 int main() {
-	int maxThread;
-	int releaseThread;
-	printf("max & release Thread num >> ");
-	cin >> maxThread >> releaseThread;
-
-	StartEchoServer(maxThread, releaseThread);
+	static CrashDump dump;
+	StartEchoServer();
+	Sleep(INFINITE);
 }

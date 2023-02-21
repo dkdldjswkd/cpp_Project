@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.2.32519.379
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EchoServer", "EchoServer.vcxproj", "{981808C7-CE3B-42AF-A3D6-DB3582A02E6C}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE4739E7-7447-476A-AD9D-6548F4549676} = {FE4739E7-7447-476A-AD9D-6548F4549676}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkLib", "..\NetworkLib\NetworkLib.vcxproj", "{FE4739E7-7447-476A-AD9D-6548F4549676}"
 EndProject
