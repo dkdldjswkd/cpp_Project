@@ -93,12 +93,19 @@ public:
 	virtual ~NetworkLib();
 
 private:
+	friend PacketBuffer;
+
+private:
 	enum class PQCS_TYPE : BYTE {
 		SEND_POST = 1,
 		DECREMENT_IO = 2,
 	};
 
 private:
+	// 프로토콜
+	static BYTE PROTOCOL_CODE;
+	static BYTE PRIVATE_KEY;
+
 	// 네트워크
 	NetType netType;
 	SOCKET listen_sock = INVALID_SOCKET;

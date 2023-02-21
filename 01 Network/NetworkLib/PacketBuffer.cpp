@@ -1,6 +1,10 @@
 #include "PacketBuffer.h"
 #include "NetworkLib.h"
 
+#define PROTOCOL_CODE	NetworkLib::PROTOCOL_CODE
+#define PRIVATE_KEY		NetworkLib::PRIVATE_KEY
+
+// PacketBuffer Static Var
 LFObjectPoolTLS<PacketBuffer>  PacketBuffer::packetPool;
 
 // header size 

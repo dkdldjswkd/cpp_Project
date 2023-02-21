@@ -12,6 +12,10 @@
 using namespace std;
 using namespace J_LIB;
 
+// NetworkLIb Static Var
+BYTE NetworkLib::PROTOCOL_CODE = 0;
+BYTE NetworkLib::PRIVATE_KEY = 0;
+
 //------------------------------
 // Server Func
 //------------------------------
@@ -27,6 +31,14 @@ NetworkLib::NetworkLib(const char* systemFile, const char* server) {
 	parser.GetValue(server, "TIME_OUT_CYCLE", (int*)&timeOutCycle);
 	parser.GetValue(server, "MAX_WORKER", (int*)&maxWorker);
 	parser.GetValue(server, "ACTIVE_WORKER", (int*)&activeWorker);
+
+	// Protocol
+	if (PROTOCOL_CODE == 0) {
+		parser.GetValue(server, "PROTOCOL_CODE", (int*)&PROTOCOL_CODE);
+	}
+	if (netType == NetType::NET && PRIVATE_KEY == 0) {
+		parser.GetValue(server, "PRIVATE_KEY", (int*)&PRIVATE_KEY);
+	}
 
 	// Check system
 	if (maxWorker < activeWorker) CRASH();

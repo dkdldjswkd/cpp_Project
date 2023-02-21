@@ -1,8 +1,8 @@
 #pragma once
 #include <Windows.h>
 
-#define PROTOCOL_CODE	0x77
-#define PRIVATE_KEY		0x32
+//#define PROTOCOL_CODE	0x77
+//#define PRIVATE_KEY	0x32
 
 #pragma pack(push, 1)
 struct LAN_HEADER {
