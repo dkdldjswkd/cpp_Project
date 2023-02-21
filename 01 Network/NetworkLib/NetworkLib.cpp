@@ -208,6 +208,11 @@ void NetworkLib::WorkerFunc() {
 				LOG("NetworkLib", LOG_LEVEL_FATAL, "Zero Byte Send !!");
 			goto Decrement_IOCount;
 		}
+		// PQCS
+		if (PQCS_TYPE::SEND_POST == (PQCS_TYPE)((byte)p_overlapped)) {
+			SendPost(p_session);
+			goto Decrement_IOCount;
+		}
 
 		// recv 완료통지
 		if (&p_session->recv_overlapped == p_overlapped) {
@@ -311,8 +316,7 @@ void NetworkLib::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 	}
 
 	p_session->sendQ.Enqueue(send_packet);
-	SendPost(p_session);
-	DecrementIOCount(p_session);
+	PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::SEND_POST);
 }
 
 // AsyncSend Call 시도

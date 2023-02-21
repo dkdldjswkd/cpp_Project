@@ -204,7 +204,6 @@ void ChattingServer_Single::ProcJob_ClientLoginSuccess(SESSION_ID session_id) {
 }
 
 // JOB_TYPE_CLIENT_LOGIN_FAIL
-int failCount = 0;
 void ChattingServer_Single::ProcJob_ClientLoginFail(SESSION_ID session_id) {
 	auto iter = player_map.find(session_id);
 	if (iter == player_map.end()) {  // 로그인 결과 패킷 회신 전 연결끊킴
@@ -219,8 +218,6 @@ void ChattingServer_Single::ProcJob_ClientLoginFail(SESSION_ID session_id) {
 	*p_packet << (INT64)p_player->accountNo;
 	SendPacket(session_id, p_packet);
 	PacketBuffer::Free(p_packet);
-
-	InterlockedIncrement((LONG*)&failCount);
 }
 
 void ChattingServer_Single::ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {

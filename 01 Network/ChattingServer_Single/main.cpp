@@ -26,8 +26,8 @@ void StartChattingServer_Single() {
 		printf("JobPoolCount    : %d \n", server.Get_JobPoolCount());
 		printf("JobQueueCount   : %d \n", server.Get_JobQueueCount());
 		printf("UpdateTPS       : %d \n", server.Get_updateTPS());
-		printf("µð¹ö±ë -------------------------------------------------------- \n"); extern int failCount;
-		printf("failCount       : %d \n", failCount);
+		printf("µð¹ö±ë -------------------------------------------------------- \n");
+		printf("var       : %d \n", 0);
 		printf("\n\n\n\n\n\n\n\n\n\n \n\n");
 	}
 

@@ -93,6 +93,11 @@ public:
 	virtual ~NetworkLib();
 
 private:
+	enum class PQCS_TYPE : BYTE {
+		SEND_POST = 1,
+	};
+
+private:
 	// 네트워크
 	NetType netType;
 	SOCKET listen_sock = INVALID_SOCKET;
