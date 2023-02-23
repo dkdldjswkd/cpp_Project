@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{a5ebc299-6cba-42b9-a9d0-cd7865f9abd4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server">
+      <UniqueIdentifier>{9a178725-85dd-44c1-a351-cb3b138f86eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{0018d058-3d03-426a-8bc9-381601a108ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{58b1a377-62c0-4e57-8117-33ba55b210e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Contents">
+      <UniqueIdentifier>{b9901fb1-f7ad-47d7-b268-a4cd0c4704b2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MonitoringServer.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitorProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="MonitoringServer.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="user.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\NetworkLib\NetworkLib.lib">
+      <Filter>include</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini">
+      <Filter>include</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -1,6 +1,4 @@
-#include "EchoServer.h"
-
-// ¿ÀÈÄ 5:29 2023-02-21
+#include "EchoGameServer.h"
 
 EchoGameServer::EchoGameServer(const char* systemFile, const char* server) : NetworkLib(systemFile, server){
 }

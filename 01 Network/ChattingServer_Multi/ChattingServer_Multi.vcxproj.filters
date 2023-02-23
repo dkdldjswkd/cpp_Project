@@ -35,6 +35,9 @@
     <Filter Include="Main">
       <UniqueIdentifier>{6b0da137-3fec-431b-9ac2-a6efebd67c72}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SystemFile">
+      <UniqueIdentifier>{81e46ce9-155d-4044-8188-dbeca50ebce7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\NetworkLib\NetworkLib.lib">
@@ -43,7 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ServerConfig.ini">
-      <Filter>include</Filter>
+      <Filter>SystemFile</Filter>
     </None>
   </ItemGroup>
 </Project>

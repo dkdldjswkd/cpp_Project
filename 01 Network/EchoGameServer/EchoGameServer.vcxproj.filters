@@ -6,6 +6,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EchoGameServer.h" />
+    <ClInclude Include="CommonProtocol.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ServerConfig.ini" />
