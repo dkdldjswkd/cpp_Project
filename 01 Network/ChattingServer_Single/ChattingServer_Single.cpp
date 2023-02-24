@@ -6,7 +6,7 @@ using namespace std;
 
 #define MAX_MSG 300
 
-ChattingServer_Single::ChattingServer_Single(const char* systemFile, const char* server) : NetworkLib(systemFile, server) {
+ChattingServer_Single::ChattingServer_Single(const char* systemFile, const char* server) : NetServer(systemFile, server) {
 	updateEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	tokenEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	updateThread = thread([this] {UpdateFunc(); });
@@ -395,9 +395,6 @@ void ChattingServer_Single::SendSector(PacketBuffer* send_packet, Sector sector)
 	for (; iter != sectors_set[sector.y][sector.x].end(); iter++) {
 		SendPacket((*iter)->session_id, send_packet);
 	}
-}
-
-void ChattingServer_Single::OnError(int errorcode) {
 }
 
 // Session Connect ½Ã

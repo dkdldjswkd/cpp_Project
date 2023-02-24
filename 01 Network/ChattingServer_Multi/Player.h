@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
 #include "Sector.h"
-#include "../NetworkLib/NetworkLib.h"
+#include "../NetworkLib/NetServer.h"
 
 // Player
 #define ID_LEN				20

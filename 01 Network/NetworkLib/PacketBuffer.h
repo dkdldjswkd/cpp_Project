@@ -21,7 +21,8 @@ public:
 #define PUT_ERROR 1 // << Error
 };
 
-class NetworkLib;
+class NetServer;
+class NetClient;
 class PacketBuffer {
 private:
 	PacketBuffer();
@@ -29,7 +30,8 @@ public:
 	inline ~PacketBuffer();
 
 private:
-	friend NetworkLib;
+	friend NetServer;
+	friend NetClient;
 	friend LFObjectPoolTLS<PacketBuffer>;
 
 private:
@@ -47,8 +49,8 @@ private:
 private:
 	// 네트워크 라이브러리에서 사용
 	void Set_LanHeader();
-	void Set_NetHeader();
-	bool DecryptPacket(PacketBuffer* encryptPacket);
+	void Set_NetHeader(BYTE protocol_code, BYTE private_key);
+	bool DecryptPacket(PacketBuffer* encryptPacket, BYTE private_key);
 	char* Get_PacketPos_LAN();
 	char* Get_PacketPos_NET();
 	inline int Get_PacketSize_LAN();

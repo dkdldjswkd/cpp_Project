@@ -35,7 +35,7 @@
     <ClCompile Include="main.cpp">
       <Filter>Main</Filter>
     </ClCompile>
-    <ClCompile Include="user.cpp">
+    <ClCompile Include="User.cpp">
       <Filter>Contents</Filter>
     </ClCompile>
   </ItemGroup>

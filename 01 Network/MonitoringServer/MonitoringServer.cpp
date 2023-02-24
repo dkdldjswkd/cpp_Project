@@ -2,7 +2,7 @@
 #include "MonitorProtocol.h"
 #include "../NetworkLib/Logger.h"
 
-MonitoringServer::MonitoringServer(const char* systemFile, const char* server) : NetworkLib(systemFile, server) {
+MonitoringServer::MonitoringServer(const char* systemFile, const char* server) : NetServer(systemFile, server) {
 	parser.GetValue("MonitoringServer", "LOGIN_KEY", loginKey);
 }
 

@@ -6,7 +6,7 @@ using namespace std;
 
 #define MAX_MSG 300
 
-ChattingServer_Multi::ChattingServer_Multi(const char* systemFile, const char* server) : NetworkLib(systemFile, server) {
+ChattingServer_Multi::ChattingServer_Multi(const char* systemFile, const char* server) : NetServer(systemFile, server) {
 }
 
 ChattingServer_Multi::~ChattingServer_Multi(){

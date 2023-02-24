@@ -156,7 +156,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MonitoringServer.cpp" />
-    <ClCompile Include="user.cpp" />
+    <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\NetworkLib\NetworkLib.lib" />

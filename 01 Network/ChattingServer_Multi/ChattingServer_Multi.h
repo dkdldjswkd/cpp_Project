@@ -5,11 +5,11 @@
 #include <unordered_set>
 #include "../NetworkLib/LFObjectPool.h"
 #include "../NetworkLib/LFQueue.h"
-#include "../NetworkLib/NetworkLib.h"
+#include "../NetworkLib/NetServer.h"
 #include "../NetworkLib/RecursiveLock.h"
 #include "Player.h"
 
-class ChattingServer_Multi : public NetworkLib {
+class ChattingServer_Multi : public NetServer {
 public:
 	ChattingServer_Multi(const char* systemFile, const char* server);
 	~ChattingServer_Multi();

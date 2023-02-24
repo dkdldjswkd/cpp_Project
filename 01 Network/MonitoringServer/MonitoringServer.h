@@ -1,11 +1,11 @@
 #pragma once
-#include "../NetworkLib/NetworkLib.h"
 #include <unordered_map>
+#include "../NetworkLib/NetServer.h"
 #include "../NetworkLib/RecursiveLock.h"
 #include "../NetworkLib/LFObjectPool.h"
 #include "User.h"
 
-class MonitoringServer : public NetworkLib {
+class MonitoringServer : public NetServer {
 public:
 	MonitoringServer(const char* systemFile, const char* server);
 	~MonitoringServer();
@@ -19,7 +19,7 @@ private:
 
 private:
 	J_LIB::LFObjectPool<User> userPool;
-	std::unordered_map<SESSION_ID, User*> userMap;
+	std::unordered_map<INT64, User*> userMap;
 	RecursiveLock userMapLock;
 
 private:

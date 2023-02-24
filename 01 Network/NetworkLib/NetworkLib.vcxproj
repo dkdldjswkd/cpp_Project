@@ -136,11 +136,13 @@
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="MemoryLogger.cpp" />
-    <ClCompile Include="NetworkLib.cpp" />
+    <ClCompile Include="NetClient.cpp" />
+    <ClCompile Include="NetServer.cpp" />
     <ClCompile Include="PacketBuffer.cpp" />
     <ClCompile Include="Parser.cpp" />
     <ClCompile Include="RecursiveLock.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
+    <ClCompile Include="Session.cpp" />
     <ClCompile Include="StringUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -151,14 +153,19 @@
     <ClInclude Include="LFStack.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="MemoryLogger.h" />
-    <ClInclude Include="NetworkLib.h" />
+    <ClInclude Include="NetClient.h" />
+    <ClInclude Include="NetServer.h" />
     <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="PacketBuffer.h" />
     <ClInclude Include="Parser.h" />
     <ClInclude Include="protocol.h" />
     <ClInclude Include="RecursiveLock.h" />
     <ClInclude Include="RingBuffer.h" />
+    <ClInclude Include="Session.h" />
     <ClInclude Include="StringUtils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

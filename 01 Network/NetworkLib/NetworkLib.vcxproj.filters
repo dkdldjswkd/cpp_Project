@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="NetworkLib.cpp" />
     <ClCompile Include="CrashDump.cpp">
       <Filter>include</Filter>
     </ClCompile>
@@ -9,9 +8,6 @@
       <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="MemoryLogger.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="PacketBuffer.cpp">
       <Filter>include</Filter>
     </ClCompile>
     <ClCompile Include="RingBuffer.cpp">
@@ -26,10 +22,20 @@
     <ClCompile Include="Parser.cpp">
       <Filter>include</Filter>
     </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>Session</Filter>
+    </ClCompile>
+    <ClCompile Include="NetServer.cpp">
+      <Filter>Server</Filter>
+    </ClCompile>
+    <ClCompile Include="NetClient.cpp">
+      <Filter>Client</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketBuffer.cpp">
+      <Filter>Protocol</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="protocol.h" />
-    <ClInclude Include="NetworkLib.h" />
     <ClInclude Include="CrashDump.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -54,9 +60,6 @@
     <ClInclude Include="ObjectPool.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="PacketBuffer.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="RingBuffer.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -69,10 +72,42 @@
     <ClInclude Include="Parser.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>Session</Filter>
+    </ClInclude>
+    <ClInclude Include="protocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="NetServer.h">
+      <Filter>Server</Filter>
+    </ClInclude>
+    <ClInclude Include="NetClient.h">
+      <Filter>Client</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketBuffer.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{66c03727-0529-4cc6-bfbc-7cb5750d6a71}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Session">
+      <UniqueIdentifier>{15f8c944-ddf8-40c2-9f65-53f1b914cc4b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{794118d2-aa7d-4839-a417-85d0afdc1c9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server">
+      <UniqueIdentifier>{29dc439f-5b98-4fc4-a04b-e849dc6ee21e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Client">
+      <UniqueIdentifier>{79cd5c7d-12c0-48fb-a9ff-070954f927e5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini">
+      <Filter>Protocol</Filter>
+    </None>
   </ItemGroup>
 </Project>

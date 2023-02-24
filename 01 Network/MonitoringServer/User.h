@@ -1,5 +1,5 @@
 #pragma once
-#include "../NetworkLib/NetworkLib.h"
+#include "../NetworkLib/NetServer.h"
 
 struct User {
 public:

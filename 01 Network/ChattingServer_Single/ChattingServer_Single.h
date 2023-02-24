@@ -7,7 +7,7 @@
 #include <queue>
 #include "../NetworkLib/LFObjectPool.h"
 #include "../NetworkLib/LFQueue.h"
-#include "../NetworkLib/NetworkLib.h"
+#include "../NetworkLib/NetServer.h"
 
 // Login On/Off
 #define ON_LOGIN	0
@@ -85,7 +85,7 @@ public:
 	inline void Reset();
 };
 
-class ChattingServer_Single: public NetworkLib {
+class ChattingServer_Single: public NetServer {
 public:
 	ChattingServer_Single(const char* systemFile, const char* server);
 	~ChattingServer_Single();
@@ -136,8 +136,6 @@ private:
 	void OnClientJoin(SESSION_ID session_id);
 	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 	void OnClientLeave(SESSION_ID session_id);
-	void 
-	(int errorcode);
 
 private:
 	void UpdateFunc();
