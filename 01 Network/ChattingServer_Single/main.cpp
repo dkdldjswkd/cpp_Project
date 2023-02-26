@@ -1,41 +1,67 @@
 #include <iostream>
 #include "ChattingServer_Single.h"
-#include "../NetworkLib/CrashDump.h"
+#include "MonitoringClient.h"
+#include "../../00 lib_jy/CrashDump.h"
+#include "../../00 lib_jy/StringUtils.h"
 using namespace std;
 
-void StartChattingServer_Single() {
-	ChattingServer_Single server("../ServerConfig.ini", "ChattingServer_Single");
-	server.StartUp();
-	printf("StartChattingServer Single \n");
+void f() { cout << 1 << endl; }
 
-	for (;;) {
-		// 1초 주기 모니터링
-		Sleep(1000);
-		printf("NetworkLib ---------------------------------------------------- \n");
-		printf("sessionCount    : %d \n", server.Get_sessionCount());
-		printf("PacketCount     : %d \n", PacketBuffer::Get_UseCount());
-		printf("acceptTotal     : %d \n", server.Get_acceptTotal());
-		printf("acceptTPS       : %d \n", server.Get_acceptTPS());
-		printf("sendMsgTPS      : %d \n", server.Get_sendTPS());
-		printf("recvMsgTPS      : %d \n", server.Get_recvTPS());
-		printf("					                                            \n");
-		printf("ChattingServer-Single ----------------------------------------- \n");
-		printf("PlayerCount     : %d \n", server.Get_playerCount());
-		printf("PlayerPoolCount : %d \n", server.Get_playerPoolCount());
-		printf("처리량 -------------------------------------------------------- \n");
-		printf("JobPoolCount    : %d \n", server.Get_JobPoolCount());
-		printf("JobQueueCount   : %d \n", server.Get_JobQueueCount());
-		printf("UpdateTPS       : %d \n", server.Get_updateTPS());
-		printf("디버깅 -------------------------------------------------------- \n");
-		printf("var       : %d \n", 0);
-		printf("\n\n\n\n\n\n\n\n\n\n \n\n");
-	}
-
-	server.CleanUp();
+thread chatting_monitor(ChattingServer_Single* server) {
+	thread monitor_thread([server]
+		{
+			system("cls");
+			auto h = GetStdHandle(STD_OUTPUT_HANDLE);
+			for (;;) {
+				// 1초 주기 모니터링
+				Sleep(1000);
+				SetConsoleCursorPosition(h, { 0, 0 });
+				printf(	"NetworkLib ----------------------------------------------------\n"
+						"sessionCount    : %d                                           \n"
+						"PacketCount     : %d                                           \n"
+						"acceptTotal     : %d                                           \n"
+						"acceptTPS       : %d                                           \n"
+						"sendMsgTPS      : %d                                           \n"
+						"recvMsgTPS      : %d                                           \n"
+						"					                                            \n"
+						"ChattingServer-Single -----------------------------------------\n"
+						"PlayerCount     : %d                                           \n"
+						"PlayerPoolCount : %d                                           \n"
+						"처리량 --------------------------------------------------------\n"
+						"JobPoolCount    : %d                                           \n"
+						"JobQueueCount   : %d                                           \n"
+						"UpdateTPS       : %d                                           \n"
+						"디버깅 --------------------------------------------------------\n"
+						"var       : %d                                                 \n",
+						server->Get_sessionCount(),
+						PacketBuffer::Get_UseCount(),
+						server->Get_acceptTotal(),
+						server->Get_acceptTPS(),
+						server->Get_sendTPS(),
+						server->Get_recvTPS(),
+						server->Get_playerCount(),
+						server->Get_playerPoolCount(),
+						server->Get_JobPoolCount(),
+						server->Get_JobQueueCount(),
+						server->Get_updateTPS(),
+						0);
+			}
+		}
+	);
+	return monitor_thread;
 }
 
 int main() {
 	static CrashDump dump;
-	StartChattingServer_Single();
+
+	// 채팅서버 & 콘솔 모니터링 스레드 생성
+	ChattingServer_Single server("../ServerConfig.ini", "ChattingServer_Single");
+	thread chatt_monitor = chatting_monitor(&server);
+	server.StartUp();
+
+	//// 모니터링 클라 생성
+	//MonitoringClient client("../ServerConfig.ini", "MonitoringClient");
+	//client.StartUp();
+
 	Sleep(INFINITE);
 }

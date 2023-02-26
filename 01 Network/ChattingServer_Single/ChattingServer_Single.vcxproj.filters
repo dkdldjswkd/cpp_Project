@@ -1,12 +1,47 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="ChattingServer_Single.cpp" />
+    <ClCompile Include="ChattingServer_Single.cpp">
+      <Filter>ChattingServer</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="MonitoringClient.cpp">
+      <Filter>MonitoringClient</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>ChattingServer\Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>ChattingServer\Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="Sector.cpp">
+      <Filter>ChattingServer\Contents</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ChattingServer_Single.h" />
-    <ClInclude Include="CommonProtocol.h" />
+    <ClInclude Include="ChattingServer_Single.h">
+      <Filter>ChattingServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitoringClient.h">
+      <Filter>MonitoringClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MonitoringServer\MonitorProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>ChattingServer\Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>ChattingServer\Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Sector.h">
+      <Filter>ChattingServer\Contents</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\Redis\tacopie.lib">
@@ -18,13 +53,33 @@
     <Library Include="..\NetworkLib\NetworkLib.lib">
       <Filter>include</Filter>
     </Library>
+    <Library Include="..\..\00 lib_jy\lib_jy.lib">
+      <Filter>include</Filter>
+    </Library>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{6aaaa404-2b16-4bfd-b91a-d63cc30a18c8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ChattingServer">
+      <UniqueIdentifier>{6d848499-c646-4afb-b56a-c3c50bc15281}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{aec61c65-1a1f-4b6c-9d99-11a8a8862248}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{cdcf01b1-e199-4f94-8d5f-49033d964e1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitoringClient">
+      <UniqueIdentifier>{b05ae783-1f83-4ad3-90d6-e2b70ff98374}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ChattingServer\Contents">
+      <UniqueIdentifier>{cab6e02a-8dbd-4dd3-bf83-68596a07aa6c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\ServerConfig.ini" />
+    <None Include="..\ServerConfig.ini">
+      <Filter>Protocol</Filter>
+    </None>
   </ItemGroup>
 </Project>

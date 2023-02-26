@@ -1,27 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="CrashDump.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="Logger.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="MemoryLogger.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="RingBuffer.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="RecursiveLock.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="StringUtils.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
-    <ClCompile Include="Parser.cpp">
-      <Filter>include</Filter>
-    </ClCompile>
     <ClCompile Include="Session.cpp">
       <Filter>Session</Filter>
     </ClCompile>
@@ -36,42 +15,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CrashDump.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="LFObjectPool.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="LFObjectPoolTLS.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="LFQueue.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="LFStack.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="Logger.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="MemoryLogger.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjectPool.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="RingBuffer.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="RecursiveLock.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="StringUtils.h">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="Parser.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="Session.h">
       <Filter>Session</Filter>
     </ClInclude>
@@ -109,5 +52,10 @@
     <None Include="..\ServerConfig.ini">
       <Filter>Protocol</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\..\00 lib_jy\lib_jy.lib">
+      <Filter>include</Filter>
+    </Library>
   </ItemGroup>
 </Project>

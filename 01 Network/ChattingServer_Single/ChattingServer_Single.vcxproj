@@ -152,12 +152,22 @@
   <ItemGroup>
     <ClCompile Include="ChattingServer_Single.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MonitoringClient.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="Sector.cpp" />
+    <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\MonitoringServer\MonitorProtocol.h" />
     <ClInclude Include="ChattingServer_Single.h" />
     <ClInclude Include="CommonProtocol.h" />
+    <ClInclude Include="MonitoringClient.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="Sector.h" />
+    <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="..\..\00 lib_jy\lib_jy.lib" />
     <Library Include="..\NetworkLib\NetworkLib.lib" />
     <Library Include="..\Redis\cpp_redis.lib" />
     <Library Include="..\Redis\tacopie.lib" />

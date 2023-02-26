@@ -1,7 +1,7 @@
 #pragma once
 #include <Windows.h>
-#include "RingBuffer.h"
-#include "LFQueue.h"
+#include "../../00 lib_jy/RingBuffer.h"
+#include "../../00 lib_jy/LFQueue.h"
 #include "PacketBuffer.h"
 
 #define MAX_SEND_MSG		100

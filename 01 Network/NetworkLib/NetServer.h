@@ -3,16 +3,10 @@
 #include <thread>
 #include "Session.h"
 #include "PacketBuffer.h"
-#include "RingBuffer.h"
-#include "LFQueue.h"
-#include "LFStack.h"
-#include "Parser.h"
-
-enum class NetType : BYTE {
-	LAN,
-	NET,
-	NONE,
-};
+#include "../../00 lib_jy/RingBuffer.h"
+#include "../../00 lib_jy/LFQueue.h"
+#include "../../00 lib_jy/LFStack.h"
+#include "../../00 lib_jy/Parser.h"
 
 //------------------------------
 // NetworkLib
@@ -26,6 +20,12 @@ private:
 	friend PacketBuffer;
 
 private:
+	enum class NetType : BYTE {
+		LAN,
+		NET,
+		NONE,
+	};
+
 	enum class PQCS_TYPE : BYTE {
 		SEND_POST = 1,
 		DECREMENT_IO = 2,

@@ -4,22 +4,13 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
-#include <queue>
-#include "../NetworkLib/LFObjectPool.h"
-#include "../NetworkLib/LFQueue.h"
+#include "../../00 lib_jy/LFObjectPool.h"
+#include "../../00 lib_jy/LFQueue.h"
 #include "../NetworkLib/NetServer.h"
+#include "Player.h"
 
 // Login On/Off
 #define ON_LOGIN	0
-
-// Sector
-#define SECTOR_MAX_X		50
-#define SECTOR_MAX_Y		50
-
-// Player
-#define ID_LEN				20
-#define NICKNAME_LEN		20
-typedef INT64 ACCOUNT_NO;
 
 // JOB
 #define JOB_TYPE_CLIENT_JOIN			100
@@ -27,63 +18,6 @@ typedef INT64 ACCOUNT_NO;
 #define JOB_TYPE_CLIENT_LOGIN_SUCCESS	102
 #define JOB_TYPE_CLIENT_LOGIN_FAIL		103
 
-struct Token {
-	char buf[64];
-};
-
-struct AccountToken {
-	SESSION_ID sessionID;
-	ACCOUNT_NO accountNo;
-	Token token;
-
-public:
-	void Set() {
-		ZeroMemory(this, sizeof(AccountToken));
-	}
-};
-
-struct Sector {
-public:
-	short x;
-	short y;
-
-public:
-	bool Is_Invalid();
-};
-
-struct Player {
-public:
-	Player() {}
-	~Player() {}
-
-private:
-	static struct SectorAround {
-		int count;
-		Sector around[9];
-	};
-
-public:
-	SESSION_ID session_id = INVALID_SESSION_ID;
-	ACCOUNT_NO accountNo;
-	bool is_login = false;
-
-public:
-	WCHAR id[ID_LEN];
-	WCHAR nickname[NICKNAME_LEN];
-	Token token;
-
-public:
-	Sector sectorPos;
-	SectorAround sectorAround;
-
-private:
-	void Set_SectorAround();
-
-public:
-	inline void Set(SESSION_ID session_id);
-	inline void Set_Sector(Sector sectorPos);
-	inline void Reset();
-};
 
 class ChattingServer_Single: public NetServer {
 public:
@@ -91,6 +25,21 @@ public:
 	~ChattingServer_Single();
 
 private:
+	static struct Token {
+		char buf[64];
+	};
+
+	static struct AccountToken {
+		SESSION_ID sessionID;
+		ACCOUNT_NO accountNo;
+		Token token;
+
+	public:
+		void Set() {
+			ZeroMemory(this, sizeof(AccountToken));
+		}
+	};
+
 	static struct Job {
 	public:
 		SESSION_ID session_id;
@@ -110,10 +59,10 @@ private:
 	};
 
 private:
-	// Player 컨테이너
+	// Player
 	J_LIB::LFObjectPool<Player> playerPool;
-	std::unordered_map<DWORD64, Player*> player_map;						// 공유자원
-	std::unordered_set<Player*> sectors_set[SECTOR_MAX_Y][SECTOR_MAX_X];	// 공유자원
+	std::unordered_map<DWORD64, Player*> player_map;						
+	std::unordered_set<Player*> sectors_set[SECTOR_MAX_Y][SECTOR_MAX_X];
 
 private:
 	// JOB
@@ -193,58 +142,4 @@ inline DWORD ChattingServer_Single::Get_updateTPS(){
 	auto tmp = updateTPS;
 	updateTPS = 0;
 	return tmp;
-}
-
-//////////////////////////////
-// Sector
-//////////////////////////////
-
-// true 반환 시 INVALID
-inline bool Sector::Is_Invalid() {
-	if (0 > x || 0 > y)
-		return true;
-	if (SECTOR_MAX_X <= x || SECTOR_MAX_Y <= y)
-		return true;
-	return false;
-}
-
-//////////////////////////////
-// Player
-//////////////////////////////
-
-inline void Player::Set_SectorAround() {
-	sectorAround.count = 0;
-
-	if (true == sectorPos.Is_Invalid())
-		return;
-
-	int sector_x = sectorPos.x - 1;
-	int sector_y = sectorPos.y - 1;
-	for (int y = 0; y < 3; y++) {
-		if (sector_y + y < 0 || sector_y + y >= SECTOR_MAX_Y)
-			continue;
-
-		for (int x = 0; x < 3; x++) {
-			if (sector_x + x < 0 || sector_x + x >= SECTOR_MAX_X)
-				continue;
-
-			sectorAround.around[sectorAround.count].x = sector_x + x;
-			sectorAround.around[sectorAround.count].y = sector_y + y;
-			sectorAround.count++;
-		}
-	}
-}
-
-inline void Player::Set(SESSION_ID session_id) {
-	this->session_id = session_id;
-	sectorPos.x = -2;
-	sectorPos.y = -2;
-	sectorAround.count = 0;
-}
-inline void Player::Set_Sector(Sector sectorPos) {
-	this->sectorPos = sectorPos;
-	Set_SectorAround();
-}
-inline void Player::Reset() {
-	is_login = false;
 }

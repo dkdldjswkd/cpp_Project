@@ -4,8 +4,8 @@
 #include <timeapi.h>
 #include "NetClient.h"
 #include "protocol.h"
-#include "MemoryLogger.h"
-#include "Logger.h"
+#include "../../00 lib_jy/MemoryLogger.h"
+#include "../../00 lib_jy/Logger.h"
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
 
