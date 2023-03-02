@@ -149,13 +149,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="MonitoringServer.h" />
+    <ClInclude Include="MonitoringLanServer.h" />
+    <ClInclude Include="MonitoringNetServer.h" />
     <ClInclude Include="MonitorProtocol.h" />
+    <ClInclude Include="MonitorSession.h" />
+    <ClInclude Include="ServerSession.h" />
     <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MonitoringServer.cpp" />
+    <ClCompile Include="MonitoringLanServer.cpp" />
+    <ClCompile Include="MonitoringNetServer.cpp" />
+    <ClCompile Include="MonitorSession.cpp" />
+    <ClCompile Include="ServerSession.cpp" />
     <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>

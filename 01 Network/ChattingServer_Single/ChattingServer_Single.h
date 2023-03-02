@@ -81,7 +81,7 @@ private:
 
 private:
 	// Lib callback (NetLib Override)
-	bool OnConnectionRequest(in_addr IP, WORD Port);
+	bool OnConnectionRequest(in_addr IP, WORD Port) { return true; }
 	void OnClientJoin(SESSION_ID session_id);
 	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 	void OnClientLeave(SESSION_ID session_id);
@@ -97,21 +97,10 @@ private:
 	void SendSector(PacketBuffer* send_packet, Sector sector);
 
 private:
-	// JOB 처리
-	void ProcJob(SESSION_ID session_id, WORD type, PacketBuffer* cs_contentsPacket);
-	// 패킷(JOB) 처리
-	void ProcJob_en_PACKET_CS_CHAT_REQ_LOGIN		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 1
-	void ProcJob_en_PACKET_CS_CHAT_REQ_SECTOR_MOVE	(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 3
-	bool ProcJob_en_PACKET_CS_CHAT_REQ_MESSAGE		(SESSION_ID session_id, PacketBuffer* cs_contentsPacket);	// 5
-	// OnFunc(JOB) 처리
-	void ProcJob_ClientJoin(SESSION_ID session_id);  // 100
-	void ProcJob_ClientLeave(SESSION_ID session_id); // 101
-	void ProcJob_ClientLoginSuccess(SESSION_ID session_id); // 102
-	void ProcJob_ClientLoginFail(SESSION_ID session_id); // 103
-private:
 	// 모니터링
 	int playerCount = 0;
 	int updateTPS = 0;
+	int tmp_updateTPS = 0;
 
 public:
 	// 모니터링
@@ -120,6 +109,7 @@ public:
 	DWORD Get_JobPoolCount();
 	DWORD Get_JobQueueCount();
 	DWORD Get_updateTPS();
+	DWORD Get_tmp_updateTPS();
 };
 
 inline DWORD ChattingServer_Single::Get_playerCount() {
@@ -139,7 +129,11 @@ inline DWORD ChattingServer_Single::Get_JobQueueCount(){
 }
 
 inline DWORD ChattingServer_Single::Get_updateTPS(){
-	auto tmp = updateTPS;
+	tmp_updateTPS = updateTPS;
 	updateTPS = 0;
-	return tmp;
+	return tmp_updateTPS;
+}
+
+inline DWORD ChattingServer_Single::Get_tmp_updateTPS(){
+	return tmp_updateTPS;
 }

@@ -4,9 +4,6 @@
     <Filter Include="include">
       <UniqueIdentifier>{a5ebc299-6cba-42b9-a9d0-cd7865f9abd4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Server">
-      <UniqueIdentifier>{9a178725-85dd-44c1-a351-cb3b138f86eb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Protocol">
       <UniqueIdentifier>{0018d058-3d03-426a-8bc9-381601a108ee}</UniqueIdentifier>
     </Filter>
@@ -16,10 +13,16 @@
     <Filter Include="Contents">
       <UniqueIdentifier>{b9901fb1-f7ad-47d7-b268-a4cd0c4704b2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="MonitoringLanServer">
+      <UniqueIdentifier>{9a178725-85dd-44c1-a351-cb3b138f86eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitoringNetServer">
+      <UniqueIdentifier>{1eb4d155-16ce-4afc-a81c-6246390b2098}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="MonitoringServer.h">
-      <Filter>Server</Filter>
+    <ClInclude Include="MonitoringLanServer.h">
+      <Filter>MonitoringLanServer</Filter>
     </ClInclude>
     <ClInclude Include="MonitorProtocol.h">
       <Filter>Protocol</Filter>
@@ -27,15 +30,33 @@
     <ClInclude Include="User.h">
       <Filter>Contents</Filter>
     </ClInclude>
+    <ClInclude Include="MonitoringNetServer.h">
+      <Filter>MonitoringNetServer</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerSession.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitorSession.h">
+      <Filter>Contents</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MonitoringServer.cpp">
-      <Filter>Server</Filter>
+    <ClCompile Include="MonitoringLanServer.cpp">
+      <Filter>MonitoringLanServer</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Main</Filter>
     </ClCompile>
     <ClCompile Include="User.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="MonitoringNetServer.cpp">
+      <Filter>MonitoringNetServer</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerSession.cpp">
+      <Filter>Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="MonitorSession.cpp">
       <Filter>Contents</Filter>
     </ClCompile>
   </ItemGroup>
@@ -46,7 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ServerConfig.ini">
-      <Filter>include</Filter>
+      <Filter>Protocol</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -151,8 +151,11 @@
   <ItemGroup>
     <ClCompile Include="CrashDump.cpp" />
     <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="MachineCpuMonitor.cpp" />
     <ClCompile Include="MemoryLogger.cpp" />
     <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="PerformanceCounter.cpp" />
+    <ClCompile Include="ProcessCpuMonitor.cpp" />
     <ClCompile Include="Profiler.cpp" />
     <ClCompile Include="ProtocolBuffer.cpp" />
     <ClCompile Include="RecursiveLock.cpp" />
@@ -166,9 +169,12 @@
     <ClInclude Include="LFQueue.h" />
     <ClInclude Include="LFStack.h" />
     <ClInclude Include="Logger.h" />
+    <ClInclude Include="MachineCpuMonitor.h" />
     <ClInclude Include="MemoryLogger.h" />
     <ClInclude Include="ObjectPool.h" />
     <ClInclude Include="Parser.h" />
+    <ClInclude Include="PerformanceCounter.h" />
+    <ClInclude Include="ProcessCpuMonitor.h" />
     <ClInclude Include="Profiler.h" />
     <ClInclude Include="ProtocolBuffer.h" />
     <ClInclude Include="RecursiveLock.h" />

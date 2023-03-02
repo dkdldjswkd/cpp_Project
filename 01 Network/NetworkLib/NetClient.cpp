@@ -8,6 +8,7 @@
 #include "../../00 lib_jy/Logger.h"
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
+//#pragma comment(lib, "../../00 lib_jy/lib_jy.lib")
 
 using namespace std;
 using namespace J_LIB;
@@ -93,7 +94,7 @@ void NetClient::StartUp() {
 	DecrementIOCount();
 
 	// LOG
-	LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Server !");
+	LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Client !");
 }
 
 void NetClient::WorkerFunc() {

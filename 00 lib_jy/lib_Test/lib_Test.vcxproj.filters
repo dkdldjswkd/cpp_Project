@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="LFStack_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClInclude>
+    <ClInclude Include="LFObjectPool_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClInclude>
+    <ClInclude Include="LFQueue_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClInclude>
+    <ClInclude Include="RingBuffer_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiler_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClInclude>
+    <ClInclude Include="RingBuffer_Multi_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="TestCode">
+      <UniqueIdentifier>{82834c64-6590-4ddb-9962-95be15d9dac0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{692123d5-f735-4792-9e4a-8dbaf2c2a44e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="New">
+      <UniqueIdentifier>{60f9ba28-1e26-4f68-89df-015e3b812b26}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CpuMonitor_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClCompile>
+    <ClCompile Include="PDH_Get_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceCounter_Test.cpp">
+      <Filter>TestCode</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\lib_jy.lib" />
+  </ItemGroup>
+</Project>

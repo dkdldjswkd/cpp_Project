@@ -9,7 +9,7 @@ using namespace std;
 //------------------------------
 // LoginServer
 //------------------------------
-LoginServer::LoginServer(const char* systemFile, const char* server) : NetworkLib(systemFile, server){
+LoginServer::LoginServer(const char* systemFile, const char* server) : NetServer(systemFile, server){
 	char dbAddr[50];
 	int port;
 	char loginID[50];

@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkLib", "NetworkLib.vc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Test\Test.vcxproj", "{EC02DD6B-8873-413D-A3AD-73A8668001BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib_jy", "..\..\00 lib_jy\lib_jy.vcxproj", "{AF9D7BE9-1084-43F5-80F4-17F623F003EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{EC02DD6B-8873-413D-A3AD-73A8668001BC}.Release|x64.Build.0 = Release|x64
 		{EC02DD6B-8873-413D-A3AD-73A8668001BC}.Release|x86.ActiveCfg = Release|Win32
 		{EC02DD6B-8873-413D-A3AD-73A8668001BC}.Release|x86.Build.0 = Release|Win32
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Debug|x64.ActiveCfg = Debug|x64
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Debug|x64.Build.0 = Debug|x64
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Debug|x86.ActiveCfg = Debug|Win32
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Debug|x86.Build.0 = Debug|Win32
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Release|x64.ActiveCfg = Release|x64
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Release|x64.Build.0 = Release|x64
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Release|x86.ActiveCfg = Release|Win32
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

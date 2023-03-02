@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include "../NetworkLib/LFObjectPool.h"
 #include "../NetworkLib/LFQueue.h"
-#include "../NetworkLib/NetworkLib.h"
+#include "../NetworkLib/NetServer.h"
 #include "../DBConnector/DBConnectorTLS.h"
 #include "../NetworkLib/RecursiveLock.h"
 
@@ -29,7 +29,7 @@ public:
 	void Reset() {}
 };
 
-class LoginServer : public NetworkLib {
+class LoginServer : public NetServer {
 public:
 	LoginServer(const char* systemFile, const char* server);
 	~LoginServer();

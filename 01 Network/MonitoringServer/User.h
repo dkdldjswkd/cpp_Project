@@ -3,8 +3,8 @@
 
 struct User {
 public:
-	User() {}
-	~User() {}
+	User();
+	virtual ~User();
 
 public:
 	// ¿¬°á Á¤º¸
@@ -12,13 +12,7 @@ public:
 	bool is_login = false;
 
 public:
-	// ÄÁÅÙÃ÷
-	int serverNo;
-	bool isTool = false;
-
-public:
-	void Set(SESSION_ID session_id);
-	void Reset();
-	void LoginFromServer(int serverNo);
-	void LoginFromTool();
+	virtual void Set(SESSION_ID session_id);
+	virtual void Reset();
+	virtual void Login();
 };

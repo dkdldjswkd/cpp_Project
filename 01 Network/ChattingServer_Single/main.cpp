@@ -5,8 +5,6 @@
 #include "../../00 lib_jy/StringUtils.h"
 using namespace std;
 
-void f() { cout << 1 << endl; }
-
 thread chatting_monitor(ChattingServer_Single* server) {
 	thread monitor_thread([server]
 		{
@@ -30,7 +28,7 @@ thread chatting_monitor(ChattingServer_Single* server) {
 						"처리량 --------------------------------------------------------\n"
 						"JobPoolCount    : %d                                           \n"
 						"JobQueueCount   : %d                                           \n"
-						"UpdateTPS       : %d                                           \n"
+						"tmp UpdateTPS   : %d                                           \n"
 						"디버깅 --------------------------------------------------------\n"
 						"var       : %d                                                 \n",
 						server->Get_sessionCount(),
@@ -43,7 +41,7 @@ thread chatting_monitor(ChattingServer_Single* server) {
 						server->Get_playerPoolCount(),
 						server->Get_JobPoolCount(),
 						server->Get_JobQueueCount(),
-						server->Get_updateTPS(),
+						server->Get_tmp_updateTPS(),
 						0);
 			}
 		}
@@ -59,9 +57,9 @@ int main() {
 	thread chatt_monitor = chatting_monitor(&server);
 	server.StartUp();
 
-	//// 모니터링 클라 생성
-	//MonitoringClient client("../ServerConfig.ini", "MonitoringClient");
-	//client.StartUp();
+	// 모니터링 클라 생성
+	MonitoringClient client("../ServerConfig.ini", "MonitoringClient", &server);
+	client.StartUp();
 
 	Sleep(INFINITE);
 }

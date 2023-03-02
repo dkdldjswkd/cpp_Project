@@ -10,12 +10,6 @@ Base.h 고민
 
 서버 종료 구현
 
-고정 키 시스템 파일로 빼기
-
-
 ----
 
-채팅서버 멀티 릴리즈 데드락 해결하기
-	Disconnect 워커로 우회시키기
-
-LanClient 구현
+CRAHSH -> Log + CRASH

@@ -10,6 +10,9 @@
     <ClCompile Include="StringUtils.cpp" />
     <ClCompile Include="ProtocolBuffer.cpp" />
     <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="ProcessCpuMonitor.cpp" />
+    <ClCompile Include="MachineCpuMonitor.cpp" />
+    <ClCompile Include="PerformanceCounter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CrashDump.h" />
@@ -26,5 +29,8 @@
     <ClInclude Include="StringUtils.h" />
     <ClInclude Include="ProtocolBuffer.h" />
     <ClInclude Include="Profiler.h" />
+    <ClInclude Include="ProcessCpuMonitor.h" />
+    <ClInclude Include="MachineCpuMonitor.h" />
+    <ClInclude Include="PerformanceCounter.h" />
   </ItemGroup>
 </Project>

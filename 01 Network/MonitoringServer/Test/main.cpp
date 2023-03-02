@@ -14,4 +14,8 @@ int main() {
 	strncpy_s(dst, src, 4);
 	cout << src << endl;
 	cout << dst << endl;
+
+	printf("asdf" "123", "asdf");
+
+	cout << __FILE__ << endl;
 }

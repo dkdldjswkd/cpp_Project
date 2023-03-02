@@ -1,9 +1,10 @@
+#include "ChattingServer_Single.h"
 #include "MonitoringClient.h"
 #include "MonitorProtocol.h"
 #include <time.h>
 using namespace std;
 
-MonitoringClient::MonitoringClient(const char* systemFile, const char* client) : NetClient(systemFile, client) {
+MonitoringClient::MonitoringClient(const char* systemFile, const char* client, NetServer* localServer) : NetClient(systemFile, client), localServer(localServer) {
 	parser.GetValue(client, "CHATT_SERVER_NO", &serverNo);
 }
 
@@ -17,7 +18,7 @@ void MonitoringClient::OnConnect() {
 	SendPacket(p_packet);
 	PacketBuffer::Free(p_packet);
 
-	updateThread = thread([this] {UpdateFunc(); });
+	updateThread = thread([this] { UpdateFunc(); });
 }
 
 void MonitoringClient::OnRecv(PacketBuffer* contents_packet){
@@ -31,27 +32,189 @@ void MonitoringClient::UpdateFunc(){
 		Sleep(1000);
 		time_t t;
 		time(&t);
+		PacketBuffer* p_packet;
 
-		// 에이전트 ChatServer 실행 여부 ON / OFF
+		// 에이전트 ChatServer 실행 여부 ON / OFF, 30
 		{
-			PacketBuffer* p_packet = PacketBuffer::Alloc();
-			*p_packet << dfMONITOR_DATA_TYPE_CHAT_SERVER_RUN;
-			*p_packet << (int)0;
-			*p_packet << (int)t;
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_SERVER_RUN; // 데이터 항목
+			*p_packet << (int)1; // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
 			SendPacket(p_packet);
 			PacketBuffer::Free(p_packet);
 		}
 
-		//// 에이전트 ChatServer CPU 사용률
-		//{
-		//	PacketBuffer* p_packet = PacketBuffer::Alloc();
-		//	*p_packet << dfMONITOR_DATA_TYPE_CHAT_SERVER_CPU;
-		//	// cpu 사용률
-		//	*p_packet << (int)0;
-		//	*p_packet << (int)t;
-		//	SendPacket(p_packet);
-		//	PacketBuffer::Free(p_packet);
-		//}
+		// 에이전트 ChatServer CPU 사용률, 31
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_SERVER_CPU; // 데이터 항목
+			*p_packet << (int)ProcessMonitor.GetTotalCpuUsage(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 에이전트 ChatServer 메모리 사용 MByte, 32
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_SERVER_MEM; // 데이터 항목
+			*p_packet << (int)perfCounter.GetUserMem(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 에이전트 ChatServer 메모리 사용 MByte, 32
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_SERVER_MEM; // 데이터 항목
+			*p_packet << (int)perfCounter.GetUserMem(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 채팅서버 세션 수 (컨넥션 수), 33
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_SESSION; // 데이터 항목
+			*p_packet << (int)localServer->Get_sessionCount(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 채팅서버 인증성공 사용자 수 (실제 접속자), 34
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_PLAYER; // 데이터 항목
+			*p_packet << (int)((ChattingServer_Single*)localServer)->Get_playerCount(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 채팅서버 UPDATE 스레드 초당 초리 횟수, 35
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_UPDATE_TPS; // 데이터 항목
+			*p_packet << (int)((ChattingServer_Single*)localServer)->Get_updateTPS(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 채팅서버 패킷풀 사용량, 36
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_PACKET_POOL; // 데이터 항목
+			*p_packet << (int)PacketBuffer::Get_UseCount(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 채팅서버 UPDATE MSG 풀 사용량, 37
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_CHAT_UPDATEMSG_POOL; // 데이터 항목
+			*p_packet << (int)((ChattingServer_Single*)localServer)->Get_JobQueueCount(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 서버컴퓨터 CPU 전체 사용률, 40
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_MONITOR_CPU_TOTAL; // 데이터 항목
+			*p_packet << (int)machineMonitor.GetTotalCpuUsage(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 서버컴퓨터 논페이지 메모리 MByte, 41
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_MONITOR_NONPAGED_MEMORY; // 데이터 항목
+			*p_packet << (int)perfCounter.GetSysNonMem(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 서버컴퓨터 네트워크 수신량 KByte, 42
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_MONITOR_NETWORK_RECV; // 데이터 항목
+			*p_packet << (int)(perfCounter.GetRecvBytes() / 1024); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 서버컴퓨터 네트워크 송신량 KByte, 43
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_MONITOR_NETWORK_SEND; // 데이터 항목
+			*p_packet << (int)(perfCounter.GetSendBytes() / 1024); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+
+		// 서버컴퓨터 사용가능 메모리, 44
+		{
+			p_packet = PacketBuffer::Alloc();
+			*p_packet << en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
+
+			*p_packet << dfMONITOR_DATA_TYPE_MONITOR_AVAILABLE_MEMORY; // 데이터 항목
+			*p_packet << (int)perfCounter.GetAvailMem(); // 데이터 수치
+			*p_packet << (int)t; // 측정 시간
+
+			SendPacket(p_packet);
+			PacketBuffer::Free(p_packet);
+		}
 	}
 }
 
