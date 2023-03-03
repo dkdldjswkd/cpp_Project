@@ -14,10 +14,28 @@ public:
 private:
 	std::thread updateThread;
 	int serverNo;
-	ProcessCpuMonitor ProcessMonitor;
-	MachineCpuMonitor machineMonitor;
-	PerformanceCounter perfCounter;
 	NetServer* localServer;
+	// 모니터링
+	ProcessCpuMonitor  ProcessMonitor;
+	MachineCpuMonitor  machineMonitor;
+	PerformanceCounter perfCounter;
+
+public:
+	// 채팅서버 모니터링 데이터
+	int cpuUsage_chattingServer = 0;
+	int usingMemoryMB_chattingServer = 0;
+	int packetCount_chattingServer = 0;
+	int sessionCount_chattServer = 0;
+	int userCount_chattServer = 0;
+	int updateTPS_chattServer = 0;
+	int jobCount_chattServe = 0;
+
+	// 머신 모니터링 데이터
+	int cpuUsage_machine = 0;
+	int usingNonMemoryMB_machine = 0;
+	int recvKbytes_machine = 0;
+	int sendKbytes_machine = 0;
+	int availMemMB_machine = 0;
 
 private:
 	void OnConnect();

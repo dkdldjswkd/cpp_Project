@@ -1,7 +1,7 @@
 #include <iostream>
 #include <thread>
-#include "MonitoringLanServer.h"
 #include "MonitoringNetServer.h"
+#include "MonitoringLanServer.h"
 #include "../../00 lib_jy/CrashDump.h"
 using namespace std;
 
@@ -15,35 +15,43 @@ thread ConsoleMonitoring(MonitoringNetServer* net_server, MonitoringLanServer* l
 				system("cls");
 				SetConsoleCursorPosition(h, { 0, 0 });
 
-				printf(	"Total ------------------------------------------------------------\n"
-						"PacketCount     : %d                                              \n"
-						"                                                                  \n"
-						"Monitoring Net Lib -----------------------------------------------\n"
-						"sessionCount    : %d                                              \n"
-						"acceptTotal     : %d                                              \n"
-						"acceptTPS       : %d                                              \n"
-						"sendMsgTPS      : %d                                              \n"
-						"recvMsgTPS      : %d                                              \n"
-						"                                                                  \n"
-						"Monitoring Lan Lib -----------------------------------------------\n"
-						"sessionCount    : %d                                              \n"
-						"acceptTotal     : %d                                              \n"
-						"acceptTPS       : %d                                              \n"
-						"sendMsgTPS      : %d                                              \n"
-						"recvMsgTPS      : %d                                              \n"
-						"					                                               \n",
-					PacketBuffer::Get_UseCount(),	// total
-					net_server->Get_sessionCount(), // net server
-					net_server->Get_acceptTotal(),
-					net_server->Get_acceptTPS(),
-					net_server->Get_sendTPS(),
-					net_server->Get_recvTPS(),
-					lan_server->Get_sessionCount(), // lan server
-					lan_server->Get_acceptTotal(),
-					lan_server->Get_acceptTPS(),
-					lan_server->Get_sendTPS(),
-					lan_server->Get_recvTPS()
+				// 콘솔 출력
+				{
+					printf(
+						"Total (Process : MonitoringServer)--------------\n"
+						"PacketCount     : %d                            \n"
+						"                                                \n"
+						"Monitoring Net Lib -----------------------------\n"
+						"sessionCount    : %d                            \n"
+						"acceptTotal     : %d                            \n"
+						"acceptTPS       : %d                            \n"
+						"sendMsgTPS      : %d                            \n"
+						"recvMsgTPS      : %d                            \n"
+						"                                                \n"
+						"Monitoring Lan Lib -----------------------------\n"
+						"sessionCount    : %d                            \n"
+						"acceptTotal     : %d                            \n"
+						"acceptTPS       : %d                            \n"
+						"sendMsgTPS      : %d                            \n"
+						"recvMsgTPS      : %d                            \n"
+						"					                             \n"
+						,
+						// total
+						PacketBuffer::Get_UseCount(),
+						// net server
+						net_server->Get_sessionCount(),
+						net_server->Get_acceptTotal(),
+						net_server->Get_acceptTPS(),
+						net_server->Get_sendTPS(),
+						net_server->Get_recvTPS(),
+						// lan server
+						lan_server->Get_sessionCount(),
+						lan_server->Get_acceptTotal(),
+						lan_server->Get_acceptTPS(),
+						lan_server->Get_sendTPS(),
+						lan_server->Get_recvTPS()
 					);
+				}
 			}
 		}
 	);
@@ -52,6 +60,8 @@ thread ConsoleMonitoring(MonitoringNetServer* net_server, MonitoringLanServer* l
 
 int main() {
 	static CrashDump dump;
+	SMALL_RECT rect = { 0,0,45,40 };
+	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), TRUE, &rect);
 
 	// 모니터링 넷서버
 	MonitoringNetServer monitoringNetServer("../ServerConfig.ini", "MonitoringNetServer");

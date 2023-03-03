@@ -40,10 +40,10 @@ public:
 	void Update();
 
 public:
-	DWORD64 GetUserMem();
-	DWORD64 GetProcessNonMem();
-	DWORD64 GetAvailMem();
-	DWORD64 GetSysNonMem();
+	DWORD64 GetUserMemB();
+	DWORD64 GetProcessNonMemB();
+	DWORD64 GetAvailMemMB();
+	DWORD64 GetSysNonMemB();
 	DWORD64 GetRecvBytes();
 	DWORD64 GetSendBytes();
 };

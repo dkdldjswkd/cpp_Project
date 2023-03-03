@@ -1,6 +1,8 @@
 #include "MonitoringLanServer.h"
+#include "MonitoringNetServer.h"
 #include "MonitorProtocol.h"
 #include "../../00 lib_jy/Logger.h"
+#include <iostream>
 
 MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* server, NetServer* localServer) : NetServer(systemFile, server), localServer(localServer) {
 }
@@ -101,8 +103,23 @@ void MonitoringLanServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 			}
 
 			// * MonitoringNetSever로 모니터링 툴에게 모니터링 데이터 송신
-			BroadcastMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
+			((MonitoringNetServer*)localServer)->BroadcastMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
 			return;
+
+			// 디버깅
+			{
+				//printf(
+				//	"server no  : %d\n"
+				//	"data type  : %d\n"
+				//	"data value : %d\n"
+				//	"time stamp : %d\n"
+				//	,
+				//	p_user->serverNo,
+				//	dataType,
+				//	dataValue,
+				//	timeStamp
+				//);
+			}
 		}
 	}
 }

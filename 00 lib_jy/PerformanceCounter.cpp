@@ -90,19 +90,19 @@ void PerformanceCounter::Update() {
 	}
 }
 
-DWORD64 PerformanceCounter::GetUserMem(){
+DWORD64 PerformanceCounter::GetUserMemB(){
 	return userMemory;
 }
 
-DWORD64 PerformanceCounter::GetProcessNonMem(){
+DWORD64 PerformanceCounter::GetProcessNonMemB(){
 	return processNonMemory;
 }
 
-DWORD64 PerformanceCounter::GetAvailMem(){
+DWORD64 PerformanceCounter::GetAvailMemMB(){
 	return availMemory;
 }
 
-DWORD64 PerformanceCounter::GetSysNonMem(){
+DWORD64 PerformanceCounter::GetSysNonMemB(){
 	return systemNonMemory;
 }
 

@@ -5,10 +5,10 @@
       <Filter>Session</Filter>
     </ClCompile>
     <ClCompile Include="NetServer.cpp">
-      <Filter>Server</Filter>
+      <Filter>NetServer</Filter>
     </ClCompile>
     <ClCompile Include="NetClient.cpp">
-      <Filter>Client</Filter>
+      <Filter>NetClient</Filter>
     </ClCompile>
     <ClCompile Include="PacketBuffer.cpp">
       <Filter>Protocol</Filter>
@@ -22,10 +22,10 @@
       <Filter>Protocol</Filter>
     </ClInclude>
     <ClInclude Include="NetServer.h">
-      <Filter>Server</Filter>
+      <Filter>NetServer</Filter>
     </ClInclude>
     <ClInclude Include="NetClient.h">
-      <Filter>Client</Filter>
+      <Filter>NetClient</Filter>
     </ClInclude>
     <ClInclude Include="PacketBuffer.h">
       <Filter>Protocol</Filter>
@@ -41,11 +41,11 @@
     <Filter Include="Protocol">
       <UniqueIdentifier>{794118d2-aa7d-4839-a417-85d0afdc1c9f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Server">
-      <UniqueIdentifier>{29dc439f-5b98-4fc4-a04b-e849dc6ee21e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Client">
+    <Filter Include="NetClient">
       <UniqueIdentifier>{79cd5c7d-12c0-48fb-a9ff-070954f927e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NetServer">
+      <UniqueIdentifier>{29dc439f-5b98-4fc4-a04b-e849dc6ee21e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

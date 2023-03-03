@@ -1,21 +1,15 @@
 #include <iostream>
+#include <WinSock2.h>
 #include <Windows.h>
 #include <string>
+#include <WS2tcpip.h>
+#include <memory.h>
+#include <timeapi.h>
+#pragma comment(lib, "ws2_32.lib")
 using namespace std;
 
 int main() {
-	char dst[5]; //1234 0
-	char src[10] = "12";
-
-	//strncpy_s(dst, 3, src, 3);
-	////dst[4] = 0;
-
-
-	strncpy_s(dst, src, 4);
-	cout << src << endl;
-	cout << dst << endl;
-
-	printf("asdf" "123", "asdf");
-
-	cout << __FILE__ << endl;
+	sockaddr_in server_address;
+	if (inet_pton(AF_INET, "127.0.0.1", &server_address.sin_addr) != 1) {
+	}
 }

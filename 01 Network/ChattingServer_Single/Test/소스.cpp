@@ -6,4 +6,5 @@ using namespace std;
 //Parser parser;
 
 int main() {
+	printf("%d,""%d","%d","%d", 1, 2, 3, 4);
 }
