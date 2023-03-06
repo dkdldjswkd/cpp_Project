@@ -361,13 +361,11 @@ void ChattingServer_Single::JobQueuing(SESSION_ID session_id, WORD type) {
 
 void ChattingServer_Single::SendSectorAround(Player* p_player, PacketBuffer* send_packet) {
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
-		SendSector(send_packet, p_player->sectorAround.around[i]);
-	}
-}
-
-void ChattingServer_Single::SendSector(PacketBuffer* send_packet, Sector sector) {
-	auto iter = sectors_set[sector.y][sector.x].begin();
-	for (; iter != sectors_set[sector.y][sector.x].end(); iter++) {
-		SendPacket((*iter)->session_id, send_packet);
+		auto sector = p_player->sectorAround.around[i];
+		//SendSector
+		for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); iter++) {
+			auto p_player = *iter;
+			SendPacket((*iter)->session_id, send_packet);
+		}
 	}
 }

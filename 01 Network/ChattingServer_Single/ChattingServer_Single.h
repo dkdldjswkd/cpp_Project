@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "../../00 lib_jy/LFObjectPool.h"
+#include "../../00 lib_jy/LFObjectPoolTLS.h"
 #include "../../00 lib_jy/LFQueue.h"
 #include "../NetworkLib/NetServer.h"
 #include "Player.h"
@@ -66,7 +67,7 @@ private:
 
 private:
 	// JOB
-	J_LIB::LFObjectPool<Job> jobPool;
+	LFObjectPoolTLS<Job> jobPool;
 	LFQueue<Job*> jobQ; 
 	HANDLE updateEvent;
 	std::thread updateThread;
@@ -94,7 +95,6 @@ private:
 
 private:
 	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
-	void SendSector(PacketBuffer* send_packet, Sector sector);
 
 private:
 	// 모니터링
