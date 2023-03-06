@@ -1,20 +1,10 @@
 #include "ThreadCpuMonitor.h"
 #include "ThreadCpuMonitorTLS.h"
 
-ThreadCpuMonitorTLS::ThreadCpuMonitorTLS() : tlsIndex(TlsAlloc()) {
+ThreadCpuMonitorTLS::ThreadCpuMonitorTLS() : TLSTemplate<ThreadCpuMonitor>()  {
 }
 
 ThreadCpuMonitorTLS::~ThreadCpuMonitorTLS() {
-}
-
-ThreadCpuMonitor* ThreadCpuMonitorTLS::Get() {
-	ThreadCpuMonitor* p = (ThreadCpuMonitor*)TlsGetValue(tlsIndex);
-	if (nullptr == p) {
-		p = new ThreadCpuMonitor();
-		TlsSetValue(tlsIndex, (LPVOID)p);
-	}
-
-	return p;
 }
 
 void ThreadCpuMonitorTLS::UpdateCpuUsage(){

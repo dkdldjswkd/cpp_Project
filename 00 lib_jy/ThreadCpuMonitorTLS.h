@@ -1,21 +1,16 @@
 #pragma once
+#include "TLSTemplate.h"
 
 class ThreadCpuMonitor;
-class ThreadCpuMonitorTLS {
+class ThreadCpuMonitorTLS : public TLSTemplate<ThreadCpuMonitor> {
 public:
 	ThreadCpuMonitorTLS();
 	~ThreadCpuMonitorTLS();
 
-private:
-	const DWORD tlsIndex;
-
-private:
-	ThreadCpuMonitor* Get();
-
 public:
+	// DataUpdate
 	void UpdateCpuUsage();
 
-public:
 	// Getter
 	float GetTotalCpuUsage();
 	float GetUserCpuUsage();
