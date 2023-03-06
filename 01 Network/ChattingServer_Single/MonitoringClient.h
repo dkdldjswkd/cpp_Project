@@ -15,7 +15,10 @@ private:
 	std::thread updateThread;
 	int serverNo;
 	NetServer* localServer;
+	bool isConnect = false;
+
 	// 모니터링
+	time_t lastUpdateTime;
 	ProcessCpuMonitor  ProcessMonitor;
 	MachineCpuMonitor  machineMonitor;
 	PerformanceCounter perfCounter;
@@ -43,5 +46,6 @@ private:
 	void OnDisconnect();
 
 private:
-	void UpdateFunc();
+	void Report_to_monitoringServer();
+	void UpdateData();
 };

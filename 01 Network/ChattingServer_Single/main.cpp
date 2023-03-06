@@ -1,8 +1,10 @@
 #include <iostream>
+#include <conio.h>
 #include "ChattingServer_Single.h"
 #include "MonitoringClient.h"
 #include "../../00 lib_jy/CrashDump.h"
 #include "../../00 lib_jy/StringUtils.h"
+#include "../../00 lib_jy/Profiler.h"
 using namespace std;
 
 thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* net_client) {
@@ -14,6 +16,17 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 				Sleep(1000);
 				system("cls");
 				SetConsoleCursorPosition(h, { 0, 0 });
+
+				// 프로파일러 파일 out
+				if (_kbhit()) {
+					auto c = _getch();
+					if (c == 'f' || c == 'F') {
+						PRO_FILEOUT();
+					}
+					else if (c == 'r' || c == 'R') {
+						PRO_RESET();
+					}
+				}
 
 				// 콘솔 출력
 				{

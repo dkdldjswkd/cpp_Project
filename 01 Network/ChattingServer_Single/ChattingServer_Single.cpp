@@ -1,6 +1,7 @@
 #include "ChattingServer_Single.h"
 #include "CommonProtocol.h"
 #include "../../00 lib_jy/Logger.h"
+#include "../../00 lib_jy/Profiler.h"
 using namespace J_LIB;
 using namespace std;
 
@@ -52,6 +53,7 @@ void ChattingServer_Single::UpdateFunc() {
 	for (;;) {
 		WaitForSingleObject(updateEvent, INFINITE);
 		while (jobQ.Dequeue(&p_job)) {
+			PRO_BEGIN("UpdateFunc");
 			SESSION_ID session_id = p_job->session_id;
 			PacketBuffer* cs_contentsPacket = p_job->p_packet;
 			switch (p_job->type) {
@@ -202,9 +204,11 @@ void ChattingServer_Single::UpdateFunc() {
 					break;
 				}
 				case en_PACKET_CS_CHAT_REQ_MESSAGE: {
+					PRO_BEGIN("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 					Player* p_player = player_map.find(session_id)->second;
 					if (nullptr == p_player) {
 						PacketBuffer::Free(cs_contentsPacket);
+						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 						break;
 					}
 
@@ -213,6 +217,7 @@ void ChattingServer_Single::UpdateFunc() {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // is not login!!");
 						Disconnect(session_id);
 						PacketBuffer::Free(cs_contentsPacket);
+						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 						break;
 					}
 
@@ -229,6 +234,7 @@ void ChattingServer_Single::UpdateFunc() {
 						//LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> chatting packet");
 						Disconnect(session_id);
 						PacketBuffer::Free(cs_contentsPacket);
+						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 						break;
 					}
 					msg[msgLen / 2] = 0;
@@ -242,9 +248,12 @@ void ChattingServer_Single::UpdateFunc() {
 					*p_packet << (WORD)msgLen;
 					p_packet->Put_Data((char*)msg, msgLen);
 
+					PRO_BEGIN("SendSectorAround");
 					SendSectorAround(p_player, p_packet);
+					PRO_END("SendSectorAround");
 					PacketBuffer::Free(p_packet);
 					PacketBuffer::Free(cs_contentsPacket);
+					PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 					break;
 				}
 				case JOB_TYPE_CLIENT_LOGIN_SUCCESS: {
@@ -290,6 +299,7 @@ void ChattingServer_Single::UpdateFunc() {
 			}
 			updateTPS++;
 			jobPool.Free(p_job);
+			PRO_END("UpdateFunc");
 		}
 	}
 }

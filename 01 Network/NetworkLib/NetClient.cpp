@@ -75,25 +75,20 @@ void NetClient::StartUp() {
 	// Set client
 	client_session.Set(client_sock, server_address.sin_addr, server_port, 0);
 
-	// Connect
+	// Connect Fail
 	if (connect(client_sock, (struct sockaddr*)&server_address, sizeof(server_address)) == SOCKET_ERROR) {
-		CRASH();
+		LOG("NetworkLib", LOG_LEVEL_WARN, "Start Client Connect FAIL");
+		// Connect 시도 스레드 생성?
 	}
-
-	//------------------------------
-	// 연결 후 작업
-	//------------------------------
-	OnConnect();
-
-	//------------------------------
-	// WSARecv
-	//------------------------------
-	AsyncRecv();
+	// Connect Success
+	else {
+		OnConnect();
+		AsyncRecv();
+		LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Client Connect Success");
+	}
 
 	// 생성 I/O Count 차감
 	DecrementIOCount();
-
-	// LOG
 	LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Client !");
 }
 
