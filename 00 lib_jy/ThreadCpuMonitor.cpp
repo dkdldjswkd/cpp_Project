@@ -21,10 +21,10 @@ void ThreadCpuMonitor::UpdateCpuUsage() {
 	ULONGLONG deltaTime = curTime.QuadPart - prevTime.QuadPart;
 	ULONGLONG deltaUserTime = curUserTime.QuadPart - prevUserTime.QuadPart;
 	ULONGLONG deltaKernelTime = curkernelTime.QuadPart - prevKernelTime.QuadPart;
-	ULONGLONG totalTime = deltaKernelTime + deltaUserTime;
+	ULONGLONG deltaTotalTime = deltaKernelTime + deltaUserTime;
 
 	// 코어 사용 시간 백분률
-	coreTotal = (float)(totalTime / (double)deltaTime * 100.0f);
+	coreTotal = (float)(deltaTotalTime / (double)deltaTime * 100.0f);
 	coreUser = (float)((deltaUserTime / (double)deltaTime * 100.0f) / coreTotal) * 100;
 	coreKernel = (float)((deltaKernelTime / (double)deltaTime * 100.0f) / coreTotal) * 100;
 

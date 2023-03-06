@@ -2,6 +2,7 @@
 #include "CommonProtocol.h"
 #include "../../00 lib_jy/Logger.h"
 #include "../../00 lib_jy/Profiler.h"
+#include "../../00 lib_jy/ThreadCpuMonitor.h"
 using namespace J_LIB;
 using namespace std;
 
@@ -50,9 +51,12 @@ void ChattingServer_Single::OnRecv(SESSION_ID session_id, PacketBuffer* cs_conte
 
 void ChattingServer_Single::UpdateFunc() {
 	Job* p_job;
+	DWORD cur_time;
+	DWORD prev_time = 0;
 	for (;;) {
 		WaitForSingleObject(updateEvent, INFINITE);
-		while (jobQ.Dequeue(&p_job)) {
+		for (;;) {
+			if (!jobQ.Dequeue(&p_job)) break;
 			PRO_BEGIN("UpdateFunc");
 			SESSION_ID session_id = p_job->session_id;
 			PacketBuffer* cs_contentsPacket = p_job->p_packet;
@@ -299,6 +303,16 @@ void ChattingServer_Single::UpdateFunc() {
 			}
 			updateTPS++;
 			jobPool.Free(p_job);
+			// 1초에 한번 스레드 모니터링
+			cur_time = timeGetTime();
+			if (1000 <= cur_time - prev_time) {
+				threadMonitor.UpdateCpuUsage();
+				totalUpdateUsage = threadMonitor.GetTotalCpuUsage();
+				kernelUpdateUsage = threadMonitor.GetKernelCpuUsage();
+				userUpdateUsage = threadMonitor.GetUserCpuUsage();
+
+				prev_time = cur_time;
+			}
 			PRO_END("UpdateFunc");
 		}
 	}

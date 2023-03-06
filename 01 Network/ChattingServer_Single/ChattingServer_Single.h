@@ -9,6 +9,7 @@
 #include "../../00 lib_jy/LFQueue.h"
 #include "../NetworkLib/NetServer.h"
 #include "Player.h"
+#include "../../00 lib_jy/ThreadCpuMonitor.h"
 
 // Login On/Off
 #define ON_LOGIN	0
@@ -34,11 +35,6 @@ private:
 		SESSION_ID sessionID;
 		ACCOUNT_NO accountNo;
 		Token token;
-
-	public:
-		void Set() {
-			ZeroMemory(this, sizeof(AccountToken));
-		}
 	};
 
 	static struct Job {
@@ -65,20 +61,30 @@ private:
 	std::unordered_map<DWORD64, Player*> player_map;						
 	std::unordered_set<Player*> sectors_set[SECTOR_MAX_Y][SECTOR_MAX_X];
 
-private:
 	// JOB
 	LFObjectPoolTLS<Job> jobPool;
 	LFQueue<Job*> jobQ; 
 	HANDLE updateEvent;
 	std::thread updateThread;
 
-private:
 	// DB
 	J_LIB::LFObjectPool<AccountToken> tokenPool;
 	LFQueue<AccountToken*> tokenQ;
 	cpp_redis::client connectorRedis;
 	std::thread tokenThread;
 	HANDLE tokenEvent;
+
+	// 모니터링
+	ThreadCpuMonitor threadMonitor;
+
+	// 모니터링 데이터
+	int playerCount = 0;
+	int updateTPS = 0;
+	int tmp_updateTPS = 0;
+	// 모니터링 데이터::업데이트 스레드
+	int totalUpdateUsage  = 0;
+	int kernelUpdateUsage = 0;
+	int userUpdateUsage   = 0;
 
 private:
 	// Lib callback (NetLib Override)
@@ -87,20 +93,14 @@ private:
 	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 	void OnClientLeave(SESSION_ID session_id);
 
-private:
+	// JOB
 	void UpdateFunc();
 	void TokenAuthFunc();
 	void JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet);
 	void JobQueuing(SESSION_ID session_id, WORD type);
 
-private:
+	// Send
 	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
-
-private:
-	// 모니터링
-	int playerCount = 0;
-	int updateTPS = 0;
-	int tmp_updateTPS = 0;
 
 public:
 	// 모니터링
@@ -110,6 +110,9 @@ public:
 	DWORD Get_JobQueueCount();
 	DWORD Get_updateTPS();
 	DWORD Get_tmp_updateTPS();
+	DWORD Get_totalUpdateUsage();
+	DWORD Get_kernelUpdateUsage();
+	DWORD Get_userUpdateUsage ();
 };
 
 inline DWORD ChattingServer_Single::Get_playerCount() {
@@ -134,6 +137,18 @@ inline DWORD ChattingServer_Single::Get_updateTPS(){
 	return tmp_updateTPS;
 }
 
-inline DWORD ChattingServer_Single::Get_tmp_updateTPS(){
+inline DWORD ChattingServer_Single::Get_tmp_updateTPS() {
 	return tmp_updateTPS;
+}
+
+inline DWORD ChattingServer_Single::Get_totalUpdateUsage() {
+	return totalUpdateUsage;
+}
+
+inline DWORD ChattingServer_Single::Get_kernelUpdateUsage() {
+	return kernelUpdateUsage;
+}
+
+inline DWORD ChattingServer_Single::Get_userUpdateUsage() {
+	return userUpdateUsage;
 }

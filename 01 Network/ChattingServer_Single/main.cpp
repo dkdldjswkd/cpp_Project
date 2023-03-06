@@ -38,6 +38,10 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 						"acceptTPS            : %u                  \n"
 						"sendMsgTPS           : %u                  \n"
 						"recvMsgTPS           : %u                  \n"
+						"ChattingServer ----------------------------\n"
+						"Total  Update CPU    : %u                  \n"
+						"User   Update CPU    : %u                  \n"
+						"Kernel Update CPU    : %u                  \n"
 						"                                           \n"
 						"MonitoringClient NetClient Lib ------------\n"
 						"sendMsgTPS           : %u                  \n"
@@ -62,6 +66,10 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 						net_server->Get_acceptTPS(),
 						net_server->Get_sendTPS(),
 						net_server->Get_recvTPS(),
+						// ChattingServer lib
+						net_server->Get_totalUpdateUsage(),
+						net_server->Get_userUpdateUsage(),
+						net_server->Get_kernelUpdateUsage(),
 						// MonitoringClient lib
 						net_client->Get_sendTPS(),
 						net_client->Get_recvTPS(),
