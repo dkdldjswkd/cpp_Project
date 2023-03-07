@@ -18,10 +18,10 @@ void ThreadCpuMonitor::UpdateCpuUsage() {
 	GetThreadTimes(GetCurrentThread(), (FILETIME*)&none, (FILETIME*)&none, (FILETIME*)&curkernelTime, (FILETIME*)&curUserTime);
 
 	// 스레드 사용시간
-	ULONGLONG deltaTime = curTime.QuadPart - prevTime.QuadPart;
-	ULONGLONG deltaUserTime = curUserTime.QuadPart - prevUserTime.QuadPart;
-	ULONGLONG deltaKernelTime = curkernelTime.QuadPart - prevKernelTime.QuadPart;
-	ULONGLONG deltaTotalTime = deltaKernelTime + deltaUserTime;
+	deltaTime = (curTime.QuadPart - prevTime.QuadPart);
+	deltaUserTime = curUserTime.QuadPart - prevUserTime.QuadPart;
+	deltaKernelTime = curkernelTime.QuadPart - prevKernelTime.QuadPart;
+	deltaTotalTime = deltaKernelTime + deltaUserTime;
 
 	// 코어 사용 시간 백분률
 	coreTotal = (float)(deltaTotalTime / (double)deltaTime * 100.0f);
@@ -31,6 +31,12 @@ void ThreadCpuMonitor::UpdateCpuUsage() {
 	prevTime = curTime;
 	prevKernelTime = curkernelTime;
 	prevUserTime = curUserTime;
+}
+
+void ThreadCpuMonitor::Init() {
+	ULARGE_INTEGER none; // 미사용
+	GetSystemTimeAsFileTime((LPFILETIME)&prevTime);
+	GetThreadTimes(GetCurrentThread(), (FILETIME*)&none, (FILETIME*)&none, (FILETIME*)&prevKernelTime, (FILETIME*)&prevUserTime);
 }
 
 float ThreadCpuMonitor::GetTotalCpuUsage() {
@@ -43,4 +49,20 @@ float ThreadCpuMonitor::GetUserCpuUsage() {
 
 float ThreadCpuMonitor::GetKernelCpuUsage() {
 	return coreKernel;
+}
+
+ULONGLONG ThreadCpuMonitor::GetDeltaTime(){
+	return deltaTime;
+}
+
+ULONGLONG ThreadCpuMonitor::GetDeltaUserTime(){
+	return deltaUserTime ;
+}
+
+ULONGLONG ThreadCpuMonitor::GetDeltaKernelTime(){
+	return deltaKernelTime ;
+}
+
+ULONGLONG ThreadCpuMonitor::GetDeltaTotalTime(){
+	return deltaTotalTime;
 }

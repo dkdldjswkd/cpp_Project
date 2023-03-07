@@ -109,7 +109,7 @@ int main() {
 	Monitoringclient.StartUp();
 
 	// 콘솔 모니터링 스레드 생성
-	auto t = ConsoleMonitoring(&chattingServer, &Monitoringclient);
+	//auto t = ConsoleMonitoring(&chattingServer, &Monitoringclient);
 
 	Sleep(INFINITE);
 }

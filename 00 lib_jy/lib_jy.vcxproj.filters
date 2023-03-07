@@ -15,6 +15,7 @@
     <ClCompile Include="PerformanceCounter.cpp" />
     <ClCompile Include="ThreadCpuMonitorTLS.cpp" />
     <ClCompile Include="ThreadCpuMonitor.cpp" />
+    <ClCompile Include="SegmentCpuMonitor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CrashDump.h" />
@@ -37,5 +38,6 @@
     <ClInclude Include="ThreadCpuMonitorTLS.h" />
     <ClInclude Include="ThreadCpuMonitor.h" />
     <ClInclude Include="TLSTemplate.h" />
+    <ClInclude Include="SegmentCpuMonitor.h" />
   </ItemGroup>
 </Project>

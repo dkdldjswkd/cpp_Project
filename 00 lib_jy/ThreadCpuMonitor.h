@@ -16,12 +16,23 @@ private:
 	ULARGE_INTEGER prevUserTime = { 0, };
 	ULARGE_INTEGER prevKernelTime = { 0, };
 
+	// delta
+	ULONGLONG deltaTime = 0;
+	ULONGLONG deltaUserTime = 0;
+	ULONGLONG deltaKernelTime = 0;
+	ULONGLONG deltaTotalTime = 0;
+
 public:
 	void UpdateCpuUsage();
+	void Init();
 
 public:
 	// Getter
 	float GetTotalCpuUsage();
 	float GetUserCpuUsage();
 	float GetKernelCpuUsage();
+	ULONGLONG GetDeltaTime();
+	ULONGLONG GetDeltaUserTime();
+	ULONGLONG GetDeltaKernelTime();
+	ULONGLONG GetDeltaTotalTime();
 };
