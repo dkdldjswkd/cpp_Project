@@ -6,8 +6,6 @@ SegmentCpuMonitor::SegmentCpuMonitor() {
 	QueryPerformanceFrequency(&frequency);
 }
 
-
-
 void SegmentCpuMonitor::Begin() {
 	QueryPerformanceCounter(&startTime);
 
@@ -51,13 +49,13 @@ void SegmentCpuMonitor::SetNano() {
 //////////////////////////////
 
 double SegmentCpuMonitor::GetUserTime(){
-	return timeUint * (double)deltaUserTime / 10000000;
+	return (double)deltaUserTime * (timeUint / 10000000);
 }
 
 double SegmentCpuMonitor::GetKernelTime(){
-	return timeUint * (double)deltaKernelTime / 10000000;
+	return (double)deltaKernelTime * (timeUint / 10000000);
 }
 
 double SegmentCpuMonitor::GetTotalTime(){
-	return timeUint * (double)deltaTotalTime / 10000000;
+	return (double)deltaTotalTime * (timeUint / 10000000);
 }

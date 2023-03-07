@@ -5,6 +5,11 @@
 #pragma comment (lib, "Winmm.lib")
 using namespace std;
 
+void BusyWait(DWORD sleep_ms) {
+	DWORD startTime = timeGetTime();
+	while (timeGetTime() - startTime < sleep_ms) {}
+}
+
 int main() {
 	SegmentCpuMonitor monitor;
 	for (int i = 0;; i++) {

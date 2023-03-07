@@ -47,7 +47,7 @@ public:
 private:
 	bool shutDown = false;
 	LogLevel logLevel = LOG_LEVEL_INFO;
-	J_LIB::LFObjectPool<LogData> logData_pool;
+	LFObjectPool<LogData> logData_pool;
 
 private:
 	// APC 처리 스레드 (JOB Thread)

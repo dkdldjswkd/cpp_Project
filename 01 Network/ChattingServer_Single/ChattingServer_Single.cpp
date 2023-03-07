@@ -3,8 +3,13 @@
 #include "../../00 lib_jy/Logger.h"
 #include "../../00 lib_jy/Profiler.h"
 #include "../../00 lib_jy/ThreadCpuMonitor.h"
-using namespace J_LIB;
 using namespace std;
+
+// 프로파일러 제거
+#define PRO_BEGIN(TagName)
+#define PRO_END(TagName)
+#define PRO_RESET()		
+#define PRO_FILEOUT()
 
 #define MAX_MSG 300
 
@@ -57,9 +62,11 @@ void ChattingServer_Single::UpdateFunc() {
 		WaitForSingleObject(updateEvent, INFINITE);
 		for (;;) {
 			if (!jobQ.Dequeue(&p_job)) break;
+
 			PRO_BEGIN("UpdateFunc");
 			SESSION_ID session_id = p_job->session_id;
 			PacketBuffer* cs_contentsPacket = p_job->p_packet;
+
 			switch (p_job->type) {
 				case JOB_TYPE_CLIENT_JOIN: {
 					Player* p_player = playerPool.Alloc();
@@ -303,16 +310,6 @@ void ChattingServer_Single::UpdateFunc() {
 			}
 			updateTPS++;
 			jobPool.Free(p_job);
-			// 1초에 한번 스레드 모니터링
-			cur_time = timeGetTime();
-			if (1000 <= cur_time - prev_time) {
-				threadMonitor.UpdateCpuUsage();
-				totalUpdateUsage = threadMonitor.GetTotalCpuUsage();
-				kernelUpdateUsage = threadMonitor.GetKernelCpuUsage();
-				userUpdateUsage = threadMonitor.GetUserCpuUsage();
-
-				prev_time = cur_time;
-			}
 			PRO_END("UpdateFunc");
 		}
 	}
@@ -332,7 +329,7 @@ void ChattingServer_Single::TokenAuthFunc() {
 			connectorRedis.sync_commit();
 			cpp_redis::reply reply = future_reply.get();
 			if (reply.is_string()) {
-				#pragma warning(suppress : 4996)
+#pragma warning(suppress : 4996)
 				strncpy((char*)&redisToken, reply.as_string().c_str(), 64);
 			}
 			else {

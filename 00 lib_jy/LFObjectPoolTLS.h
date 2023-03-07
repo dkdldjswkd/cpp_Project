@@ -36,7 +36,7 @@ public:
 		~Chunk() {}
 
 	private:
-		J_LIB::LFObjectPool<Chunk>* p_myPool;
+		LFObjectPool<Chunk>* p_myPool;
 		bool flag_placementNew;
 		int tlsIndex;
 

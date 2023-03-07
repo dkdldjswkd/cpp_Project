@@ -20,7 +20,6 @@
 #define JOB_TYPE_CLIENT_LOGIN_SUCCESS	102
 #define JOB_TYPE_CLIENT_LOGIN_FAIL		103
 
-
 class ChattingServer_Single: public NetServer {
 public:
 	ChattingServer_Single(const char* systemFile, const char* server);
@@ -57,7 +56,7 @@ private:
 
 private:
 	// Player
-	J_LIB::LFObjectPool<Player> playerPool;
+	LFObjectPool<Player> playerPool;
 	std::unordered_map<DWORD64, Player*> player_map;						
 	std::unordered_set<Player*> sectors_set[SECTOR_MAX_Y][SECTOR_MAX_X];
 
@@ -68,23 +67,15 @@ private:
 	std::thread updateThread;
 
 	// DB
-	J_LIB::LFObjectPool<AccountToken> tokenPool;
+	LFObjectPool<AccountToken> tokenPool;
 	LFQueue<AccountToken*> tokenQ;
 	cpp_redis::client connectorRedis;
 	std::thread tokenThread;
 	HANDLE tokenEvent;
 
-	// 모니터링
-	ThreadCpuMonitor threadMonitor;
-
 	// 모니터링 데이터
 	int playerCount = 0;
 	int updateTPS = 0;
-	int tmp_updateTPS = 0;
-	// 모니터링 데이터::업데이트 스레드
-	int totalUpdateUsage  = 0;
-	int kernelUpdateUsage = 0;
-	int userUpdateUsage   = 0;
 
 private:
 	// Lib callback (NetLib Override)
@@ -109,10 +100,6 @@ public:
 	DWORD Get_JobPoolCount();
 	DWORD Get_JobQueueCount();
 	DWORD Get_updateTPS();
-	DWORD Get_tmp_updateTPS();
-	DWORD Get_totalUpdateUsage();
-	DWORD Get_kernelUpdateUsage();
-	DWORD Get_userUpdateUsage ();
 };
 
 inline DWORD ChattingServer_Single::Get_playerCount() {
@@ -132,23 +119,7 @@ inline DWORD ChattingServer_Single::Get_JobQueueCount(){
 }
 
 inline DWORD ChattingServer_Single::Get_updateTPS(){
-	tmp_updateTPS = updateTPS;
+	auto tmp = updateTPS;
 	updateTPS = 0;
-	return tmp_updateTPS;
-}
-
-inline DWORD ChattingServer_Single::Get_tmp_updateTPS() {
-	return tmp_updateTPS;
-}
-
-inline DWORD ChattingServer_Single::Get_totalUpdateUsage() {
-	return totalUpdateUsage;
-}
-
-inline DWORD ChattingServer_Single::Get_kernelUpdateUsage() {
-	return kernelUpdateUsage;
-}
-
-inline DWORD ChattingServer_Single::Get_userUpdateUsage() {
-	return userUpdateUsage;
+	return tmp;
 }
