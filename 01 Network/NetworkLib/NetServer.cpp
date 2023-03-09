@@ -11,112 +11,90 @@
 
 using namespace std;
 
+
 //------------------------------
 // Server Func
 //------------------------------
 NetServer::NetServer(const char* systemFile, const char* server) {
 	// Read SystemFile
 	parser.LoadFile(systemFile);
-	parser.GetValue(server, "PROTOCOL_CODE", (int*)&protocolCode);
-	parser.GetValue(server, "PRIVATE_KEY", (int*)&privateKey);
+	parser.GetValue(server, "PROTOCOL_CODE", (int*)&protocol_code);
+	parser.GetValue(server, "PRIVATE_KEY", (int*)&private_key);
 	parser.GetValue(server, "NET_TYPE", (int*)&netType);
-	parser.GetValue(server, "PORT", (int*)&serverPort);
-	parser.GetValue(server, "MAX_SESSION", (int*)&maxSession);
-	parser.GetValue(server, "NAGLE", (int*)&nagleFlag);
-	parser.GetValue(server, "TIME_OUT_FLAG", (int*)&timeoutFlag);
-	parser.GetValue(server, "TIME_OUT", (int*)&timeout);
-	parser.GetValue(server, "TIME_OUT_CYCLE", (int*)&timeoutCycle);
+	parser.GetValue(server, "PORT", (int*)&server_port);
+	parser.GetValue(server, "MAX_SESSION", (int*)&max_session);
+	parser.GetValue(server, "NAGLE", (int*)&nagle_flag);
+	parser.GetValue(server, "TIME_OUT_FLAG", (int*)&timeOut_flag);
+	parser.GetValue(server, "TIME_OUT", (int*)&timeOut);
+	parser.GetValue(server, "TIME_OUT_CYCLE", (int*)&timeOutCycle);
 	parser.GetValue(server, "MAX_WORKER", (int*)&maxWorker);
 	parser.GetValue(server, "ACTIVE_WORKER", (int*)&activeWorker);
 
 	// Check system
-	if (maxWorker < activeWorker) {
-		LOG("NetServer", LOG_LEVEL_FATAL, "WORKER_NUM_ERROR");
-		throw std::exception("WORKER_NUM_ERROR");
-	}
-	if (1 < (BYTE)netType) {
-		LOG("NetServer", LOG_LEVEL_FATAL, "WORKER_NUM_ERROR");
-		throw std::exception("NET_TYPE_ERROR");
-	}
+	if (maxWorker < activeWorker) CRASH();
+	if (1 < (BYTE)netType) CRASH();
 
 	//////////////////////////////
 	// Set Server
 	//////////////////////////////
 
 	WSADATA wsaData;
-	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData)) {
-		LOG("NetServer", LOG_LEVEL_FATAL, "WSAStartup_ERROR : %d", WSAGetLastError());
-		throw std::exception("WSAStartup_ERROR");
-	}
+	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
+		CRASH();
 
-	listenSock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
-	if (INVALID_SOCKET == listenSock) {
-		LOG("NetServer", LOG_LEVEL_FATAL, "WSASocket_ERROR : %d", WSAGetLastError());
-		throw std::exception("WSASocket_ERROR");
-	}
+	listen_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
+	if (INVALID_SOCKET == listen_sock) CRASH();
 
 	// Set nagle
-	if (!nagleFlag) {
+	if (!nagle_flag) {
 		int opt_val = TRUE;
-		if(0 != setsockopt(listenSock, IPPROTO_TCP, TCP_NODELAY, (const char*)&opt_val, sizeof(opt_val))) {
-			LOG("NetServer", LOG_LEVEL_WARN, "setsockopt_ERROR : %d", WSAGetLastError());
-		}
+		setsockopt(listen_sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&opt_val, sizeof(opt_val));
 	}
 
 	// Set Linger
 	LINGER linger = { 1, 0 };
-	if (0 != setsockopt(listenSock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof linger)) {
-		LOG("NetServer", LOG_LEVEL_WARN, "setsockopt_ERROR : %d", WSAGetLastError());
-	}
+	setsockopt(listen_sock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof linger);
 
 	// bind 
 	SOCKADDR_IN	server_addr;
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(serverPort);
+	server_addr.sin_port = htons(server_port);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
-	if (0 != bind(listenSock, (SOCKADDR*)&server_addr, sizeof(SOCKADDR_IN))) {
-		LOG("NetServer", LOG_LEVEL_FATAL, "bind_ERROR : %d", WSAGetLastError());
-		throw std::exception("bind_ERROR");
-	}
+	if (0 != bind(listen_sock, (SOCKADDR*)&server_addr, sizeof(SOCKADDR_IN))) CRASH();
 
 	// Set Session
-	sessionArray = new Session[maxSession];
-	for (int i = 0; i < maxSession; i++)
-		sessionIdxStack.Push(maxSession - (1 + i));
+	session_array = new Session[max_session];
+	for (int i = 0; i < max_session; i++)
+		sessionIndex_stack.Push(max_session - (1 + i));
 
 	// Create IOCP
 	h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, activeWorker);
-	if (INVALID_HANDLE_VALUE == h_iocp) {
-		LOG("NetServer", LOG_LEVEL_FATAL, "CreateIoCompletionPort_ERROR : %d", GetLastError());
-		throw std::exception("CreateIoCompletionPort_ERROR");
-	}
+	if (INVALID_HANDLE_VALUE == h_iocp) CRASH();
 
 	// Create IOCP Worker
-	workerThreadPool = new thread[maxWorker];
+	workerThread_Pool = new thread[maxWorker];
 	for (int i = 0; i < maxWorker; i++) {
-		workerThreadPool[i] = thread([this] {WorkerFunc(); });
+		workerThread_Pool[i] = thread([this] {WorkerFunc(); });
 	}
 }
 NetServer::~NetServer() {}
 
 void NetServer::StartUp() {
 	// listen
-	if (0 != listen(listenSock, SOMAXCONN_HINT(65535))) {
-		LOG("NetServer", LOG_LEVEL_FATAL, "listen_ERROR : %d", GetLastError());
-		throw std::exception("listen_ERROR");
-	}
+	if (0 != listen(listen_sock, SOMAXCONN_HINT(65535))) CRASH();
 
 	// Create Thread
 	acceptThread = thread([this] {AcceptFunc(); });
-	if (timeoutFlag) {
-		timeoutThread = thread([this] {TimeOutFunc(); });
+	if (timeOut_flag) {
+		timeOutThread = thread([this] {TimeOutFunc(); });
 	}
 
 	// LOG
-	LOG("NetServer", LOG_LEVEL_INFO, "NetServer StartUp");
+	LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Server !");
 }
 
 void NetServer::AcceptFunc() {
+	printf("Start Accept Thread \n");
 	for (;;) {
 		sockaddr_in client_addr;
 		int addr_len = sizeof(client_addr);
@@ -124,13 +102,13 @@ void NetServer::AcceptFunc() {
 		//------------------------------
 		// Accept
 		//------------------------------
-		auto accept_sock = accept(listenSock, (sockaddr*)&client_addr, &addr_len);
+		auto accept_sock = accept(listen_sock, (sockaddr*)&client_addr, &addr_len);
 		acceptTotal++;
 		if (accept_sock == INVALID_SOCKET) {
-			LOG("NetServer", LOG_LEVEL_DEBUG, "accept() Fail, Error code : %d", WSAGetLastError());
+			LOG("NetworkLib", LOG_LEVEL_DEBUG, "accept() Fail, Error code : %d", WSAGetLastError());
 			continue;
 		}
-		if (maxSession <= sessionCount) {
+		if (max_session <= sessionCount) {
 			closesocket(accept_sock);
 		}
 
@@ -149,14 +127,14 @@ void NetServer::AcceptFunc() {
 		//------------------------------
 
 		// ID 할당 (최대 세션 초과 시 연결 종료)
-		SESSION_ID session_id = GetSessionID();
+		SESSION_ID session_id = Get_SessionID();
 		if (session_id == INVALID_SESSION_ID) {
 			closesocket(accept_sock);
 			continue;
 		}
 
 		// 세션 자료구조 할당
-		Session* p_accept_session = &sessionArray[session_id.session_index];
+		Session* p_accept_session = &session_array[session_id.session_index];
 		p_accept_session->Set(accept_sock, accept_ip, accept_port, session_id);
 		acceptTPS++;
 
@@ -175,22 +153,21 @@ void NetServer::AcceptFunc() {
 		AsyncRecv(p_accept_session);
 
 		// 생성 I/O Count 차감
-		if (0 == InterlockedDecrement((LONG*)&p_accept_session->io_count)) {
-			ReleaseSession(p_accept_session);
-		}
+		DecrementIOCount(p_accept_session);
 	}
+	printf("End Accept Thread \n");
 }
 
 void NetServer::TimeOutFunc() {
 	for (;;) {
-		Sleep(timeoutCycle);
+		Sleep(timeOutCycle);
 		INT64 cur_time = timeGetTime();
-		for (int i = 0; i < maxSession; i++) {
-			Session* p_session = &sessionArray[i];
+		for (int i = 0; i < max_session; i++) {
+			Session* p_session = &session_array[i];
 			SESSION_ID id = p_session->session_id;
 
 			// 타임아웃 처리 대상 아님 (Interlocked 연산 최소화하기 위해)
-			if (sessionArray[i].release_flag || (timeout > cur_time - sessionArray[i].lastRecvTime))
+			if (session_array[i].release_flag || (timeOut > cur_time - session_array[i].lastRecvTime))
 				continue;
 
 			// 타임아웃 처리 대상일 수 있음
@@ -201,7 +178,7 @@ void NetServer::TimeOutFunc() {
 				continue;
 			}
 			// 타임아웃 조건 판단.
-			if (timeout > cur_time - sessionArray[i].lastRecvTime) {
+			if (timeOut > cur_time - session_array[i].lastRecvTime) {
 				DecrementIOCount(p_session);
 				continue;
 			}
@@ -214,45 +191,45 @@ void NetServer::TimeOutFunc() {
 }
 
 void NetServer::WorkerFunc() {
+	printf("Start Worker Thread \n");
 	for (;;) {
-		DWORD	ioSize = 0;
+		DWORD	io_size = 0;
 		Session* p_session = 0;
 		LPOVERLAPPED p_overlapped = 0;
-		BOOL ret_GQCS = GetQueuedCompletionStatus(h_iocp, &ioSize, (PULONG_PTR)&p_session, &p_overlapped, INFINITE);
+
+		BOOL ret_GQCS = GetQueuedCompletionStatus(h_iocp, &io_size, (PULONG_PTR)&p_session, &p_overlapped, INFINITE);
 
 		// 워커 스레드 종료
-		if (ioSize == 0 && p_session == 0 && p_overlapped == 0) {
+		if (io_size == 0 && p_session == 0 && p_overlapped == 0) {
 			PostQueuedCompletionStatus(h_iocp, 0, 0, 0);
 			return;
 		}
 		// FIN
-		if (ioSize == 0) {
+		if (io_size == 0) {
 			if (&p_session->send_overlapped == p_overlapped)
-				LOG("NetServer", LOG_LEVEL_FATAL, "Zero Byte Send !!");
+				LOG("NetworkLib", LOG_LEVEL_FATAL, "Zero Byte Send !!");
 			goto Decrement_IOCount;
 		}
 		// PQCS
-		else if ((ULONG_PTR)p_overlapped < (ULONG_PTR)PQCS_TYPE::NONE) {
-			switch ((PQCS_TYPE)(ULONG_PTR)p_overlapped) {
-				case PQCS_TYPE::SEND_POST: {
-					SendPost(p_session);
-					goto Decrement_IOCount;
-				}
-				case PQCS_TYPE::RELEASE_SESSION: {
-					ReleaseSession(p_session);
-					continue;
-				}
-				default: {
-					LOG("NetServer", LOG_LEVEL_FATAL, "PQCS Default");
-					break;
-				}
+		if ((PQCS_TYPE)((byte)p_overlapped) <= PQCS_TYPE::DECREMENT_IO) {
+			switch ((PQCS_TYPE)((byte)p_overlapped)) {
+			case PQCS_TYPE::SEND_POST:
+				SendPost(p_session);
+				goto Decrement_IOCount;
+
+			case PQCS_TYPE::DECREMENT_IO:
+				goto Decrement_IOCount;
+
+			default:
+				LOG("NetworkLib", LOG_LEVEL_FATAL, "PQCS Default");
+				break;
 			}
 		}
 
 		// recv 완료통지
 		if (&p_session->recv_overlapped == p_overlapped) {
 			if (ret_GQCS) {
-				p_session->recv_buf.Move_Rear(ioSize);
+				p_session->recv_buf.Move_Rear(io_size);
 				p_session->lastRecvTime = timeGetTime();
 				// 내부 통신 외부 통신 구분
 				if (NetType::LAN == netType) {
@@ -261,7 +238,7 @@ void NetServer::WorkerFunc() {
 				else {
 					RecvCompletion_NET(p_session);
 				}
-			}  
+			}
 			else {
 				LOG("NetworkLib", LOG_LEVEL_DEBUG, "Overlapped Recv Fail");
 			}
@@ -280,13 +257,12 @@ void NetServer::WorkerFunc() {
 		}
 
 	Decrement_IOCount:
-		if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
-			ReleaseSession(p_session);
-		}
+		DecrementIOCount(p_session);
 	}
+	printf("End Worker Thread \n");
 }
 
-bool NetServer::ReleaseSession(Session* p_session){
+bool NetServer::ReleaseSession(Session* p_session) {
 	if (0 != p_session->io_count)
 		return false;
 
@@ -306,20 +282,20 @@ bool NetServer::ReleaseSession(Session* p_session){
 		OnClientLeave(p_session->session_id);
 
 		// 세션 반환
-		sessionIdxStack.Push(p_session->session_id.session_index);
+		sessionIndex_stack.Push(p_session->session_id.session_index);
 		InterlockedDecrement((LONG*)&sessionCount);
 		return true;
 	}
 	return false;
 }
 
-void NetServer::SendCompletion(Session* p_session){
+void NetServer::SendCompletion(Session* p_session) {
 	// Send Packet Free
-	for (int i = 0; i < p_session->sendPacketCount; i++) {
+	for (int i = 0; i < p_session->sendPacketCount ; i++) {
 		PacketBuffer::Free(p_session->sendPacketArr[i]);
 		InterlockedIncrement(&sendMsgTPS);
 	}
-	p_session->sendPacketCount = 0;
+	p_session->sendPacketCount  = 0;
 
 	// Send Flag OFF
 	InterlockedExchange8((char*)&p_session->send_flag, false);
@@ -336,21 +312,23 @@ void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 	if (nullptr == p_session)
 		return;
 
+	if (p_session->disconnect_flag) {
+		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::DECREMENT_IO);
+		return;
+	}
+
 	// LAN, NET 구분
 	if (NetType::LAN == netType) {
 		send_packet->Set_LanHeader();
 		send_packet->Increment_refCount();
 	}
 	else {
-		send_packet->Set_NetHeader(protocolCode, privateKey);
+		send_packet->Set_NetHeader(protocol_code, private_key);
 		send_packet->Increment_refCount();
 	}
 
 	p_session->sendQ.Enqueue(send_packet);
-	if (p_session->send_flag == false) {
-		// SendPost 큐잉
-		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::SEND_POST);
-	}
+	PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::SEND_POST);
 }
 
 // AsyncSend Call 시도
@@ -382,7 +360,7 @@ int NetServer::AsyncSend(Session* p_session) {
 	if (NetType::LAN == netType) {
 		for (int i = 0; i < MAX_SEND_MSG; i++) {
 			if (p_session->sendQ.GetUseCount() <= 0) {
-				p_session->sendPacketCount = i;
+				p_session->sendPacketCount  = i;
 				break;
 			}
 			p_session->sendQ.Dequeue((PacketBuffer**)&p_session->sendPacketArr[i]);
@@ -393,7 +371,7 @@ int NetServer::AsyncSend(Session* p_session) {
 	else {
 		for (int i = 0; i < MAX_SEND_MSG; i++) {
 			if (p_session->sendQ.GetUseCount() <= 0) {
-				p_session->sendPacketCount = i;
+				p_session->sendPacketCount  = i;
 				break;
 			}
 			p_session->sendQ.Dequeue((PacketBuffer**)&p_session->sendPacketArr[i]);
@@ -402,15 +380,15 @@ int NetServer::AsyncSend(Session* p_session) {
 		}
 	}
 	// MAX SEND 제한 초과
-	if (p_session->sendPacketCount == 0) {
-		p_session->sendPacketCount = MAX_SEND_MSG;
+	if (p_session->sendPacketCount  == 0) {
+		p_session->sendPacketCount  = MAX_SEND_MSG;
 		DisconnectSession(p_session);
 		return false;
 	}
 
 	IncrementIOCount(p_session);
 	ZeroMemory(&p_session->send_overlapped, sizeof(p_session->send_overlapped));
-	if (SOCKET_ERROR == WSASend(p_session->sock, wsaBuf, p_session->sendPacketCount, NULL, 0, &p_session->send_overlapped, NULL)) {
+	if (SOCKET_ERROR == WSASend(p_session->sock, wsaBuf, p_session->sendPacketCount , NULL, 0, &p_session->send_overlapped, NULL)) {
 		const auto err_no = WSAGetLastError();
 		if (ERROR_IO_PENDING != err_no) { // Send 실패
 			LOG("NetworkLib", LOG_LEVEL_DEBUG, "WSASend() Fail, Error code : %d", WSAGetLastError());
@@ -451,7 +429,7 @@ bool NetServer::AsyncRecv(Session* p_session) {
 	return true;
 }
 
-void NetServer::RecvCompletion_LAN(Session* p_session){
+void NetServer::RecvCompletion_LAN(Session* p_session) {
 	// 패킷 조립
 	for (;;) {
 		int recv_len = p_session->recv_buf.Get_UseSize();
@@ -490,7 +468,7 @@ void NetServer::RecvCompletion_LAN(Session* p_session){
 	}
 }
 
-void NetServer::RecvCompletion_NET(Session* p_session){
+void NetServer::RecvCompletion_NET(Session* p_session) {
 	// 패킷 조립
 	for (;;) {
 		int recv_len = p_session->recv_buf.Get_UseSize();
@@ -506,7 +484,7 @@ void NetServer::RecvCompletion_NET(Session* p_session){
 		WORD payload_len = ((NET_HEADER*)p_packet)->len;
 
 		// code 검사
-		if (code != protocolCode) {
+		if (code != protocol_code) {
 			PacketBuffer::Free(encrypt_packet);
 			LOG("NetworkLib", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
 			DisconnectSession(p_session);
@@ -526,7 +504,7 @@ void NetServer::RecvCompletion_NET(Session* p_session){
 
 		// 복호패킷 생성
 		PacketBuffer* decrypt_packet = PacketBuffer::Alloc();
-		if (!decrypt_packet->DecryptPacket(encrypt_packet, privateKey)) {
+		if (!decrypt_packet->DecryptPacket(encrypt_packet, private_key)) {
 			PacketBuffer::Free(encrypt_packet);
 			PacketBuffer::Free(decrypt_packet);
 			LOG("NetworkLib", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
@@ -552,26 +530,21 @@ void NetServer::RecvCompletion_NET(Session* p_session){
 }
 
 Session* NetServer::Check_InvalidSession(SESSION_ID session_id) {
-	Session* p_session = &sessionArray[session_id.session_index];
+	Session* p_session = &session_array[session_id.session_index];
 	IncrementIOCount(p_session);
 
-	// 릴리즈 체크
+	// 세션 릴리즈 상태
 	if (true == p_session->release_flag) {
 		DecrementIOCount(p_session);
 		return nullptr;
 	}
-	// 재사용 세션 체크
+	// 세션 재사용
 	if (p_session->session_id != session_id) {
 		DecrementIOCount(p_session);
 		return nullptr;
 	}
-	// * 위 두 조건을 통과했으므로 정상적인 세션임
-	// disconnect flag 체크
-	if (p_session->disconnect_flag) {
-		DecrementIOCount(p_session);
-		return nullptr;
-	}
 
+	// 재사용 가능성 제로
 	return p_session;
 }
 
@@ -579,7 +552,7 @@ bool NetServer::Disconnect(SESSION_ID session_id) {
 	Session* p_session = Check_InvalidSession(session_id);
 	if (nullptr == p_session) return true;
 	DisconnectSession(p_session);
-	DecrementIOCount(p_session);
+	PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::DECREMENT_IO);
 	return true;
 }
 
@@ -592,15 +565,15 @@ void NetServer::CleanUp() {
 	// WorkerThread 종료
 	//PostQueuedCompletionStatus(h_iocp, 0, 0, 0);
 	for (int i = 0; i < maxWorker; i++) {
-		if (workerThreadPool[i].joinable()) {
-			workerThreadPool[i].join();
+		if (workerThread_Pool[i].joinable()) {
+			workerThread_Pool[i].join();
 		}
 	}
 
 	// 세션 정리
 	// ...
 
-	closesocket(listenSock);
+	closesocket(listen_sock);
 	CloseHandle(h_iocp);
 	WSACleanup();
 }
@@ -609,11 +582,11 @@ void NetServer::CleanUp() {
 // SESSION_ID
 //------------------------------
 
-SESSION_ID NetServer::GetSessionID() {
+SESSION_ID NetServer::Get_SessionID() {
 	static DWORD unique = 1;
 
 	DWORD index;
-	if (false == sessionIdxStack.Pop(&index)) {
+	if (false == sessionIndex_stack.Pop(&index)) {
 		return INVALID_SESSION_ID;
 	}
 
