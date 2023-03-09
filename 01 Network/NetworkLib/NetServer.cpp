@@ -90,7 +90,7 @@ void NetServer::StartUp() {
 	}
 
 	// LOG
-	LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Server !");
+	LOG("NetServer", LOG_LEVEL_DEBUG, "Start Server !");
 }
 
 void NetServer::AcceptFunc() {
@@ -105,7 +105,7 @@ void NetServer::AcceptFunc() {
 		auto accept_sock = accept(listen_sock, (sockaddr*)&client_addr, &addr_len);
 		acceptTotal++;
 		if (accept_sock == INVALID_SOCKET) {
-			LOG("NetworkLib", LOG_LEVEL_DEBUG, "accept() Fail, Error code : %d", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_DEBUG, "accept() Fail, Error code : %d", WSAGetLastError());
 			continue;
 		}
 		if (max_session <= sessionCount) {
@@ -207,21 +207,24 @@ void NetServer::WorkerFunc() {
 		// FIN
 		if (io_size == 0) {
 			if (&p_session->send_overlapped == p_overlapped)
-				LOG("NetworkLib", LOG_LEVEL_FATAL, "Zero Byte Send !!");
+				LOG("NetServer", LOG_LEVEL_FATAL, "Zero Byte Send !!");
 			goto Decrement_IOCount;
 		}
 		// PQCS
-		if ((PQCS_TYPE)((byte)p_overlapped) <= PQCS_TYPE::DECREMENT_IO) {
-			switch ((PQCS_TYPE)((byte)p_overlapped)) {
-			case PQCS_TYPE::SEND_POST:
+		else if ((ULONG_PTR)p_overlapped < (ULONG_PTR)PQCS_TYPE::NONE) {
+			switch ((PQCS_TYPE)(byte)p_overlapped) {
+			case PQCS_TYPE::SEND_POST: {
 				SendPost(p_session);
 				goto Decrement_IOCount;
+			}
 
-			case PQCS_TYPE::DECREMENT_IO:
-				goto Decrement_IOCount;
+			case PQCS_TYPE::RELEASE_SESSION: {
+				ReleaseSession(p_session);
+				continue;
+			}
 
 			default:
-				LOG("NetworkLib", LOG_LEVEL_FATAL, "PQCS Default");
+				LOG("NetServer", LOG_LEVEL_FATAL, "PQCS Default");
 				break;
 			}
 		}
@@ -240,7 +243,7 @@ void NetServer::WorkerFunc() {
 				}
 			}
 			else {
-				LOG("NetworkLib", LOG_LEVEL_DEBUG, "Overlapped Recv Fail");
+				LOG("NetServer", LOG_LEVEL_DEBUG, "Overlapped Recv Fail");
 			}
 		}
 		// send 완료통지
@@ -249,15 +252,17 @@ void NetServer::WorkerFunc() {
 				SendCompletion(p_session);
 			}
 			else {
-				LOG("NetworkLib", LOG_LEVEL_DEBUG, "Overlapped Send Fail");
+				LOG("NetServer", LOG_LEVEL_DEBUG, "Overlapped Send Fail");
 			}
 		}
 		else {
-			LOG("NetworkLib", LOG_LEVEL_FATAL, "GQCS INVALID Overlapped!!");
+			LOG("NetServer", LOG_LEVEL_FATAL, "GQCS INVALID Overlapped!!");
 		}
 
 	Decrement_IOCount:
-		DecrementIOCount(p_session);
+		if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+			ReleaseSession(p_session);
+		}
 	}
 	printf("End Worker Thread \n");
 }
@@ -308,12 +313,12 @@ void NetServer::SendCompletion(Session* p_session) {
 
 // SendQ Enqueue, SendPost
 void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
-	Session* p_session = Check_InvalidSession(session_id);
+	Session* p_session = ValidateSession(session_id);
 	if (nullptr == p_session)
 		return;
 
 	if (p_session->disconnect_flag) {
-		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::DECREMENT_IO);
+		DecrementIOCount(p_session);
 		return;
 	}
 
@@ -391,7 +396,7 @@ int NetServer::AsyncSend(Session* p_session) {
 	if (SOCKET_ERROR == WSASend(p_session->sock, wsaBuf, p_session->sendPacketCount , NULL, 0, &p_session->send_overlapped, NULL)) {
 		const auto err_no = WSAGetLastError();
 		if (ERROR_IO_PENDING != err_no) { // Send 실패
-			LOG("NetworkLib", LOG_LEVEL_DEBUG, "WSASend() Fail, Error code : %d", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_DEBUG, "WSASend() Fail, Error code : %d", WSAGetLastError());
 			DisconnectSession(p_session);
 			DecrementIOCount(p_session);
 			return false;
@@ -415,7 +420,7 @@ bool NetServer::AsyncRecv(Session* p_session) {
 	ZeroMemory(&p_session->recv_overlapped, sizeof(p_session->recv_overlapped));
 	if (SOCKET_ERROR == WSARecv(p_session->sock, wsaBuf, 2, NULL, &flags, &p_session->recv_overlapped, NULL)) {
 		if (WSAGetLastError() != ERROR_IO_PENDING) { // Recv 실패
-			LOG("NetworkLib", LOG_LEVEL_DEBUG, "WSARecv() Fail, Error code : %d", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_DEBUG, "WSARecv() Fail, Error code : %d", WSAGetLastError());
 			DecrementIOCount(p_session);
 			return false;
 		}
@@ -486,7 +491,7 @@ void NetServer::RecvCompletion_NET(Session* p_session) {
 		// code 검사
 		if (code != protocol_code) {
 			PacketBuffer::Free(encrypt_packet);
-			LOG("NetworkLib", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
 			DisconnectSession(p_session);
 			break;
 		}
@@ -507,7 +512,7 @@ void NetServer::RecvCompletion_NET(Session* p_session) {
 		if (!decrypt_packet->DecryptPacket(encrypt_packet, private_key)) {
 			PacketBuffer::Free(encrypt_packet);
 			PacketBuffer::Free(decrypt_packet);
-			LOG("NetworkLib", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
 			DisconnectSession(p_session);
 			break;
 		}
@@ -529,7 +534,7 @@ void NetServer::RecvCompletion_NET(Session* p_session) {
 	}
 }
 
-Session* NetServer::Check_InvalidSession(SESSION_ID session_id) {
+Session* NetServer::ValidateSession(SESSION_ID session_id) {
 	Session* p_session = &session_array[session_id.session_index];
 	IncrementIOCount(p_session);
 
@@ -549,10 +554,10 @@ Session* NetServer::Check_InvalidSession(SESSION_ID session_id) {
 }
 
 bool NetServer::Disconnect(SESSION_ID session_id) {
-	Session* p_session = Check_InvalidSession(session_id);
+	Session* p_session = ValidateSession(session_id);
 	if (nullptr == p_session) return true;
 	DisconnectSession(p_session);
-	PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::DECREMENT_IO);
+	DecrementIOCount(p_session);
 	return true;
 }
 

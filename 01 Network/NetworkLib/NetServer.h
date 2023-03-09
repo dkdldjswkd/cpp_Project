@@ -28,7 +28,8 @@ private:
 
 	enum class PQCS_TYPE : BYTE {
 		SEND_POST = 1,
-		DECREMENT_IO = 2,
+		RELEASE_SESSION = 2,
+		NONE,
 	};
 
 private:
@@ -84,7 +85,7 @@ private:
 
 	// ¼¼¼Ç
 	SESSION_ID Get_SessionID();
-	Session* Check_InvalidSession(SESSION_ID session_id);
+	Session* ValidateSession(SESSION_ID session_id);
 	inline void DecrementIOCount(Session* p_session);
 	inline void IncrementIOCount(Session* p_session);
 	inline void DisconnectSession(Session* p_session);
@@ -130,8 +131,9 @@ public:
 };
 
 inline void NetServer::DecrementIOCount(Session* p_session) {
-	if (0 == InterlockedDecrement((LONG*)&p_session->io_count))
-		ReleaseSession(p_session);
+	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::RELEASE_SESSION);
+	}
 }
 
 inline void NetServer::IncrementIOCount(Session* p_session) {
