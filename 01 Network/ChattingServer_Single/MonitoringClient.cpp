@@ -164,10 +164,10 @@ void MonitoringClient::UpdateData() {
 
 	cpuUsage_chattingServer = ProcessMonitor.GetTotalCpuUsage();
 	usingMemoryMB_chattingServer = perfCounter.GetUserMemB() / 1024 / 1024;
-	sessionCount_chattServer = localServer->Get_sessionCount();
+	sessionCount_chattServer = localServer->GetSessionCount();
 	userCount_chattServer = ((ChattingServer_Single*)localServer)->Get_playerCount();
 	updateTPS_chattServer = ((ChattingServer_Single*)localServer)->Get_updateTPS();
-	packetCount_chattingServer = PacketBuffer::Get_UseCount();
+	packetCount_chattingServer = PacketBuffer::GetUseCount();
 	jobCount_chattServe = ((ChattingServer_Single*)localServer)->Get_JobQueueCount();
 	cpuUsage_machine = machineMonitor.GetTotalCpuUsage();
 	usingNonMemoryMB_machine = perfCounter.GetSysNonMemB() / 1024 / 1024;

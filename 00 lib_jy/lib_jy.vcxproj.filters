@@ -39,5 +39,6 @@
     <ClInclude Include="ThreadCpuMonitor.h" />
     <ClInclude Include="TLSTemplate.h" />
     <ClInclude Include="SegmentCpuMonitor.h" />
+    <ClInclude Include="base.h" />
   </ItemGroup>
 </Project>

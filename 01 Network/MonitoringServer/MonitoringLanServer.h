@@ -18,7 +18,7 @@ private:
 	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 
 private:
-	J_LIB::LFObjectPool<ServerSession> serverSessionPool;
+	LFObjectPool<ServerSession> serverSessionPool;
 	std::unordered_map<INT64, ServerSession*> serverSessionMap;
 	RecursiveLock serverSessionMapLock;
 	NetServer* localServer;

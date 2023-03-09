@@ -20,55 +20,59 @@ private:
 	friend PacketBuffer;
 
 private:
-	enum class NetType : BYTE {
+	static enum class NetType : BYTE {
 		LAN,
 		NET,
 		NONE,
 	};
 
-	enum class PQCS_TYPE : BYTE {
+	static enum class PQCS_TYPE : BYTE {
 		SEND_POST = 1,
-		DECREMENT_IO = 2,
+		RELEASE_SESSION = 2,
+		NONE = 3,
 	};
 
 private:
 	// 프로토콜
-	BYTE protocol_code;
-	BYTE private_key;
+	BYTE protocolCode;
+	BYTE privateKey;
 
 	// 네트워크
 	NetType netType;
-	SOCKET listen_sock = INVALID_SOCKET;
+	SOCKET listenSock = INVALID_SOCKET;
 	HANDLE h_iocp = INVALID_HANDLE_VALUE;
-	WORD server_port = 0;
+	WORD serverPort = 0;
 
 	// 세션
-	Session* session_array;
-	DWORD max_session;
-	LFStack<DWORD> sessionIndex_stack;
+	Session* sessionArray;
+	DWORD maxSession;
+	LFStack<DWORD> sessionIdxStack;
 
 	// 스레드
 	WORD maxWorker;
 	WORD activeWorker;
-	std::thread* workerThread_Pool;
+	std::thread* workerThreadPool;
 	std::thread acceptThread;
-	std::thread timeOutThread;
+	std::thread timeoutThread;
 
 	// 옵션
-	bool nagle_flag;
-	bool timeOut_flag;
+	bool nagleFlag;
+	bool timeoutFlag;
 
 	// 타임아웃
-	DWORD timeOutCycle;
-	DWORD timeOut;
+	DWORD timeoutCycle;
+	DWORD timeout;
 
-private:
 	// 모니터링
+	DWORD acceptTPS = 0;
+	DWORD acceptTotal = 0;
 	alignas(64) DWORD sessionCount = 0;
 	alignas(64) DWORD recvMsgTPS = 0;
 	alignas(64) DWORD sendMsgTPS = 0;
-	DWORD acceptTPS = 0;
-	DWORD acceptTotal = 0;
+
+public:
+	// 유틸
+	Parser parser;
 
 private:
 	// 스레드
@@ -77,14 +81,13 @@ private:
 	void TimeOutFunc();
 
 	// IO 완료 통지 루틴
-	void (NetServer::* RecvCompletion)(Session* p_session);
 	void RecvCompletion_LAN(Session* p_session);
 	void RecvCompletion_NET(Session* p_session);
 	void SendCompletion(Session* p_session);
 
 	// 세션
-	SESSION_ID Get_SessionID();
-	Session* Check_InvalidSession(SESSION_ID session_id);
+	SESSION_ID GetSessionID();
+	Session* Check_InvalidSession(SESSION_ID session_id); // * public 함수 내부에서만 사용
 	inline void DecrementIOCount(Session* p_session);
 	inline void IncrementIOCount(Session* p_session);
 	inline void DisconnectSession(Session* p_session);
@@ -99,18 +102,14 @@ private:
 
 protected:
 	// 라이브러리 사용자 측 재정의 하여 사용
-	virtual bool OnConnectionRequest(in_addr IP, WORD Port) = 0;	//  accept 직후 호출, client 수용 여부 반환
-	virtual void OnClientJoin(SESSION_ID session_id) = 0;		// 접속 처리 후 호출
+	virtual bool OnConnectionRequest(in_addr IP, WORD Port) = 0;
+	virtual void OnClientJoin(SESSION_ID session_id) = 0;		
 	virtual void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet) = 0;
-	virtual void OnClientLeave(SESSION_ID session_id) = 0; // Release 후 호출
+	virtual void OnClientLeave(SESSION_ID session_id) = 0;
 	// virtual void OnError(int errorcode /* (wchar*) */) = 0;
-	// virtual void OnSend(SessionID, int sendsize) = 0;           // 패킷 송신 완료 후
-	// virtual void OnWorkerThreadBegin() = 0;                    // 워커스레드 GQCS 바로 하단에서 호출
-	// virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
-
-public:
-	// 유틸
-	Parser parser;
+	// virtual void OnSend(SessionID, int sendsize) = 0;          
+	// virtual void OnWorkerThreadBegin() = 0;                    
+	// virtual void OnWorkerThreadEnd() = 0;                      
 
 public:
 	void StartUp();
@@ -122,16 +121,17 @@ public:
 
 public:
 	// 모니터링 Getter
-	DWORD Get_sessionCount();
-	DWORD Get_acceptTPS();
-	DWORD Get_acceptTotal();
-	DWORD Get_sendTPS();
-	DWORD Get_recvTPS();
+	DWORD GetSessionCount();
+	DWORD GetAcceptTotal();
+	DWORD GetAcceptTPS();
+	DWORD GetSendTPS();
+	DWORD GetRecvTPS();
 };
 
 inline void NetServer::DecrementIOCount(Session* p_session) {
-	if (0 == InterlockedDecrement((LONG*)&p_session->io_count))
-		ReleaseSession(p_session);
+	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::RELEASE_SESSION);
+	}
 }
 
 inline void NetServer::IncrementIOCount(Session* p_session) {
@@ -143,24 +143,23 @@ inline void NetServer::DisconnectSession(Session* p_session) {
 	p_session->disconnect_flag = true;
 	CancelIoEx((HANDLE)p_session->sock, NULL);
 }
-
-inline DWORD NetServer::Get_sessionCount() {
+inline DWORD NetServer::GetSessionCount() {
 	return sessionCount;
 }
-inline DWORD NetServer::Get_acceptTPS() {
+inline DWORD NetServer::GetAcceptTotal() {
+	return acceptTotal;
+}
+inline DWORD NetServer::GetAcceptTPS() {
 	auto tmp = acceptTPS;
 	acceptTPS = 0;
 	return tmp;
 }
-inline DWORD NetServer::Get_acceptTotal() {
-	return acceptTotal;
-}
-inline DWORD NetServer::Get_sendTPS() {
+inline DWORD NetServer::GetSendTPS() {
 	auto tmp = sendMsgTPS;
 	sendMsgTPS = 0;
 	return tmp;
 }
-inline DWORD NetServer::Get_recvTPS() {
+inline DWORD NetServer::GetRecvTPS() {
 	auto tmp = recvMsgTPS;
 	recvMsgTPS = 0;
 	return tmp;

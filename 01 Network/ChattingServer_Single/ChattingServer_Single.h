@@ -107,11 +107,11 @@ inline DWORD ChattingServer_Single::Get_playerCount() {
 }
 
 inline DWORD ChattingServer_Single::Get_playerPoolCount(){
-	return playerPool.Get_UseCount();
+	return playerPool.GetUseCount();
 }
 
 inline DWORD ChattingServer_Single::Get_JobPoolCount(){
-	return jobPool.Get_UseCount();
+	return jobPool.GetUseCount();
 }
 
 inline DWORD ChattingServer_Single::Get_JobQueueCount(){

@@ -58,10 +58,10 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 						"avail Memory(MB)     : %d                  \n"
 						,
 						// ChattingServer lib
-						net_server->Get_acceptTotal(),
-						net_server->Get_acceptTPS(),
-						net_server->Get_sendTPS(),
-						net_server->Get_recvTPS(),
+						net_server->GetAcceptTotal(),
+						net_server->GetAcceptTPS(),
+						net_server->GetSendTPS(),
+						net_server->GetRecvTPS(),
 						// MonitoringClient lib
 						net_client->Get_sendTPS(),
 						net_client->Get_recvTPS(),

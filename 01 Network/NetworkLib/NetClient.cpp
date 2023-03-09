@@ -11,7 +11,6 @@
 //#pragma comment(lib, "../../00 lib_jy/lib_jy.lib")
 
 using namespace std;
-using namespace J_LIB;
 
 //------------------------------
 // Server Func
@@ -93,7 +92,6 @@ void NetClient::StartUp() {
 }
 
 void NetClient::WorkerFunc() {
-	printf("Start Worker Thread \n");
 	for (;;) {
 		DWORD	io_size = 0;
 		Session* p_session = 0;
@@ -113,7 +111,7 @@ void NetClient::WorkerFunc() {
 			goto Decrement_IOCount;
 		}
 		// PQCS
-		if ((PQCS_TYPE)((byte)p_overlapped) <= PQCS_TYPE::DECREMENT_IO) {
+		else if ((PQCS_TYPE)((byte)p_overlapped) <= PQCS_TYPE::DECREMENT_IO) {
 			switch ((PQCS_TYPE)((byte)p_overlapped)) {
 				case PQCS_TYPE::SEND_POST:
 					SendPost();
@@ -161,7 +159,6 @@ void NetClient::WorkerFunc() {
 	Decrement_IOCount:
 		DecrementIOCount();
 	}
-	printf("End Worker Thread \n");
 }
 
 bool NetClient::ReleaseSession(){
@@ -176,8 +173,8 @@ bool NetClient::ReleaseSession(){
 		while (client_session.sendQ.Dequeue(&packet)) {
 			PacketBuffer::Free(packet);
 		}
-		for (int i = 0; i < client_session.sendPacket_count; i++) {
-			PacketBuffer::Free(client_session.sendPacket_array[i]);
+		for (int i = 0; i < client_session.sendPacketCount; i++) {
+			PacketBuffer::Free(client_session.sendPacketArr[i]);
 		}
 
 		// 사용자 리소스 정리
@@ -189,11 +186,11 @@ bool NetClient::ReleaseSession(){
 
 void NetClient::SendCompletion(){
 	// Send Packet Free
-	for (int i = 0; i < client_session.sendPacket_count; i++) {
-		PacketBuffer::Free(client_session.sendPacket_array[i]);
+	for (int i = 0; i < client_session.sendPacketCount; i++) {
+		PacketBuffer::Free(client_session.sendPacketArr[i]);
 		InterlockedIncrement(&sendMsgTPS);
 	}
-	client_session.sendPacket_count = 0;
+	client_session.sendPacketCount = 0;
 
 	// Send Flag OFF
 	InterlockedExchange8((char*)&client_session.send_flag, false);
@@ -257,35 +254,35 @@ int NetClient::AsyncSend() {
 	if (NetType::LAN == netType) {
 		for (int i = 0; i < MAX_SEND_MSG; i++) {
 			if (client_session.sendQ.GetUseCount() <= 0) {
-				client_session.sendPacket_count = i;
+				client_session.sendPacketCount = i;
 				break;
 			}
-			client_session.sendQ.Dequeue((PacketBuffer**)&client_session.sendPacket_array[i]);
-			wsaBuf[i].buf = client_session.sendPacket_array[i]->Get_PacketPos_LAN();
-			wsaBuf[i].len = client_session.sendPacket_array[i]->Get_PacketSize_LAN();
+			client_session.sendQ.Dequeue((PacketBuffer**)&client_session.sendPacketArr[i]);
+			wsaBuf[i].buf = client_session.sendPacketArr[i]->Get_PacketPos_LAN();
+			wsaBuf[i].len = client_session.sendPacketArr[i]->Get_PacketSize_LAN();
 		}
 	}
 	else {
 		for (int i = 0; i < MAX_SEND_MSG; i++) {
 			if (client_session.sendQ.GetUseCount() <= 0) {
-				client_session.sendPacket_count = i;
+				client_session.sendPacketCount = i;
 				break;
 			}
-			client_session.sendQ.Dequeue((PacketBuffer**)&client_session.sendPacket_array[i]);
-			wsaBuf[i].buf = client_session.sendPacket_array[i]->Get_PacketPos_NET();
-			wsaBuf[i].len = client_session.sendPacket_array[i]->Get_PacketSize_NET();
+			client_session.sendQ.Dequeue((PacketBuffer**)&client_session.sendPacketArr[i]);
+			wsaBuf[i].buf = client_session.sendPacketArr[i]->Get_PacketPos_NET();
+			wsaBuf[i].len = client_session.sendPacketArr[i]->Get_PacketSize_NET();
 		}
 	}
 	// MAX SEND 제한 초과
-	if (client_session.sendPacket_count == 0) {
-		client_session.sendPacket_count = MAX_SEND_MSG;
+	if (client_session.sendPacketCount == 0) {
+		client_session.sendPacketCount = MAX_SEND_MSG;
 		DisconnectSession();
 		return false;
 	}
 
 	IncrementIOCount();
 	ZeroMemory(&client_session.send_overlapped, sizeof(client_session.send_overlapped));
-	if (SOCKET_ERROR == WSASend(client_session.sock, wsaBuf, client_session.sendPacket_count, NULL, 0, &client_session.send_overlapped, NULL)) {
+	if (SOCKET_ERROR == WSASend(client_session.sock, wsaBuf, client_session.sendPacketCount, NULL, 0, &client_session.send_overlapped, NULL)) {
 		const auto err_no = WSAGetLastError();
 		if (ERROR_IO_PENDING != err_no) { // Send 실패
 			LOG("NetworkLib", LOG_LEVEL_DEBUG, "WSASend() Fail, Error code : %d", WSAGetLastError());

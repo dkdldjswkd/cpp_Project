@@ -6,7 +6,7 @@
 // * 해당 LFStack 구현 환경 : Release, x64, 최적화 컴파일 OFF
 //	오전 3:03 2022-12-18
 
-// J_LIB::LFObjectPool에 종속적임
+// LFObjectPool에 종속적임
 
 #define CRASH()			do{							\
 							*(int*)nullptr = 0;		\
@@ -40,11 +40,11 @@ public:
 	~LFStack();
 
 private:
-	J_LIB::LFObjectPool<Node> node_pool;
+	LFObjectPool<Node> node_pool;
 
 private:
-	__declspec(align(64)) DWORD64 top_ABA = NULL;
-	__declspec(align(64)) int node_count = 0;
+	alignas(64) DWORD64 top_ABA = NULL;
+	alignas(64) int node_count = 0;
 
 private:
 	DWORD64 mask			= 0x00007FFFFFFFFFFF; // 상위 17bit 0
@@ -89,7 +89,7 @@ void LFStack<T>::Push(T data) {
 		insert_node->next = (Node*)(copy_ABA & mask);
 
 		// aba count 추출 및 new_ABA 생성
-		DWORD64 aba_count = (copy_ABA + UNUSED_COUNT) & mask_reverse;
+		DWORD64 aba_count = (copy_ABA + stampCount) & mask_reverse;
 		Node* new_ABA = (Node*)(aba_count | (DWORD64)insert_node);
 
 		// 스택에 변화가 있었다면 다시시도
@@ -110,7 +110,7 @@ bool LFStack<T>::Pop(T* dst) {
 		// Not empty!!
 		if (copy_top) {
 			// aba count 추출 및 new_ABA 생성
-			DWORD64 aba_count = (copy_ABA + UNUSED_COUNT) & mask_reverse;
+			DWORD64 aba_count = (copy_ABA + stampCount) & mask_reverse;
 			Node* new_ABA = (Node*)(aba_count | (DWORD64)copy_top->next);
 
 			// 스택에 변화가 있었다면 다시시도

@@ -5,7 +5,7 @@
 // 오전 4:18 2023-01-09
 //
 // * 해당 LFQueue 구현 환경 : Release, x64, 최적화 컴파일 OFF
-//		J_LIB::LFObjectPool에 종속적
+//		LFObjectPool에 종속적
 // 사본
 
 template <typename T>
@@ -27,7 +27,7 @@ public:
 	~LFQueue();
 
 private:
-	J_LIB::LFObjectPool<Node> node_pool;
+	LFObjectPool<Node> node_pool;
 
 private:
 	const DWORD64 node_mask  = 0x00007FFFFFFFFFFF; // 노드 추출 목적 (상위 17bit 제거)
@@ -36,7 +36,7 @@ private:
 public:
 	alignas(64) DWORD64 head_ABA;
 	alignas(64) DWORD64 tail_ABA;
-	alignas(32) int size = 0;
+	alignas(64) int size = 0;
 
 public:
 	void Enqueue(T data);
@@ -82,14 +82,14 @@ void LFQueue<T>::Enqueue(T data) {
 				InterlockedIncrement((LONG*)&size);
 
 				// tail 이동
-				DWORD64 new_tail_ABA = ((copy_tail_ABA + UNUSED_COUNT) & stamp_mask) | (DWORD64)insert_node;
+				DWORD64 new_tail_ABA = ((copy_tail_ABA + stampCount) & stamp_mask) | (DWORD64)insert_node;
 				LONG64 ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)new_tail_ABA, (LONG64)copy_tail_ABA);
 				return;
 			}
 		}
 		else {
 			// tail 이동
-			DWORD64 next_tail_ABA = ((copy_tail_ABA + UNUSED_COUNT) & stamp_mask) | (DWORD64)copy_tail_next;
+			DWORD64 next_tail_ABA = ((copy_tail_ABA + stampCount) & stamp_mask) | (DWORD64)copy_tail_next;
 			LONG64 ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA);
 		}
 	}
@@ -118,7 +118,7 @@ bool LFQueue<T>::Dequeue(T* data) {
 				continue;
 
 			// tail 밀기
-			DWORD64 next_tail_ABA = ((copy_tail_ABA + UNUSED_COUNT) & stamp_mask) | (DWORD64)copy_tail_next;
+			DWORD64 next_tail_ABA = ((copy_tail_ABA + stampCount) & stamp_mask) | (DWORD64)copy_tail_next;
 			auto ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA);
 		}
 
@@ -135,7 +135,7 @@ bool LFQueue<T>::Dequeue(T* data) {
 		T dq_data = copy_head_next->data;
 
 		// Dequeue 시도
-		DWORD64 next_head_ABA = ((copy_head_ABA + UNUSED_COUNT) & stamp_mask) | (DWORD64)copy_head_next;
+		DWORD64 next_head_ABA = ((copy_head_ABA + stampCount) & stamp_mask) | (DWORD64)copy_head_next;
 		if (InterlockedCompareExchange64((LONG64*)&head_ABA, (LONG64)next_head_ABA, (LONG64)copy_head_ABA) == (DWORD64)copy_head_ABA) {
 			*data = dq_data;
 			node_pool.Free(copy_head);

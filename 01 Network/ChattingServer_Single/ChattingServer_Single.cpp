@@ -18,7 +18,10 @@ ChattingServer_Single::ChattingServer_Single(const char* systemFile, const char*
 	tokenEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	updateThread = thread([this] {UpdateFunc(); });
 	tokenThread = thread([this] {TokenAuthFunc(); });
+#if ON_LOGIN
 	connectorRedis.connect();
+#else ON_LOGIN
+#endif
 }
 
 ChattingServer_Single::~ChattingServer_Single() {
@@ -56,11 +59,10 @@ void ChattingServer_Single::OnRecv(SESSION_ID session_id, PacketBuffer* cs_conte
 
 void ChattingServer_Single::UpdateFunc() {
 	Job* p_job;
-	DWORD cur_time;
-	DWORD prev_time = 0;
 	for (;;) {
-		WaitForSingleObject(updateEvent, INFINITE);
+		//WaitForSingleObject(updateEvent, INFINITE);
 		for (;;) {
+			if (jobQ.GetUseCount() < 1) continue;
 			if (!jobQ.Dequeue(&p_job)) break;
 
 			PRO_BEGIN("UpdateFunc");
@@ -88,9 +90,11 @@ void ChattingServer_Single::UpdateFunc() {
 					}
 
 					// Player ¹ÝÈ¯
-					p_player->Reset();
+					if (p_player->is_login) {
+						p_player->Reset();
+						playerCount--;
+					}
 					playerPool.Free(p_player);
-					playerCount--;
 					break;
 				}
 				case en_PACKET_CS_CHAT_REQ_LOGIN: {
@@ -360,14 +364,14 @@ void ChattingServer_Single::JobQueuing(SESSION_ID session_id, WORD type, PacketB
 	Job* p_job = jobPool.Alloc();
 	p_job->Set(session_id, type, p_packet);
 	jobQ.Enqueue(p_job);
-	SetEvent(updateEvent);
+	//SetEvent(updateEvent);
 }
 
 void ChattingServer_Single::JobQueuing(SESSION_ID session_id, WORD type) {
 	Job* p_job = jobPool.Alloc();
 	p_job->Set(session_id, type);
 	jobQ.Enqueue(p_job);
-	SetEvent(updateEvent);
+	//SetEvent(updateEvent);
 }
 
 void ChattingServer_Single::SendSectorAround(Player* p_player, PacketBuffer* send_packet) {

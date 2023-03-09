@@ -36,7 +36,7 @@ void Session::Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id) {
 	recv_buf.Clear();
 	send_flag = false;
 	disconnect_flag = false;
-	sendPacket_count = 0;
+	sendPacketCount = 0;
 	lastRecvTime = timeGetTime();
 
 	// 생성하자 마자 릴리즈 되는것을 방지

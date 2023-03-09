@@ -11,7 +11,7 @@ public:
 	~MonitoringNetServer();
 
 private:
-	J_LIB::LFObjectPool<MonitorTool> userPool;
+	LFObjectPool<MonitorTool> userPool;
 	std::unordered_map<INT64, MonitorTool*> userMap;
 	RecursiveLock userMapLock;
 	char loginKey[32];

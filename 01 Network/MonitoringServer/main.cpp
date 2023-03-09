@@ -37,7 +37,7 @@ thread ConsoleMonitoring(MonitoringNetServer* net_server, MonitoringLanServer* l
 						"					                             \n"
 						,
 						// total
-						PacketBuffer::Get_UseCount(),
+						PacketBuffer::GetUseCount(),
 						// net server
 						net_server->Get_sessionCount(),
 						net_server->Get_acceptTotal(),

@@ -54,7 +54,6 @@ private:
 	// 옵션
 	bool nagle_flag;
 
-private:
 	// 모니터링
 	alignas(64) DWORD recvMsgTPS = 0;
 	alignas(64) DWORD sendMsgTPS = 0;

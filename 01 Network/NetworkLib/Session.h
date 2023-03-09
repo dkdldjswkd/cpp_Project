@@ -50,8 +50,8 @@ public:
 
 	// Send
 	LFQueue<PacketBuffer*> sendQ;
-	PacketBuffer* sendPacket_array[MAX_SEND_MSG];
-	LONG sendPacket_count = 0;
+	PacketBuffer* sendPacketArr[MAX_SEND_MSG];
+	LONG sendPacketCount = 0;
 
 	// Recv
 	RingBuffer recv_buf;

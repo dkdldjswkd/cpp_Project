@@ -73,7 +73,7 @@ public:
 	inline char* Get_writePos() const;
 	inline char* Get_payloadPos() const;
 	void Increment_refCount();
-	static int Get_UseCount();
+	static int GetUseCount();
 
 public:
 	// instream
@@ -122,8 +122,8 @@ inline PacketBuffer::~PacketBuffer() {
 	free(begin);
 }
 
-inline int PacketBuffer::Get_UseCount() {
-	return packetPool.Get_UseCount();
+inline int PacketBuffer::GetUseCount() {
+	return packetPool.GetUseCount();
 }
 
 inline int PacketBuffer::Get_PacketSize_LAN() {
