@@ -8,6 +8,8 @@
 #include "../../00 lib_jy/LFStack.h"
 #include "../../00 lib_jy/Parser.h"
 
+#define PQCS_SEND	1	// 1 : SendPacket::WSASend() worker 스레드 우회, 0 : SendPacket 호출 스레드에서 WSASend() call
+
 //------------------------------
 // NetworkLib
 //------------------------------
@@ -78,7 +80,6 @@ private:
 	void TimeOutFunc();
 
 	// IO 완료 통지 루틴
-	void (NetServer::* RecvCompletion)(Session* p_session);
 	void RecvCompletion_LAN(Session* p_session);
 	void RecvCompletion_NET(Session* p_session);
 	void SendCompletion(Session* p_session);
@@ -86,8 +87,9 @@ private:
 	// 세션
 	SESSION_ID Get_SessionID();
 	Session* ValidateSession(SESSION_ID session_id);
-	inline void DecrementIOCount(Session* p_session);
 	inline void IncrementIOCount(Session* p_session);
+	inline void DecrementIOCount(Session* p_session);
+	inline void DecrementIOCountPQCS(Session* p_session);
 	inline void DisconnectSession(Session* p_session);
 
 	// Send/Recv
@@ -130,14 +132,20 @@ public:
 	DWORD GetRecvTPS();
 };
 
+inline void NetServer::IncrementIOCount(Session* p_session) {
+	InterlockedIncrement((LONG*)&p_session->io_count);
+}
+
 inline void NetServer::DecrementIOCount(Session* p_session) {
 	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
-		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::RELEASE_SESSION);
+		ReleaseSession(p_session);
 	}
 }
 
-inline void NetServer::IncrementIOCount(Session* p_session) {
-	InterlockedIncrement((LONG*)&p_session->io_count);
+inline void NetServer::DecrementIOCountPQCS(Session* p_session) {
+	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::RELEASE_SESSION);
+	}
 }
 
 // * 'IO Count == 0' 이 될 수 없을때 사용할것. (그렇지 않다면, 다른세션 끊는문제 발생)

@@ -12,7 +12,6 @@
 
 using namespace std;
 
-
 //------------------------------
 // Server Func
 //------------------------------
@@ -180,9 +179,7 @@ void NetServer::AcceptFunc() {
 		AsyncRecv(p_accept_session);
 
 		// 생성 I/O Count 차감
-		if (0 == InterlockedDecrement((LONG*)&p_accept_session->io_count)) {
-			ReleaseSession(p_accept_session);
-		}
+		DecrementIOCount(p_accept_session);
 	}
 }
 
@@ -288,9 +285,7 @@ void NetServer::WorkerFunc() {
 		}
 
 	Decrement_IOCount:
-		if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
-			ReleaseSession(p_session);
-		}
+		DecrementIOCount(p_session);
 	}
 	printf("End Worker Thread \n");
 }
@@ -327,7 +322,7 @@ void NetServer::SendCompletion(Session* p_session) {
 	for (int i = 0; i < p_session->sendPacketCount ; i++) {
 		PacketBuffer::Free(p_session->sendPacketArr[i]);
 	}
-	InterlockedAdd((LONG*)&sendMsgTPS, -p_session->sendPacketCount);
+	InterlockedAdd((LONG*)&sendMsgTPS, p_session->sendPacketCount);
 	p_session->sendPacketCount = 0;
 
 	// Send Flag OFF
@@ -346,7 +341,7 @@ void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 		return;
 
 	if (p_session->disconnect_flag) {
-		DecrementIOCount(p_session);
+		DecrementIOCountPQCS(p_session);
 		return;
 	}
 
@@ -361,12 +356,17 @@ void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 	}
 
 	p_session->sendQ.Enqueue(send_packet);
+#if PQCS_SEND
 	if (p_session->send_flag == false) {
 		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::SEND_POST);
 	}
 	else {
-		DecrementIOCount(p_session);
+		DecrementIOCountPQCS(p_session);
 	}
+#else
+	AsyncSend(p_session);
+	DecrementIOCountPQCS(p_session);
+#endif
 }
 
 // AsyncSend Call 시도
@@ -573,12 +573,12 @@ Session* NetServer::ValidateSession(SESSION_ID session_id) {
 
 	// 세션 릴리즈 상태
 	if (true == p_session->release_flag) {
-		DecrementIOCount(p_session);
+		DecrementIOCountPQCS(p_session);
 		return nullptr;
 	}
 	// 세션 재사용
 	if (p_session->session_id != session_id) {
-		DecrementIOCount(p_session);
+		DecrementIOCountPQCS(p_session);
 		return nullptr;
 	}
 
@@ -590,7 +590,7 @@ bool NetServer::Disconnect(SESSION_ID session_id) {
 	Session* p_session = ValidateSession(session_id);
 	if (nullptr == p_session) return true;
 	DisconnectSession(p_session);
-	DecrementIOCount(p_session);
+	DecrementIOCountPQCS(p_session);
 	return true;
 }
 

@@ -15,12 +15,11 @@ using namespace std;
 
 ChattingServer_Single::ChattingServer_Single(const char* systemFile, const char* server) : NetServer(systemFile, server) {
 	updateEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	tokenEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	updateThread = thread([this] {UpdateFunc(); });
-	tokenThread = thread([this] {TokenAuthFunc(); });
 #if ON_LOGIN
+	tokenEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	tokenThread = thread([this] {TokenAuthFunc(); });
 	connectorRedis.connect();
-#else ON_LOGIN
 #endif
 }
 
@@ -380,7 +379,11 @@ void ChattingServer_Single::SendSectorAround(Player* p_player, PacketBuffer* sen
 		//SendSector
 		for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); iter++) {
 			auto p_player = *iter;
-			SendPacket((*iter)->session_id, send_packet);
+			if (p_player->is_login == false || p_player->session_id == INVALID_SESSION_ID) {
+				LOG("ChattingServer-Single", LOG_LEVEL_WARN, "SendSectorAround : continue");
+				continue;
+			}
+			SendPacket(p_player->session_id, send_packet);
 		}
 	}
 }
