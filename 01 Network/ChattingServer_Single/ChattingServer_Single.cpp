@@ -377,7 +377,7 @@ void ChattingServer_Single::SendSectorAround(Player* p_player, PacketBuffer* sen
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
 		auto sector = p_player->sectorAround.around[i];
 		//SendSector
-		for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); iter++) {
+		for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); ++iter) {
 			auto p_player = *iter;
 			SendPacket(p_player->session_id, send_packet);
 		}

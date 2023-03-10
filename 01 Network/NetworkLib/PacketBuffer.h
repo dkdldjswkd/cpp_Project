@@ -50,7 +50,7 @@ private:
 	// 네트워크 라이브러리에서 사용
 	void SetLanHeader();
 	void SetNetHeader(BYTE protocol_code, BYTE private_key);
-	bool DecryptPacket(PacketBuffer* encryptPacket, BYTE private_key);
+	bool DecryptPacket(char* encryptPacket, BYTE private_key);
 	char* GetLanPacketPos();
 	char* GetNetPacketPos();
 	inline int GetLanPacketSize();

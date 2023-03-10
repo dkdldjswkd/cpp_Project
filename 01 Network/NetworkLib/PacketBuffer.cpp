@@ -65,9 +65,9 @@ void PacketBuffer::SetNetHeader(BYTE protocol_code, BYTE private_key) {
 }
 
 // this에 암호 패킷 복호화 작업
-bool PacketBuffer::DecryptPacket(PacketBuffer* encryptPacket, BYTE private_key) {
+bool PacketBuffer::DecryptPacket(char* encryptPacket, BYTE private_key) {
 	char* const packetPos			= GetNetPacketPos();					// 복호화'될' 패킷 시작 주소
-	char* const packetPos_encrypt	= encryptPacket->GetNetPacketPos();	// 암호패킷 시작 주소
+	char* const packetPos_encrypt	= encryptPacket;						// 암호패킷 시작 주소
 	char* decryptPos = packetPos + (NET_HEADER_SIZE - 1);					// 복호화'될' 주소
 	char* encryptPos = packetPos_encrypt + (NET_HEADER_SIZE - 1);			// 암호 주소
 	const short encrypt_len = ((NET_HEADER*)packetPos_encrypt)->len + 1;	// 암호 길이

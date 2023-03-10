@@ -370,38 +370,32 @@ void NetClient::RecvCompletion_NET(){
 			break;
 
 		// 헤더 카피
-		PacketBuffer* encrypt_packet = PacketBuffer::Alloc();
-		char* p_packet = encrypt_packet->GetNetPacketPos();
-		client_session.recv_buf.Peek(p_packet, NET_HEADER_SIZE);
-
-		BYTE code = ((NET_HEADER*)p_packet)->code;
-		WORD payload_len = ((NET_HEADER*)p_packet)->len;
+		char encryptPacket[200];
+		client_session.recv_buf.Peek(encryptPacket, NET_HEADER_SIZE);
 
 		// code 검사
+		BYTE code = ((NET_HEADER*)encryptPacket)->code;
 		if (code != protocol_code) {
-			PacketBuffer::Free(encrypt_packet);
-			LOG("NetClient", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
 			DisconnectSession();
 			break;
 		}
 
 		// 페이로드 데이터 부족
+		WORD payload_len = ((NET_HEADER*)encryptPacket)->len;
 		if (recv_len < (NET_HEADER_SIZE + payload_len)) {
-			PacketBuffer::Free(encrypt_packet);
 			break;
 		}
 
 		// Recv Data 패킷 화
 		client_session.recv_buf.Move_Front(NET_HEADER_SIZE);
-		client_session.recv_buf.Dequeue(encrypt_packet->GetWritePos(), payload_len);
-		encrypt_packet->Move_Wp(payload_len);
+		client_session.recv_buf.Dequeue(encryptPacket + NET_HEADER_SIZE, payload_len);
 
 		// 복호패킷 생성
 		PacketBuffer* decrypt_packet = PacketBuffer::Alloc();
-		if (!decrypt_packet->DecryptPacket(encrypt_packet, private_key)) {
-			PacketBuffer::Free(encrypt_packet);
+		if (!decrypt_packet->DecryptPacket(encryptPacket, private_key)) {
 			PacketBuffer::Free(decrypt_packet);
-			LOG("NetClient", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
 			DisconnectSession();
 			break;
 		}
@@ -411,7 +405,6 @@ void NetClient::RecvCompletion_NET(){
 		InterlockedIncrement(&recvMsgTPS);
 
 		// 암호패킷, 복호화 패킷 Free
-		PacketBuffer::Free(encrypt_packet);
 		PacketBuffer::Free(decrypt_packet);
 	}
 
