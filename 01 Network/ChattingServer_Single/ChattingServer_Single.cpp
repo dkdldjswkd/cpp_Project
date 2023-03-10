@@ -52,7 +52,7 @@ void ChattingServer_Single::OnRecv(SESSION_ID session_id, PacketBuffer* cs_conte
 		return;
 	}
 
-	cs_contentsPacket->Increment_refCount();
+	cs_contentsPacket->IncrementRefCount();
 	JobQueuing(session_id, type, cs_contentsPacket);
 }
 

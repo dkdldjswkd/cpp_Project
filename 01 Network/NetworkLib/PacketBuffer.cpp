@@ -1,13 +1,8 @@
 #include "PacketBuffer.h"
 #include "NetServer.h"
 
-#define PROTOCOL_CODE	NetClient::PROTOCOL_CODE
-#define PRIVATE_KEY		NetClient::PRIVATE_KEY
-
-// PacketBuffer Static Var
 LFObjectPoolTLS<PacketBuffer>  PacketBuffer::packetPool;
 
-// header size 
 PacketBuffer::PacketBuffer() : buf_size(HEADER_SPACE + PAYLOAD_SPACE) {
 	begin = (char*)malloc(buf_size);
 	end = begin + buf_size;
@@ -24,9 +19,9 @@ void PacketBuffer::Set() {
 }
 
 PacketBuffer* PacketBuffer::Alloc() {
-	PacketBuffer* p = packetPool.Alloc();
-	p->Set();
-	return p;
+	PacketBuffer* p_packet = packetPool.Alloc();
+	p_packet->Set();
+	return p_packet;
 }
 
 int PacketBuffer::Free(PacketBuffer* instance) {
@@ -37,24 +32,23 @@ int PacketBuffer::Free(PacketBuffer* instance) {
 	return ref_count;
 }
 
-void PacketBuffer::Set_LanHeader() {
+void PacketBuffer::SetLanHeader() {
 	LAN_HEADER lanHeader;
-	lanHeader.len = Get_PayloadSize();
-	memmove(Get_PacketPos_LAN(), &lanHeader, LAN_HEADER_SIZE);
+	lanHeader.len = GetPayloadSize();
+	memmove(GetLanPacketPos(), &lanHeader, LAN_HEADER_SIZE);
 }
 
-void PacketBuffer::Set_NetHeader(BYTE protocol_code, BYTE private_key) {
+void PacketBuffer::SetNetHeader(BYTE protocol_code, BYTE private_key) {
 	// 중복 암호화 하지 않기 위함 (이미 암호화 된 패킷)
-	if (encrypt_flag)
-		return;
+	if (encrypt_flag) return;
 	encrypt_flag = true;
 
 	NET_HEADER netHeader;
 	netHeader.code = protocol_code;
-	netHeader.len = Get_PayloadSize();
+	netHeader.len = GetPayloadSize();
 	netHeader.randKey = (rand() & 0xFF);
-	netHeader.checkSum = Get_CheckSum();
-	memmove(Get_PacketPos_NET(), &netHeader, NET_HEADER_SIZE);
+	netHeader.checkSum = GetChecksum();
+	memmove(GetNetPacketPos(), &netHeader, NET_HEADER_SIZE);
 
 	char* encryptPos = payload_pos - 1;		// 암호화'될' 주소
 	short encrypt_len = netHeader.len + 1;	// 암호화될 길이
@@ -72,8 +66,8 @@ void PacketBuffer::Set_NetHeader(BYTE protocol_code, BYTE private_key) {
 
 // this에 암호 패킷 복호화 작업
 bool PacketBuffer::DecryptPacket(PacketBuffer* encryptPacket, BYTE private_key) {
-	char* const packetPos			= Get_PacketPos_NET();					// 복호화'될' 패킷 시작 주소
-	char* const packetPos_encrypt	= encryptPacket->Get_PacketPos_NET();	// 암호패킷 시작 주소
+	char* const packetPos			= GetNetPacketPos();					// 복호화'될' 패킷 시작 주소
+	char* const packetPos_encrypt	= encryptPacket->GetNetPacketPos();	// 암호패킷 시작 주소
 	char* decryptPos = packetPos + (NET_HEADER_SIZE - 1);					// 복호화'될' 주소
 	char* encryptPos = packetPos_encrypt + (NET_HEADER_SIZE - 1);			// 암호 주소
 	const short encrypt_len = ((NET_HEADER*)packetPos_encrypt)->len + 1;	// 암호 길이
@@ -93,14 +87,14 @@ bool PacketBuffer::DecryptPacket(PacketBuffer* encryptPacket, BYTE private_key) 
 	}
 
 	// 패킷 유효 여부 검사 (false 시 유효하지 않은 패킷(or 복호화 로직 결함))
-	if (((NET_HEADER*)packetPos)->checkSum == Get_CheckSum()) {
+	if (((NET_HEADER*)packetPos)->checkSum == GetChecksum()) {
 		return true;
 	}
 	return false;
 }
 
-BYTE PacketBuffer::Get_CheckSum() {
-	WORD len = Get_PayloadSize();
+BYTE PacketBuffer::GetChecksum() {
+	WORD len = GetPayloadSize();
 
 	DWORD checkSum = 0;
 	char* cpy_readPos = payload_pos;
@@ -109,7 +103,6 @@ BYTE PacketBuffer::Get_CheckSum() {
 		cpy_readPos++;
 	}
 	return (BYTE)(checkSum & 0xFF);
-	//return (BYTE)(checkSum % 256);
 }
 
 ///////////////////////////////

@@ -3,12 +3,15 @@
 #include <memory.h>
 #include <timeapi.h>
 #include <atomic>
+#include <iostream>
 #include "NetServer.h"
 #include "protocol.h"
 #include "../../00 lib_jy/MemoryLogger.h"
 #include "../../00 lib_jy/Logger.h"
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
+
+#define MAX_PACKET_LEN 500
 
 using namespace std;
 
@@ -112,7 +115,7 @@ void NetServer::StartUp() {
 	// Create Thread
 	acceptThread = thread([this] {AcceptFunc(); });
 	if (timeOut_flag) {
-		timeOutThread = thread([this] {TimeOutFunc(); });
+		timeOutThread = thread([this] {TimeoutFunc(); });
 	}
 
 	// LOG
@@ -183,7 +186,7 @@ void NetServer::AcceptFunc() {
 	}
 }
 
-void NetServer::TimeOutFunc() {
+void NetServer::TimeoutFunc() {
 	for (;;) {
 		Sleep(timeOutCycle);
 		INT64 cur_time = timeGetTime();
@@ -216,21 +219,20 @@ void NetServer::TimeOutFunc() {
 }
 
 void NetServer::WorkerFunc() {
-	printf("Start Worker Thread \n");
 	for (;;) {
-		DWORD	io_size = 0;
+		DWORD	ioSize = 0;
 		Session* p_session = 0;
 		LPOVERLAPPED p_overlapped = 0;
 
-		BOOL ret_GQCS = GetQueuedCompletionStatus(h_iocp, &io_size, (PULONG_PTR)&p_session, &p_overlapped, INFINITE);
+		BOOL ret_GQCS = GetQueuedCompletionStatus(h_iocp, &ioSize, (PULONG_PTR)&p_session, &p_overlapped, INFINITE);
 
 		// 워커 스레드 종료
-		if (io_size == 0 && p_session == 0 && p_overlapped == 0) {
+		if (ioSize == 0 && p_session == 0 && p_overlapped == 0) {
 			PostQueuedCompletionStatus(h_iocp, 0, 0, 0);
 			return;
 		}
 		// FIN
-		if (io_size == 0) {
+		if (ioSize == 0) {
 			if (&p_session->send_overlapped == p_overlapped)
 				LOG("NetServer", LOG_LEVEL_FATAL, "Zero Byte Send !!");
 			goto Decrement_IOCount;
@@ -257,14 +259,14 @@ void NetServer::WorkerFunc() {
 		// recv 완료통지
 		if (&p_session->recv_overlapped == p_overlapped) {
 			if (ret_GQCS) {
-				p_session->recv_buf.Move_Rear(io_size);
+				p_session->recv_buf.Move_Rear(ioSize);
 				p_session->lastRecvTime = timeGetTime();
 				// 내부 통신 외부 통신 구분
 				if (NetType::LAN == netType) {
-					RecvCompletion_LAN(p_session);
+					RecvCompletionLan(p_session);
 				}
 				else {
-					RecvCompletion_NET(p_session);
+					RecvCompletionNet(p_session);
 				}
 			}
 			else {
@@ -287,7 +289,6 @@ void NetServer::WorkerFunc() {
 	Decrement_IOCount:
 		DecrementIOCount(p_session);
 	}
-	printf("End Worker Thread \n");
 }
 
 bool NetServer::ReleaseSession(Session* p_session) {
@@ -347,12 +348,12 @@ void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 
 	// LAN, NET 구분
 	if (NetType::LAN == netType) {
-		send_packet->Set_LanHeader();
-		send_packet->Increment_refCount();
+		send_packet->SetLanHeader();
+		send_packet->IncrementRefCount();
 	}
 	else {
-		send_packet->Set_NetHeader(protocol_code, private_key);
-		send_packet->Increment_refCount();
+		send_packet->SetNetHeader(protocol_code, private_key);
+		send_packet->IncrementRefCount();
 	}
 
 	p_session->sendQ.Enqueue(send_packet);
@@ -395,33 +396,26 @@ bool NetServer::SendPost(Session* p_session) {
 int NetServer::AsyncSend(Session* p_session) {
 	WSABUF wsaBuf[MAX_SEND_MSG];
 
+	// MAX SEND 제한 초과
+	if (MAX_SEND_MSG < p_session->sendQ.GetUseCount()) {
+		DisconnectSession(p_session);
+		return false;
+	}
 	if (NetType::LAN == netType) {
-		for (int i = 0; i < MAX_SEND_MSG; i++) {
-			if (p_session->sendQ.GetUseCount() <= 0) {
-				p_session->sendPacketCount  = i;
-				break;
-			}
+		for (int i = 0; (i < MAX_SEND_MSG && 0 < p_session->sendQ.GetUseCount()); i++) {
 			p_session->sendQ.Dequeue((PacketBuffer**)&p_session->sendPacketArr[i]);
-			wsaBuf[i].buf = p_session->sendPacketArr[i]->Get_PacketPos_LAN();
-			wsaBuf[i].len = p_session->sendPacketArr[i]->Get_PacketSize_LAN();
+			p_session->sendPacketCount++;
+			wsaBuf[i].buf = p_session->sendPacketArr[i]->GetLanPacketPos();
+			wsaBuf[i].len = p_session->sendPacketArr[i]->GetLanPacketSize();
 		}
 	}
 	else {
-		for (int i = 0; i < MAX_SEND_MSG; i++) {
-			if (p_session->sendQ.GetUseCount() <= 0) {
-				p_session->sendPacketCount  = i;
-				break;
-			}
+		for (int i = 0; (i < MAX_SEND_MSG && 0 < p_session->sendQ.GetUseCount()); i++) {
 			p_session->sendQ.Dequeue((PacketBuffer**)&p_session->sendPacketArr[i]);
-			wsaBuf[i].buf = p_session->sendPacketArr[i]->Get_PacketPos_NET();
-			wsaBuf[i].len = p_session->sendPacketArr[i]->Get_PacketSize_NET();
+			p_session->sendPacketCount++;
+			wsaBuf[i].buf = p_session->sendPacketArr[i]->GetNetPacketPos();
+			wsaBuf[i].len = p_session->sendPacketArr[i]->GetNetPacketSize();
 		}
-	}
-	// MAX SEND 제한 초과
-	if (p_session->sendPacketCount  == 0) {
-		p_session->sendPacketCount  = MAX_SEND_MSG;
-		DisconnectSession(p_session);
-		return false;
 	}
 
 	IncrementIOCount(p_session);
@@ -467,7 +461,7 @@ bool NetServer::AsyncRecv(Session* p_session) {
 	return true;
 }
 
-void NetServer::RecvCompletion_LAN(Session* p_session) {
+void NetServer::RecvCompletionLan(Session* p_session) {
 	// 패킷 조립
 	for (;;) {
 		int recv_len = p_session->recv_buf.GetUseSize();
@@ -488,7 +482,7 @@ void NetServer::RecvCompletion_LAN(Session* p_session) {
 
 		// 컨텐츠 패킷 생성
 		p_session->recv_buf.Move_Front(LAN_HEADER_SIZE);
-		p_session->recv_buf.Dequeue(contents_packet->Get_writePos(), lanHeader.len);
+		p_session->recv_buf.Dequeue(contents_packet->GetWritePos(), lanHeader.len);
 		contents_packet->Move_Wp(lanHeader.len);
 
 		// 사용자 패킷 처리
@@ -506,7 +500,7 @@ void NetServer::RecvCompletion_LAN(Session* p_session) {
 	}
 }
 
-void NetServer::RecvCompletion_NET(Session* p_session) {
+void NetServer::RecvCompletionNet(Session* p_session) {
 	// 패킷 조립
 	for (;;) {
 		int recv_len = p_session->recv_buf.GetUseSize();
@@ -515,7 +509,7 @@ void NetServer::RecvCompletion_NET(Session* p_session) {
 
 		// 헤더 카피
 		PacketBuffer* encrypt_packet = PacketBuffer::Alloc();
-		char* p_packet = encrypt_packet->Get_PacketPos_NET();
+		char* p_packet = encrypt_packet->GetNetPacketPos();
 		p_session->recv_buf.Peek(p_packet, NET_HEADER_SIZE);
 
 		BYTE code = ((NET_HEADER*)p_packet)->code;
@@ -537,7 +531,7 @@ void NetServer::RecvCompletion_NET(Session* p_session) {
 
 		// Recv Data 패킷 화
 		p_session->recv_buf.Move_Front(NET_HEADER_SIZE);
-		p_session->recv_buf.Dequeue(encrypt_packet->Get_writePos(), payload_len);
+		p_session->recv_buf.Dequeue(encrypt_packet->GetWritePos(), payload_len);
 		encrypt_packet->Move_Wp(payload_len);
 
 		// 복호패킷 생성

@@ -77,11 +77,11 @@ private:
 	// 스레드
 	void WorkerFunc();
 	void AcceptFunc();
-	void TimeOutFunc();
+	void TimeoutFunc();
 
 	// IO 완료 통지 루틴
-	void RecvCompletion_LAN(Session* p_session);
-	void RecvCompletion_NET(Session* p_session);
+	void RecvCompletionLan(Session* p_session);
+	void RecvCompletionNet(Session* p_session);
 	void SendCompletion(Session* p_session);
 
 	// 세션

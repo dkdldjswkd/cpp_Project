@@ -213,12 +213,12 @@ void NetClient::SendPacket(PacketBuffer* send_packet) {
 
 	// LAN, NET 구분
 	if (NetType::LAN == netType) {
-		send_packet->Set_LanHeader();
-		send_packet->Increment_refCount();
+		send_packet->SetLanHeader();
+		send_packet->IncrementRefCount();
 	}
 	else {
-		send_packet->Set_NetHeader(protocol_code, private_key);
-		send_packet->Increment_refCount();
+		send_packet->SetNetHeader(protocol_code, private_key);
+		send_packet->IncrementRefCount();
 	}
 
 	client_session.sendQ.Enqueue(send_packet);
@@ -258,8 +258,8 @@ int NetClient::AsyncSend() {
 				break;
 			}
 			client_session.sendQ.Dequeue((PacketBuffer**)&client_session.sendPacketArr[i]);
-			wsaBuf[i].buf = client_session.sendPacketArr[i]->Get_PacketPos_LAN();
-			wsaBuf[i].len = client_session.sendPacketArr[i]->Get_PacketSize_LAN();
+			wsaBuf[i].buf = client_session.sendPacketArr[i]->GetLanPacketPos();
+			wsaBuf[i].len = client_session.sendPacketArr[i]->GetLanPacketSize();
 		}
 	}
 	else {
@@ -269,8 +269,8 @@ int NetClient::AsyncSend() {
 				break;
 			}
 			client_session.sendQ.Dequeue((PacketBuffer**)&client_session.sendPacketArr[i]);
-			wsaBuf[i].buf = client_session.sendPacketArr[i]->Get_PacketPos_NET();
-			wsaBuf[i].len = client_session.sendPacketArr[i]->Get_PacketSize_NET();
+			wsaBuf[i].buf = client_session.sendPacketArr[i]->GetNetPacketPos();
+			wsaBuf[i].len = client_session.sendPacketArr[i]->GetNetPacketSize();
 		}
 	}
 	// MAX SEND 제한 초과
@@ -344,7 +344,7 @@ void NetClient::RecvCompletion_LAN(){
 
 		// 컨텐츠 패킷 생성
 		client_session.recv_buf.Move_Front(LAN_HEADER_SIZE);
-		client_session.recv_buf.Dequeue(contents_packet->Get_writePos(), lanHeader.len);
+		client_session.recv_buf.Dequeue(contents_packet->GetWritePos(), lanHeader.len);
 		contents_packet->Move_Wp(lanHeader.len);
 
 		// 사용자 패킷 처리
@@ -371,7 +371,7 @@ void NetClient::RecvCompletion_NET(){
 
 		// 헤더 카피
 		PacketBuffer* encrypt_packet = PacketBuffer::Alloc();
-		char* p_packet = encrypt_packet->Get_PacketPos_NET();
+		char* p_packet = encrypt_packet->GetNetPacketPos();
 		client_session.recv_buf.Peek(p_packet, NET_HEADER_SIZE);
 
 		BYTE code = ((NET_HEADER*)p_packet)->code;
@@ -393,7 +393,7 @@ void NetClient::RecvCompletion_NET(){
 
 		// Recv Data 패킷 화
 		client_session.recv_buf.Move_Front(NET_HEADER_SIZE);
-		client_session.recv_buf.Dequeue(encrypt_packet->Get_writePos(), payload_len);
+		client_session.recv_buf.Dequeue(encrypt_packet->GetWritePos(), payload_len);
 		encrypt_packet->Move_Wp(payload_len);
 
 		// 복호패킷 생성
