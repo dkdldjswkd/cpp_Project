@@ -76,19 +76,19 @@ void NetClient::StartUp() {
 
 	// Connect Fail
 	if (connect(client_sock, (struct sockaddr*)&server_address, sizeof(server_address)) == SOCKET_ERROR) {
-		LOG("NetworkLib", LOG_LEVEL_WARN, "Start Client Connect FAIL");
+		LOG("NetClient", LOG_LEVEL_WARN, "Start Client Connect FAIL");
 		// Connect 시도 스레드 생성?
 	}
 	// Connect Success
 	else {
 		OnConnect();
 		AsyncRecv();
-		LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Client Connect Success");
+		LOG("NetClient", LOG_LEVEL_DEBUG, "Start Client Connect Success");
 	}
 
 	// 생성 I/O Count 차감
 	DecrementIOCount();
-	LOG("NetworkLib", LOG_LEVEL_DEBUG, "Start Client !");
+	LOG("NetClient", LOG_LEVEL_DEBUG, "Start Client !");
 }
 
 void NetClient::WorkerFunc() {
@@ -107,7 +107,7 @@ void NetClient::WorkerFunc() {
 		// FIN
 		if (io_size == 0) {
 			if (&p_session->send_overlapped == p_overlapped)
-				LOG("NetworkLib", LOG_LEVEL_FATAL, "Zero Byte Send !!");
+				LOG("NetClient", LOG_LEVEL_FATAL, "Zero Byte Send !!");
 			goto Decrement_IOCount;
 		}
 		// PQCS
@@ -121,7 +121,7 @@ void NetClient::WorkerFunc() {
 					goto Decrement_IOCount;
 
 				default:
-					LOG("NetworkLib", LOG_LEVEL_FATAL, "PQCS Default");
+					LOG("NetClient", LOG_LEVEL_FATAL, "PQCS Default");
 					break;
 			}
 		}
@@ -140,7 +140,7 @@ void NetClient::WorkerFunc() {
 				}
 			}  
 			else {
-				LOG("NetworkLib", LOG_LEVEL_DEBUG, "Overlapped Recv Fail");
+				LOG("NetClient", LOG_LEVEL_DEBUG, "Overlapped Recv Fail");
 			}
 		}
 		// send 완료통지
@@ -149,11 +149,11 @@ void NetClient::WorkerFunc() {
 				SendCompletion();
 			}
 			else {
-				LOG("NetworkLib", LOG_LEVEL_DEBUG, "Overlapped Send Fail");
+				LOG("NetClient", LOG_LEVEL_DEBUG, "Overlapped Send Fail");
 			}
 		}
 		else {
-			LOG("NetworkLib", LOG_LEVEL_FATAL, "GQCS INVALID Overlapped!!");
+			LOG("NetClient", LOG_LEVEL_FATAL, "GQCS INVALID Overlapped!!");
 		}
 
 	Decrement_IOCount:
@@ -285,7 +285,7 @@ int NetClient::AsyncSend() {
 	if (SOCKET_ERROR == WSASend(client_session.sock, wsaBuf, client_session.sendPacketCount, NULL, 0, &client_session.send_overlapped, NULL)) {
 		const auto err_no = WSAGetLastError();
 		if (ERROR_IO_PENDING != err_no) { // Send 실패
-			LOG("NetworkLib", LOG_LEVEL_DEBUG, "WSASend() Fail, Error code : %d", WSAGetLastError());
+			LOG("NetClient", LOG_LEVEL_DEBUG, "WSASend() Fail, Error code : %d", WSAGetLastError());
 			DisconnectSession();
 			DecrementIOCount();
 			return false;
@@ -309,7 +309,7 @@ bool NetClient::AsyncRecv() {
 	ZeroMemory(&client_session.recv_overlapped, sizeof(client_session.recv_overlapped));
 	if (SOCKET_ERROR == WSARecv(client_session.sock, wsaBuf, 2, NULL, &flags, &client_session.recv_overlapped, NULL)) {
 		if (WSAGetLastError() != ERROR_IO_PENDING) { // Recv 실패
-			LOG("NetworkLib", LOG_LEVEL_DEBUG, "WSARecv() Fail, Error code : %d", WSAGetLastError());
+			LOG("NetClient", LOG_LEVEL_DEBUG, "WSARecv() Fail, Error code : %d", WSAGetLastError());
 			DecrementIOCount();
 			return false;
 		}
@@ -380,7 +380,7 @@ void NetClient::RecvCompletion_NET(){
 		// code 검사
 		if (code != protocol_code) {
 			PacketBuffer::Free(encrypt_packet);
-			LOG("NetworkLib", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
+			LOG("NetClient", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
 			DisconnectSession();
 			break;
 		}
@@ -401,7 +401,7 @@ void NetClient::RecvCompletion_NET(){
 		if (!decrypt_packet->DecryptPacket(encrypt_packet, private_key)) {
 			PacketBuffer::Free(encrypt_packet);
 			PacketBuffer::Free(decrypt_packet);
-			LOG("NetworkLib", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
+			LOG("NetClient", LOG_LEVEL_WARN, "Recv Packet is wrong checksum!!", WSAGetLastError());
 			DisconnectSession();
 			break;
 		}

@@ -108,8 +108,8 @@ BYTE PacketBuffer::Get_CheckSum() {
 		checkSum += *cpy_readPos;
 		cpy_readPos++;
 	}
-	//return (BYTE)(checkSum & 0xFF);
-	return (BYTE)(checkSum % 256);
+	return (BYTE)(checkSum & 0xFF);
+	//return (BYTE)(checkSum % 256);
 }
 
 ///////////////////////////////

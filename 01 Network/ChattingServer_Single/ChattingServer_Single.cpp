@@ -379,10 +379,6 @@ void ChattingServer_Single::SendSectorAround(Player* p_player, PacketBuffer* sen
 		//SendSector
 		for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); iter++) {
 			auto p_player = *iter;
-			if (p_player->is_login == false || p_player->session_id == INVALID_SESSION_ID) {
-				LOG("ChattingServer-Single", LOG_LEVEL_WARN, "SendSectorAround : continue");
-				continue;
-			}
 			SendPacket(p_player->session_id, send_packet);
 		}
 	}
