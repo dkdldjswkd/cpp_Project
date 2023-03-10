@@ -50,9 +50,6 @@
     <Library Include="..\Redis\cpp_redis.lib">
       <Filter>include</Filter>
     </Library>
-    <Library Include="..\..\00 lib_jy\lib_jy.lib">
-      <Filter>include</Filter>
-    </Library>
     <Library Include="..\NetworkLib\NetworkLib.lib">
       <Filter>include</Filter>
     </Library>

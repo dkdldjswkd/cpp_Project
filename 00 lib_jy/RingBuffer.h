@@ -51,8 +51,8 @@ public:
 	inline int Remain_DequeueSize() const;
 
 	// inline Àû¿ë ¾ÈµÊ
-	inline int Get_FreeSize() const;
-	inline int Get_UseSize() const;
+	inline int GetFreeSize() const;
+	inline int GetUseSize() const;
 
 	inline char* Get_ReadPos() const { return read_pos; }
 	inline char* Get_WritePos()  const { return write_pos; }
@@ -110,10 +110,10 @@ inline int RingBuffer::Remain_DequeueSize() const {
 	else return write_pos - begin;
 }
 
-int RingBuffer::Get_FreeSize() const {
+int RingBuffer::GetFreeSize() const {
 	return  Direct_EnqueueSize() + Remain_EnqueueSize();
 }
-inline int RingBuffer::Get_UseSize() const {
+inline int RingBuffer::GetUseSize() const {
 	return  Direct_DequeueSize() + Remain_DequeueSize();
 };
 

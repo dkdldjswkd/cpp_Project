@@ -2,6 +2,7 @@
 #include <WinSock2.h>
 #include <memory.h>
 #include <timeapi.h>
+#include <atomic>
 #include "NetServer.h"
 #include "protocol.h"
 #include "../../00 lib_jy/MemoryLogger.h"
@@ -31,36 +32,56 @@ NetServer::NetServer(const char* systemFile, const char* server) {
 	parser.GetValue(server, "ACTIVE_WORKER", (int*)&activeWorker);
 
 	// Check system
-	if (maxWorker < activeWorker) CRASH();
-	if (1 < (BYTE)netType) CRASH();
+	if (maxWorker < activeWorker) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "WORKER_NUM_ERROR");
+		throw std::exception("WORKER_NUM_ERROR");
+	} 
+	if (1 < (BYTE)netType) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "NET_TYPE_ERROR");
+		throw std::exception("NET_TYPE_ERROR");
+	}
 
 	//////////////////////////////
 	// Set Server
 	//////////////////////////////
 
 	WSADATA wsaData;
-	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData))
-		CRASH();
+	if (0 != WSAStartup(MAKEWORD(2, 2), &wsaData)) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "WSAStartup()_ERROR : %d", WSAGetLastError());
+		throw std::exception("WSAStartup_ERROR");
+	}
 
 	listen_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
-	if (INVALID_SOCKET == listen_sock) CRASH();
+	if (INVALID_SOCKET == listen_sock) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "WSASocket()_ERROR : %d", WSAGetLastError());
+		throw std::exception("WSASocket_ERROR");
+	}
 
 	// Set nagle
 	if (!nagle_flag) {
 		int opt_val = TRUE;
-		setsockopt(listen_sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&opt_val, sizeof(opt_val));
+		if (setsockopt(listen_sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&opt_val, sizeof(opt_val)) != 0) {
+			LOG("NetServer", LOG_LEVEL_FATAL, "SET_NAGLE_ERROR : %d", WSAGetLastError());
+			throw std::exception("SET_NAGLE_ERROR");
+		}
 	}
 
 	// Set Linger
 	LINGER linger = { 1, 0 };
-	setsockopt(listen_sock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof linger);
+	if (setsockopt(listen_sock, SOL_SOCKET, SO_LINGER, (char*)&linger, sizeof linger) != 0) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "SET_LINGER_ERROR : %d", WSAGetLastError());
+		throw std::exception("SET_LINGER_ERROR");
+	}
 
 	// bind 
 	SOCKADDR_IN	server_addr;
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(server_port);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
-	if (0 != bind(listen_sock, (SOCKADDR*)&server_addr, sizeof(SOCKADDR_IN))) CRASH();
+	if (0 != bind(listen_sock, (SOCKADDR*)&server_addr, sizeof(SOCKADDR_IN))) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "bind()_ERROR : %d", WSAGetLastError());
+		throw std::exception("bind()_ERROR");
+	}
 
 	// Set Session
 	session_array = new Session[max_session];
@@ -69,7 +90,10 @@ NetServer::NetServer(const char* systemFile, const char* server) {
 
 	// Create IOCP
 	h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, activeWorker);
-	if (INVALID_HANDLE_VALUE == h_iocp) CRASH();
+	if (h_iocp == INVALID_HANDLE_VALUE || h_iocp == NULL) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "CreateIoCompletionPort()_ERROR : %d", GetLastError());
+		throw std::exception("CreateIoCompletionPort()_ERROR");
+	}
 
 	// Create IOCP Worker
 	workerThread_Pool = new thread[maxWorker];
@@ -81,7 +105,10 @@ NetServer::~NetServer() {}
 
 void NetServer::StartUp() {
 	// listen
-	if (0 != listen(listen_sock, SOMAXCONN_HINT(65535))) CRASH();
+	if (0 != listen(listen_sock, SOMAXCONN_HINT(65535))) {
+		LOG("NetServer", LOG_LEVEL_FATAL, "listen()_ERROR : %d", WSAGetLastError());
+		throw std::exception("listen()_ERROR");
+	}
 
 	// Create Thread
 	acceptThread = thread([this] {AcceptFunc(); });
@@ -90,7 +117,7 @@ void NetServer::StartUp() {
 	}
 
 	// LOG
-	LOG("NetServer", LOG_LEVEL_DEBUG, "Start Server !");
+	LOG("NetServer", LOG_LEVEL_INFO, "Start NetServer");
 }
 
 void NetServer::AcceptFunc() {
@@ -105,7 +132,7 @@ void NetServer::AcceptFunc() {
 		auto accept_sock = accept(listen_sock, (sockaddr*)&client_addr, &addr_len);
 		acceptTotal++;
 		if (accept_sock == INVALID_SOCKET) {
-			LOG("NetServer", LOG_LEVEL_DEBUG, "accept() Fail, Error code : %d", WSAGetLastError());
+			LOG("NetServer", LOG_LEVEL_WARN, "accept() Fail, Error code : %d", WSAGetLastError());
 			continue;
 		}
 		if (max_session <= sessionCount) {
@@ -153,9 +180,10 @@ void NetServer::AcceptFunc() {
 		AsyncRecv(p_accept_session);
 
 		// 생성 I/O Count 차감
-		DecrementIOCount(p_accept_session);
+		if (0 == InterlockedDecrement((LONG*)&p_accept_session->io_count)) {
+			ReleaseSession(p_accept_session);
+		}
 	}
-	printf("End Accept Thread \n");
 }
 
 void NetServer::TimeOutFunc() {
@@ -298,9 +326,9 @@ void NetServer::SendCompletion(Session* p_session) {
 	// Send Packet Free
 	for (int i = 0; i < p_session->sendPacketCount ; i++) {
 		PacketBuffer::Free(p_session->sendPacketArr[i]);
-		InterlockedIncrement(&sendMsgTPS);
 	}
-	p_session->sendPacketCount  = 0;
+	InterlockedAdd((LONG*)&sendMsgTPS, -p_session->sendPacketCount);
+	p_session->sendPacketCount = 0;
 
 	// Send Flag OFF
 	InterlockedExchange8((char*)&p_session->send_flag, false);
@@ -333,7 +361,12 @@ void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 	}
 
 	p_session->sendQ.Enqueue(send_packet);
-	PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::SEND_POST);
+	if (p_session->send_flag == false) {
+		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::SEND_POST);
+	}
+	else {
+		DecrementIOCount(p_session);
+	}
 }
 
 // AsyncSend Call 시도
@@ -437,7 +470,7 @@ bool NetServer::AsyncRecv(Session* p_session) {
 void NetServer::RecvCompletion_LAN(Session* p_session) {
 	// 패킷 조립
 	for (;;) {
-		int recv_len = p_session->recv_buf.Get_UseSize();
+		int recv_len = p_session->recv_buf.GetUseSize();
 		if (recv_len <= LAN_HEADER_SIZE)
 			break;
 
@@ -476,7 +509,7 @@ void NetServer::RecvCompletion_LAN(Session* p_session) {
 void NetServer::RecvCompletion_NET(Session* p_session) {
 	// 패킷 조립
 	for (;;) {
-		int recv_len = p_session->recv_buf.Get_UseSize();
+		int recv_len = p_session->recv_buf.GetUseSize();
 		if (recv_len < NET_HEADER_SIZE)
 			break;
 

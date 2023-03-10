@@ -172,7 +172,6 @@
     <ClInclude Include="User.h" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\..\00 lib_jy\lib_jy.lib" />
     <Library Include="..\NetworkLib\NetworkLib.lib" />
     <Library Include="..\Redis\cpp_redis.lib" />
     <Library Include="..\Redis\tacopie.lib" />

@@ -326,7 +326,7 @@ bool NetClient::AsyncRecv() {
 void NetClient::RecvCompletion_LAN(){
 	// 패킷 조립
 	for (;;) {
-		int recv_len = client_session.recv_buf.Get_UseSize();
+		int recv_len = client_session.recv_buf.GetUseSize();
 		if (recv_len <= LAN_HEADER_SIZE)
 			break;
 
@@ -365,7 +365,7 @@ void NetClient::RecvCompletion_LAN(){
 void NetClient::RecvCompletion_NET(){
 	// 패킷 조립
 	for (;;) {
-		int recv_len = client_session.recv_buf.Get_UseSize();
+		int recv_len = client_session.recv_buf.GetUseSize();
 		if (recv_len < NET_HEADER_SIZE)
 			break;
 

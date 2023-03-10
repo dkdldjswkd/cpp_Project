@@ -33,7 +33,7 @@ RingBuffer::~RingBuffer() {
 ///////////////////////////////////////////////////////////////////////
 
 int RingBuffer::Enqueue(const void* src, size_t size) {
-	int free_size = Get_FreeSize();
+	int free_size = GetFreeSize();
 	if (free_size < size)
 		size = free_size;
 
@@ -49,7 +49,7 @@ int RingBuffer::Enqueue(const void* src, size_t size) {
 }
 
 int RingBuffer::Dequeue(void* dst, size_t size) {
-	int use_size = Get_UseSize();
+	int use_size = GetUseSize();
 	if (use_size < size)
 		size = use_size;
 
@@ -65,7 +65,7 @@ int RingBuffer::Dequeue(void* dst, size_t size) {
 }
 
 int RingBuffer::Peek(void* dst, size_t size) const {
-	int use_size = Get_UseSize();
+	int use_size = GetUseSize();
 	if (use_size < size)
 		size = use_size;
 
