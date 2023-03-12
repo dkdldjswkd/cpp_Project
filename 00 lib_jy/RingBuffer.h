@@ -39,7 +39,7 @@ private:
 
 public:
 	inline void Move_Front(int size) { front = begin + MASKING_BIT((ULONG_PTR)front + size); Set_ReadPos();  }
-	inline void Move_Rear(int size) { rear = begin + MASKING_BIT((ULONG_PTR)rear + size);    Set_WritePos(); }
+	inline void MoveRear(int size) { rear = begin + MASKING_BIT((ULONG_PTR)rear + size);    Set_WritePos(); }
 
 	inline bool Empty() const { return front == rear; }
 	inline bool Full() const { return front == write_pos; }
@@ -65,7 +65,7 @@ public:
 
 inline int RingBuffer::Must_Enqueue(const void* src, size_t size) {
 	memmove(write_pos, src, size);
-	Move_Rear(size);
+	MoveRear(size);
 	return size;
 }
 

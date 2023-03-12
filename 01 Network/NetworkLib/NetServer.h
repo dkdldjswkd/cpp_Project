@@ -46,6 +46,7 @@ private:
 	WORD server_port = 0;
 
 	// 세션
+	DWORD sessionUnique = 0;
 	Session* session_array;
 	DWORD max_session;
 	LFStack<DWORD> sessionIndex_stack;
@@ -53,7 +54,7 @@ private:
 	// 스레드
 	WORD maxWorker;
 	WORD activeWorker;
-	std::thread* workerThread_Pool;
+	std::thread* workerThreadArr;
 	std::thread acceptThread;
 	std::thread timeOutThread;
 
@@ -85,7 +86,7 @@ private:
 	void SendCompletion(Session* p_session);
 
 	// 세션
-	SESSION_ID Get_SessionID();
+	SESSION_ID GetSessionId();
 	Session* ValidateSession(SESSION_ID session_id);
 	inline void IncrementIOCount(Session* p_session);
 	inline void DecrementIOCount(Session* p_session);
@@ -150,7 +151,7 @@ inline void NetServer::DecrementIOCountPQCS(Session* p_session) {
 
 // * 'IO Count == 0' 이 될 수 없을때 사용할것. (그렇지 않다면, 다른세션 끊는문제 발생)
 inline void NetServer::DisconnectSession(Session* p_session) {
-	p_session->disconnect_flag = true;
+	p_session->disconnectFlag = true;
 	CancelIoEx((HANDLE)p_session->sock, NULL);
 }
 

@@ -11,8 +11,6 @@
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "Winmm.lib")
 
-#define MAX_PACKET_LEN 500
-
 using namespace std;
 
 //------------------------------
@@ -59,7 +57,7 @@ NetServer::NetServer(const char* systemFile, const char* server) {
 		throw std::exception("WSASocket_ERROR");
 	}
 
-	// Set nagle
+	// Reset nagle
 	if (!nagle_flag) {
 		int opt_val = TRUE;
 		if (setsockopt(listen_sock, IPPROTO_TCP, TCP_NODELAY, (const char*)&opt_val, sizeof(opt_val)) != 0) {
@@ -98,9 +96,9 @@ NetServer::NetServer(const char* systemFile, const char* server) {
 	}
 
 	// Create IOCP Worker
-	workerThread_Pool = new thread[maxWorker];
+	workerThreadArr = new thread[maxWorker];
 	for (int i = 0; i < maxWorker; i++) {
-		workerThread_Pool[i] = thread([this] {WorkerFunc(); });
+		workerThreadArr[i] = thread([this] {WorkerFunc(); });
 	}
 }
 NetServer::~NetServer() {}
@@ -131,14 +129,14 @@ void NetServer::AcceptFunc() {
 		//------------------------------
 		// Accept
 		//------------------------------
-		auto accept_sock = accept(listen_sock, (sockaddr*)&client_addr, &addr_len);
+		auto acceptSock = accept(listen_sock, (sockaddr*)&client_addr, &addr_len);
 		acceptTotal++;
-		if (accept_sock == INVALID_SOCKET) {
+		if (acceptSock == INVALID_SOCKET) {
 			LOG("NetServer", LOG_LEVEL_WARN, "accept() Fail, Error code : %d", WSAGetLastError());
 			continue;
 		}
 		if (max_session <= sessionCount) {
-			closesocket(accept_sock);
+			closesocket(acceptSock);
 		}
 
 		//------------------------------
@@ -147,7 +145,7 @@ void NetServer::AcceptFunc() {
 		in_addr accept_ip = client_addr.sin_addr;
 		WORD accept_port = ntohs(client_addr.sin_port);
 		if (false == OnConnectionRequest(accept_ip, accept_port)) {
-			closesocket(accept_sock);
+			closesocket(acceptSock);
 			continue;
 		}
 
@@ -156,19 +154,19 @@ void NetServer::AcceptFunc() {
 		//------------------------------
 
 		// ID 할당 (최대 세션 초과 시 연결 종료)
-		SESSION_ID session_id = Get_SessionID();
+		SESSION_ID session_id = GetSessionId();
 		if (session_id == INVALID_SESSION_ID) {
-			closesocket(accept_sock);
+			closesocket(acceptSock);
 			continue;
 		}
 
 		// 세션 자료구조 할당
-		Session* p_accept_session = &session_array[session_id.session_index];
-		p_accept_session->Set(accept_sock, accept_ip, accept_port, session_id);
+		Session* p_acceptSession = &session_array[session_id.session_index];
+		p_acceptSession->Set(acceptSock, accept_ip, accept_port, session_id);
 		acceptTPS++;
 
 		// Bind IOCP
-		CreateIoCompletionPort((HANDLE)accept_sock, h_iocp, (ULONG_PTR)p_accept_session, 0);
+		CreateIoCompletionPort((HANDLE)acceptSock, h_iocp, (ULONG_PTR)p_acceptSession, 0);
 
 		//------------------------------
 		// 세션 로그인 시 작업
@@ -179,10 +177,10 @@ void NetServer::AcceptFunc() {
 		//------------------------------
 		// WSARecv
 		//------------------------------
-		AsyncRecv(p_accept_session);
+		AsyncRecv(p_acceptSession);
 
 		// 생성 I/O Count 차감
-		DecrementIOCount(p_accept_session);
+		DecrementIOCount(p_acceptSession);
 	}
 }
 
@@ -220,7 +218,7 @@ void NetServer::TimeoutFunc() {
 
 void NetServer::WorkerFunc() {
 	for (;;) {
-		DWORD	ioSize = 0;
+		DWORD ioSize = 0;
 		Session* p_session = 0;
 		LPOVERLAPPED p_overlapped = 0;
 
@@ -259,7 +257,7 @@ void NetServer::WorkerFunc() {
 		// recv 완료통지
 		if (&p_session->recv_overlapped == p_overlapped) {
 			if (ret_GQCS) {
-				p_session->recv_buf.Move_Rear(ioSize);
+				p_session->recv_buf.MoveRear(ioSize);
 				p_session->lastRecvTime = timeGetTime();
 				// 내부 통신 외부 통신 구분
 				if (NetType::LAN == netType) {
@@ -330,7 +328,7 @@ void NetServer::SendCompletion(Session* p_session) {
 	InterlockedExchange8((char*)&p_session->send_flag, false);
 
 	// Send 조건 체크
-	if (p_session->disconnect_flag)	return;
+	if (p_session->disconnectFlag)	return;
 	if (p_session->sendQ.GetUseCount() <= 0) return;
 	SendPost(p_session);
 }
@@ -341,7 +339,7 @@ void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 	if (nullptr == p_session)
 		return;
 
-	if (p_session->disconnect_flag) {
+	if (p_session->disconnectFlag) {
 		DecrementIOCountPQCS(p_session);
 		return;
 	}
@@ -454,7 +452,7 @@ bool NetServer::AsyncRecv(Session* p_session) {
 	}
 
 	// Disconnect 체크
-	if (p_session->disconnect_flag) {
+	if (p_session->disconnectFlag) {
 		CancelIoEx((HANDLE)p_session->sock, NULL);
 		return false;
 	}
@@ -495,7 +493,7 @@ void NetServer::RecvCompletionLan(Session* p_session) {
 	//------------------------------
 	// Post Recv (Recv 걸어두기)
 	//------------------------------
-	if (false == p_session->disconnect_flag) {
+	if (false == p_session->disconnectFlag) {
 		AsyncRecv(p_session);
 	}
 }
@@ -504,11 +502,11 @@ void NetServer::RecvCompletionNet(Session* p_session) {
 	// 패킷 조립
 	for (;;) {
 		int recv_len = p_session->recv_buf.GetUseSize();
-		if (recv_len < NET_HEADER_SIZE)
+		if (recv_len <= NET_HEADER_SIZE)
 			break;
 
 		// 헤더 카피
-		char encryptPacket[200];
+		char encryptPacket[NET_HEADER_SIZE + MAX_PAYLOAD_LEN];
 		p_session->recv_buf.Peek(encryptPacket, NET_HEADER_SIZE);
 
 		// code 검사
@@ -525,11 +523,11 @@ void NetServer::RecvCompletionNet(Session* p_session) {
 			break;
 		}
 
-		// Recv Data 패킷 화
+		// 암호패킷 복사
 		p_session->recv_buf.Move_Front(NET_HEADER_SIZE);
 		p_session->recv_buf.Dequeue(encryptPacket + NET_HEADER_SIZE, payload_len);
 
-		// 복호패킷 생성
+		// 패킷 복호화
 		PacketBuffer* decrypt_packet = PacketBuffer::Alloc();
 		if (!decrypt_packet->DecryptPacket(encryptPacket, private_key)) {
 			PacketBuffer::Free(decrypt_packet);
@@ -549,7 +547,7 @@ void NetServer::RecvCompletionNet(Session* p_session) {
 	//------------------------------
 	// Post Recv
 	//------------------------------
-	if (!p_session->disconnect_flag) {
+	if (!p_session->disconnectFlag) {
 		AsyncRecv(p_session);
 	}
 }
@@ -590,8 +588,8 @@ void NetServer::CleanUp() {
 	// WorkerThread 종료
 	//PostQueuedCompletionStatus(h_iocp, 0, 0, 0);
 	for (int i = 0; i < maxWorker; i++) {
-		if (workerThread_Pool[i].joinable()) {
-			workerThread_Pool[i].join();
+		if (workerThreadArr[i].joinable()) {
+			workerThreadArr[i].join();
 		}
 	}
 
@@ -607,14 +605,12 @@ void NetServer::CleanUp() {
 // SESSION_ID
 //------------------------------
 
-SESSION_ID NetServer::Get_SessionID() {
-	static DWORD unique = 1;
-
+SESSION_ID NetServer::GetSessionId() {
 	DWORD index;
 	if (false == sessionIndex_stack.Pop(&index)) {
 		return INVALID_SESSION_ID;
 	}
 
-	SESSION_ID session_id(index, unique++);
+	SESSION_ID session_id(index, ++sessionUnique);
 	return session_id;
 }

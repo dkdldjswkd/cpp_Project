@@ -3,17 +3,17 @@
 
 LFObjectPoolTLS<PacketBuffer>  PacketBuffer::packetPool;
 
-PacketBuffer::PacketBuffer() : buf_size(HEADER_SPACE + PAYLOAD_SPACE) {
+PacketBuffer::PacketBuffer() : buf_size(MAX_HEADER_LEN + MAX_PAYLOAD_LEN) {
 	begin = (char*)malloc(buf_size);
 	end = begin + buf_size;
 
-	payload_pos = begin + HEADER_SPACE;
-	write_pos = begin + HEADER_SPACE;
+	payload_pos = begin + MAX_HEADER_LEN;
+	write_pos = begin + MAX_HEADER_LEN;
 }
 
 void PacketBuffer::Set() {
-	payload_pos = begin + HEADER_SPACE;
-	write_pos = begin + HEADER_SPACE;
+	payload_pos = begin + MAX_HEADER_LEN;
+	write_pos = begin + MAX_HEADER_LEN;
 	encrypt_flag = false;
 	ref_count = 1;
 }

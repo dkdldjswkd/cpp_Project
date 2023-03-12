@@ -7,8 +7,8 @@
 #include "protocol.h"
 #include <exception>
 
-#define PAYLOAD_SPACE 8000
-#define HEADER_SPACE 10
+#define MAX_PAYLOAD_LEN 8000
+#define MAX_HEADER_LEN 10
 
 struct PacketException : public std::exception {
 public:

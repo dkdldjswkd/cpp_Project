@@ -1,5 +1,4 @@
 #pragma once
-#include <Windows.h>
 
 #pragma pack(push, 1)
 struct LAN_HEADER {
@@ -14,5 +13,5 @@ struct NET_HEADER {
 };
 #pragma pack(pop)
 
-constexpr unsigned LAN_HEADER_SIZE = sizeof(LAN_HEADER);
-constexpr unsigned NET_HEADER_SIZE = sizeof(NET_HEADER);
+#define LAN_HEADER_SIZE  ((WORD)sizeof(LAN_HEADER))
+#define NET_HEADER_SIZE  ((WORD)sizeof(NET_HEADER))

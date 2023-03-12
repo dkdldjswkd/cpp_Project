@@ -129,7 +129,7 @@ void NetClient::WorkerFunc() {
 		// recv 완료통지
 		if (&p_session->recv_overlapped == p_overlapped) {
 			if (ret_GQCS) {
-				p_session->recv_buf.Move_Rear(io_size);
+				p_session->recv_buf.MoveRear(io_size);
 				p_session->lastRecvTime = timeGetTime();
 				// 내부 통신 외부 통신 구분
 				if (NetType::LAN == netType) {
@@ -196,7 +196,7 @@ void NetClient::SendCompletion(){
 	InterlockedExchange8((char*)&client_session.send_flag, false);
 
 	// Send 조건 체크
-	if (client_session.disconnect_flag)	return;
+	if (client_session.disconnectFlag)	return;
 	if (client_session.sendQ.GetUseCount() <= 0) return;
 	SendPost();
 }
@@ -206,7 +206,7 @@ void NetClient::SendPacket(PacketBuffer* send_packet) {
 	if (false == Check_InvalidSession())
 		return;
 
-	if (client_session.disconnect_flag) {
+	if (client_session.disconnectFlag) {
 		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)&client_session, (LPOVERLAPPED)PQCS_TYPE::DECREMENT_IO);
 		return;
 	}
@@ -316,7 +316,7 @@ bool NetClient::AsyncRecv() {
 	}
 
 	// Disconnect 체크
-	if (client_session.disconnect_flag) {
+	if (client_session.disconnectFlag) {
 		CancelIoEx((HANDLE)client_session.sock, NULL);
 		return false;
 	}
@@ -357,7 +357,7 @@ void NetClient::RecvCompletion_LAN(){
 	//------------------------------
 	// Post Recv (Recv 걸어두기)
 	//------------------------------
-	if (false == client_session.disconnect_flag) {
+	if (false == client_session.disconnectFlag) {
 		AsyncRecv();
 	}
 }
@@ -411,7 +411,7 @@ void NetClient::RecvCompletion_NET(){
 	//------------------------------
 	// Post Recv
 	//------------------------------
-	if (!client_session.disconnect_flag) {
+	if (!client_session.disconnectFlag) {
 		AsyncRecv();
 	}
 }

@@ -13,20 +13,20 @@
 union SESSION_ID {
 public:
 	struct { DWORD index, unique; } s;
-	UINT64	session_id = 0;
+	DWORD64	session_id = 0;
 #define		session_index  s.index   
 #define		session_unique s.unique
 
 public:
 	SESSION_ID();
-	SESSION_ID(UINT64 value);
+	SESSION_ID(DWORD64 value);
 	SESSION_ID(DWORD index, DWORD unique_no);
 	~SESSION_ID();
 
 public:
 	void operator=(const SESSION_ID& other);
-	void operator=(UINT64 value);
-	operator UINT64();
+	void operator=(DWORD64 value);
+	operator DWORD64();
 };
 
 //------------------------------
@@ -46,7 +46,7 @@ public:
 
 	// flag
 	bool send_flag = false;
-	bool disconnect_flag = false;
+	bool disconnectFlag = false;
 
 	// Send
 	LFQueue<PacketBuffer*> sendQ;
@@ -63,7 +63,7 @@ public:
 	OVERLAPPED recv_overlapped = { 0, };
 	OVERLAPPED send_overlapped = { 0, };
 
-	// 세션 레퍼런스 카운트 역할 (release_flag, io_count가 같은 캐시라인에 위치하게 의도)
+	// 세션 레퍼런스 카운트 역할 (release_flag, io_count가 연속되는 8byte, 같은 캐시라인에 위치하게 의도)
 	alignas(64) BOOL release_flag = true;
 	LONG io_count = 0;
 

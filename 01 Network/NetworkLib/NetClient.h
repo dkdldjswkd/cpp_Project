@@ -121,7 +121,7 @@ inline void NetClient::IncrementIOCount() {
 
 // * 'IO Count == 0' 이 될 수 없을때 사용할것. (그렇지 않다면, 다른세션 끊는문제 발생)
 inline void NetClient::DisconnectSession() {
-	client_session.disconnect_flag = true;
+	client_session.disconnectFlag = true;
 	CancelIoEx((HANDLE)client_session.sock, NULL);
 }
 
