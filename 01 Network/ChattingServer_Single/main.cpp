@@ -26,6 +26,10 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 					else if (c == 'r' || c == 'R') {
 						PRO_RESET();
 					}
+					else if (c == 'q' || c == 'Q') {
+						net_server->ServerStop();
+						break;
+					}
 				}
 
 				// 콘솔 출력
@@ -66,19 +70,19 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 						net_client->Get_sendTPS(),
 						net_client->Get_recvTPS(),
 						// ChattingServer Status
-						net_client->cpuUsage_chattingServer,
-						net_client->usingMemoryMB_chattingServer,
-						net_client->packetCount_chattingServer,
-						net_client->sessionCount_chattServer,
-						net_client->userCount_chattServer,
-						net_client->updateTPS_chattServer,
-						net_client->jobCount_chattServe,
+						net_client->cpuUsageChat,
+						net_client->usingMemoryMbChat,
+						net_client->packetCount,
+						net_client->sessionCount,
+						net_client->userCount,
+						net_client->updateTPS,
+						net_client->jobCount,
 						// Machine Status
-						net_client->cpuUsage_machine,
-						net_client->usingNonMemoryMB_machine,
-						net_client->recvKbytes_machine,
-						net_client->sendKbytes_machine,
-						net_client->availMemMB_machine
+						net_client->cpuUsageMachine,
+						net_client->usingNonMemoryMbMachine,
+						net_client->recvKbytes,
+						net_client->sendKbytes,
+						net_client->availMemMb
 					);
 				}
 			}
@@ -94,7 +98,7 @@ int main() {
 
 	// 채팅 서버
 	ChattingServer_Single chattingServer("../ServerConfig.ini", "ChattingServer_Single");
-	chattingServer.StartUp();
+	chattingServer.Start();
 
 	// 모니터링 클라
 	MonitoringClient Monitoringclient("../ServerConfig.ini", "MonitoringClient", &chattingServer);

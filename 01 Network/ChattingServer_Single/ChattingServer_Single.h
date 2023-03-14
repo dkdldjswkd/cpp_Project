@@ -94,31 +94,34 @@ private:
 	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
 
 public:
+	// 서버 종료
+	void ServerStop();
+
 	// 모니터링
-	DWORD Get_playerCount();
-	DWORD Get_playerPoolCount();
-	DWORD Get_JobPoolCount();
-	DWORD Get_JobQueueCount();
-	DWORD Get_updateTPS();
+	DWORD GetPlayerCount();
+	DWORD GetPlayerPoolCount();
+	DWORD GetJobPoolCount();
+	DWORD GetJobQueueCount();
+	DWORD GetUpdateTPS();
 };
 
-inline DWORD ChattingServer_Single::Get_playerCount() {
+inline DWORD ChattingServer_Single::GetPlayerCount() {
 	return playerCount;
 }
 
-inline DWORD ChattingServer_Single::Get_playerPoolCount(){
+inline DWORD ChattingServer_Single::GetPlayerPoolCount(){
 	return playerPool.GetUseCount();
 }
 
-inline DWORD ChattingServer_Single::Get_JobPoolCount(){
+inline DWORD ChattingServer_Single::GetJobPoolCount(){
 	return jobPool.GetUseCount();
 }
 
-inline DWORD ChattingServer_Single::Get_JobQueueCount(){
+inline DWORD ChattingServer_Single::GetJobQueueCount(){
 	return jobQ.GetUseCount();
 }
 
-inline DWORD ChattingServer_Single::Get_updateTPS(){
+inline DWORD ChattingServer_Single::GetUpdateTPS(){
 	auto tmp = updateTPS;
 	updateTPS = 0;
 	return tmp;

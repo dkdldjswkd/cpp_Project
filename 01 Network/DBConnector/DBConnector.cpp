@@ -45,8 +45,10 @@ MYSQL_RES* DBConnector::DoQuery(const char* query){
 	auto queryTime = timeGetTime() - start;
 
 	if (loggingTime < queryTime) {
-		// ·Î±ë, Äõ¸® Æò±Õ ¼Óµµ ·Î±ë »ý°¢ÇØº¸ÀÚ
+		// ·Î±ë
 	}
+	// Äõ¸® Æò±Õ ¼Óµµ ·Î±ë »ý°¢ÇØº¸ÀÚ
+	// ...
 
 	return mysql_store_result(connection);
 }

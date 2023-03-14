@@ -36,20 +36,19 @@ private:
 
 private:
 	// 프로토콜
-	BYTE protocol_code;
-	BYTE private_key;
+	BYTE protocolCode;
+	BYTE privateKey;
 
 	// 네트워크
 	NetType netType;
-	SOCKET listen_sock = INVALID_SOCKET;
+	SOCKET listenSock = INVALID_SOCKET;
 	HANDLE h_iocp = INVALID_HANDLE_VALUE;
-	WORD server_port = 0;
 
 	// 세션
 	DWORD sessionUnique = 0;
-	Session* session_array;
-	DWORD max_session;
-	LFStack<DWORD> sessionIndex_stack;
+	Session* sessionArray;
+	DWORD maxSession;
+	LFStack<DWORD> sessionIdxStack;
 
 	// 스레드
 	WORD maxWorker;
@@ -59,20 +58,22 @@ private:
 	std::thread timeOutThread;
 
 	// 옵션
-	bool nagle_flag;
-	bool timeOut_flag;
+	bool timeoutFlag;
 
 	// 타임아웃
-	DWORD timeOutCycle;
+	DWORD timeoutCycle;
 	DWORD timeOut;
 
-private:
 	// 모니터링
+	DWORD acceptTPS = 0;
+	DWORD acceptTotal = 0;
 	alignas(64) DWORD sessionCount = 0;
 	alignas(64) DWORD recvMsgTPS = 0;
 	alignas(64) DWORD sendMsgTPS = 0;
-	DWORD acceptTPS = 0;
-	DWORD acceptTotal = 0;
+
+public:
+	// 유틸
+	Parser parser;
 
 private:
 	// 스레드
@@ -88,18 +89,16 @@ private:
 	// 세션
 	SESSION_ID GetSessionId();
 	Session* ValidateSession(SESSION_ID session_id);
-	inline void IncrementIOCount(Session* p_session);
-	inline void DecrementIOCount(Session* p_session);
-	inline void DecrementIOCountPQCS(Session* p_session);
-	inline void DisconnectSession(Session* p_session);
+	void IncrementIOCount(Session* p_session);
+	void DecrementIOCount(Session* p_session);
+	void DecrementIOCountPQCS(Session* p_session);
+	void DisconnectSession(Session* p_session);
+	bool ReleaseSession(Session* p_session);
 
 	// Send/Recv
 	bool SendPost(Session* p_session);
 	int	 AsyncSend(Session* p_session);
 	bool AsyncRecv(Session* p_session);
-
-	// 컨텐츠
-	bool ReleaseSession(Session* p_session);
 
 protected:
 	// 라이브러리 사용자 측 재정의 하여 사용
@@ -113,25 +112,25 @@ protected:
 	// virtual void OnWorkerThreadEnd() = 0;                     
 
 public:
-	// 유틸
-	Parser parser;
+	// 서버 ON/OFF
+	void Start();
+	void Stop();
 
-public:
-	void StartUp();
-	void CleanUp();
-
-public:
+	// 라이브러리 제공 API
 	void SendPacket(SESSION_ID session_id, PacketBuffer* send_packet);
 	bool Disconnect(SESSION_ID session_id);
 
-public:
-	// 모니터링 Getter
+	// Getter
 	DWORD GetSessionCount();
 	DWORD GetAcceptTPS();
 	DWORD GetAcceptTotal();
 	DWORD GetSendTPS();
 	DWORD GetRecvTPS();
 };
+
+//////////////////////////////
+/// NetServer Inline Func
+//////////////////////////////
 
 inline void NetServer::IncrementIOCount(Session* p_session) {
 	InterlockedIncrement((LONG*)&p_session->io_count);
@@ -158,19 +157,23 @@ inline void NetServer::DisconnectSession(Session* p_session) {
 inline DWORD NetServer::GetSessionCount() {
 	return sessionCount;
 }
+
 inline DWORD NetServer::GetAcceptTPS() {
 	auto tmp = acceptTPS;
 	acceptTPS = 0;
 	return tmp;
 }
+
 inline DWORD NetServer::GetAcceptTotal() {
 	return acceptTotal;
 }
+
 inline DWORD NetServer::GetSendTPS() {
 	auto tmp = sendMsgTPS;
 	sendMsgTPS = 0;
 	return tmp;
 }
+
 inline DWORD NetServer::GetRecvTPS() {
 	auto tmp = recvMsgTPS;
 	recvMsgTPS = 0;

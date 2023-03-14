@@ -76,7 +76,7 @@ void MonitoringNetServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 			}
 
 			// 로그인 성공
-			p_user->Login();
+			p_user->isLogin = true;
 
 			// Send en_PACKET_CS_MONITOR_TOOL_RES_LOGIN
 			PacketBuffer* p_packet = PacketBuffer::Alloc();
@@ -100,10 +100,11 @@ void MonitoringNetServer::BroadcastMonitoringData(BYTE serverNo, BYTE dataType, 
 
 	// 붙어있는 모니터링 툴에게 브로드 캐스트
 	userMapLock.Lock_Shared();
-	for (auto iter = userMap.begin(); iter != userMap.end(); iter++) {
+	auto userMapEnd = userMap.end();
+	for (auto iter = userMap.begin(); iter != userMapEnd; ++iter) {
 		auto* p_user = iter->second;
-		if (p_user->is_login) {
-			SendPacket(p_user->session_id, p_packet);
+		if (p_user->isLogin) {
+			SendPacket(p_user->sessionID, p_packet);
 		}
 	}
 	userMapLock.Unlock_Shared();

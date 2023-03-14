@@ -12,10 +12,12 @@ public:
 	~MonitoringClient();
 
 private:
-	std::thread updateThread;
 	int serverNo;
-	NetServer* localServer;
+	std::thread updateThread;
 	bool isConnect = false;
+
+	// Control Server
+	NetServer* localServer;
 
 	// 모니터링
 	time_t lastUpdateTime;
@@ -25,27 +27,28 @@ private:
 
 public:
 	// 채팅서버 모니터링 데이터
-	int cpuUsage_chattingServer = 0;
-	int usingMemoryMB_chattingServer = 0;
-	int packetCount_chattingServer = 0;
-	int sessionCount_chattServer = 0;
-	int userCount_chattServer = 0;
-	int updateTPS_chattServer = 0;
-	int jobCount_chattServe = 0;
+	int cpuUsageChat = 0;
+	int usingMemoryMbChat = 0;
+	int packetCount = 0;
+	int sessionCount = 0;
+	int userCount = 0;
+	int updateTPS = 0;
+	int jobCount = 0;
 
 	// 머신 모니터링 데이터
-	int cpuUsage_machine = 0;
-	int usingNonMemoryMB_machine = 0;
-	int recvKbytes_machine = 0;
-	int sendKbytes_machine = 0;
-	int availMemMB_machine = 0;
+	int cpuUsageMachine = 0;
+	int usingNonMemoryMbMachine = 0;
+	int recvKbytes = 0;
+	int sendKbytes = 0;
+	int availMemMb = 0;
 
 private:
+	// Lib Callback
 	void OnConnect();
 	void OnRecv(PacketBuffer* contents_packet);
 	void OnDisconnect();
 
 private:
-	void Report_to_monitoringServer();
+	void ReportToMonitoringServer();
 	void UpdateData();
 };

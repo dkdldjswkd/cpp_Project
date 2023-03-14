@@ -4,7 +4,24 @@
 #include "../../00 lib_jy/Logger.h"
 #include <iostream>
 
-MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* server, NetServer* localServer) : NetServer(systemFile, server), localServer(localServer) {
+MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* server, NetServer* localServer) : NetServer(systemFile, server), localServer(localServer){
+	// Set DB
+	char dbAddr[50];
+	int port;
+	char loginID[50];
+	char password[50];
+	char schema[50];
+	int loggingTime;
+	parser.GetValue(server, "DB_IP", dbAddr);
+	parser.GetValue(server, "DB_PORT", &port);
+	parser.GetValue(server, "DB_ID", loginID);
+	parser.GetValue(server, "DB_PASSWORD", password);
+	parser.GetValue(server, "DB_SCHEMA", schema);
+	parser.GetValue(server, "DB_LOGTIME", &loggingTime);
+	p_dbConnector = new DBConnector(dbAddr, port, loginID, password, schema, loggingTime);
+
+	dbEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+	dbThread = std::thread([this] {DBWriteFunc(); });
 }
 
 MonitoringLanServer::~MonitoringLanServer() {
@@ -63,9 +80,9 @@ void MonitoringLanServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 			serverSessionMapLock.Unlock_Shared();
 
 			// 이미 로그인 되있던 유저
-			if (p_user->is_login == true) {
+			if (p_user->isLogin == true) {
 				LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // Duplicate LOGIN");
-				Disconnect(p_user->session_id);
+				Disconnect(p_user->sessionID);
 				return;
 			}
 
@@ -96,30 +113,77 @@ void MonitoringLanServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 			serverSessionMapLock.Unlock_Shared();
 
 			// 세션 로그인 판단 (비정상적 세션 판단)
-			if (p_user->is_login == false) {
-				Disconnect(p_user->session_id);
+			if (p_user->isLogin == false) {
+				Disconnect(p_user->sessionID);
 				LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // NOT LOGIN");
 				return;
 			}
 
 			// * MonitoringNetSever로 모니터링 툴에게 모니터링 데이터 송신
 			((MonitoringNetServer*)localServer)->BroadcastMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
+			SaveMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
 			return;
-
-			// 디버깅
-			{
-				//printf(
-				//	"server no  : %d\n"
-				//	"data type  : %d\n"
-				//	"data value : %d\n"
-				//	"time stamp : %d\n"
-				//	,
-				//	p_user->serverNo,
-				//	dataType,
-				//	dataValue,
-				//	timeStamp
-				//);
-			}
 		}
 	}
+}
+
+void MonitoringLanServer::DBWriteFunc(){
+	for (;;) {
+		WaitForSingleObject(dbEvent, INFINITE);
+		for (;;) {
+			if (dbJobQ.GetUseCount() < 1) break;
+			DBJob* p_job;
+			dbJobQ.Dequeue(&p_job);
+
+			// DB Write
+			p_dbConnector->Query("INSERT INTO logdb.monitorlog (serverno, type, avr, min, max) VALUES (%d, %d, %d, %d, %d)", p_job->serverNo, p_job->dataType, p_job->avr, p_job->min, p_job->max);
+			dbJobPool.Free(p_job);
+		}
+	}
+}
+
+void MonitoringLanServer::SaveMonitoringData(int serverNo, int dataType, int data, int timeStamp){
+	auto monitoringMapIter = serverMonitoredDataMap.find(serverNo);
+
+	//////////////////////////////
+	// 모니터링 데이터 save
+	//////////////////////////////
+
+	// 데이터가 최초 저장되는 서버
+	if (monitoringMapIter == serverMonitoredDataMap.end()) {
+		auto p_dataMap = new MonitoredDataMap;
+		p_dataMap->insert({ dataType, new MonitoredData(data, timeStamp) });
+		serverMonitoredDataMap.insert({ serverNo, p_dataMap });
+		return;
+	}
+
+	MonitoredDataMap* p_dataMap = monitoringMapIter->second;
+	auto MonitoredDataIter = p_dataMap->find(dataType);
+	// 최초 저장되는 데이터 항목
+	if (MonitoredDataIter == p_dataMap->end()) {
+		p_dataMap->insert({ dataType, new MonitoredData(data, timeStamp) });
+		return;
+	}
+
+	// 데이터 추가
+	MonitoredData* p_data = MonitoredDataIter->second;
+	p_data->AddData(data);
+
+	// DB Write (10분 주기)
+	if (p_data->lastWriteTime + 600 <= timeStamp) {
+		DBJobQueuing(serverNo, dataType, p_data);
+		p_data->Init(timeStamp);
+	}
+}
+
+void MonitoringLanServer::DBJobQueuing(int serverNo, int dataType, MonitoredData* p_data) {
+	auto p_job = dbJobPool.Alloc();
+	p_job->serverNo = serverNo;
+	p_job->dataType = dataType;
+	p_job->avr = ((DWORD)p_data->sum / (DWORD)p_data->count);
+	p_job->min = p_data->min;
+	p_job->max = p_data->max;
+
+	dbJobQ.Enqueue(p_job);
+	SetEvent(dbEvent);
 }

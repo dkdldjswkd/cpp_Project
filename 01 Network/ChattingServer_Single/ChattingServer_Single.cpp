@@ -26,6 +26,13 @@ ChattingServer_Single::ChattingServer_Single(const char* systemFile, const char*
 ChattingServer_Single::~ChattingServer_Single() {
 }
 
+void ChattingServer_Single::ServerStop() {
+	Stop();
+	// User Count 0 확인
+	// update Q Size 0 확인
+	// token Q Size 0 확인
+}
+
 void ChattingServer_Single::OnClientJoin(SESSION_ID session_id) {
 	JobQueuing(session_id, JOB_TYPE_CLIENT_JOIN);
 }
@@ -45,13 +52,14 @@ void ChattingServer_Single::OnRecv(SESSION_ID session_id, PacketBuffer* cs_conte
 		return;
 	}
 
-	// INVALID Packet type
-	if ((5 < type) || (type == 2) || (type == 4)) { // 1, 3, 5
+	// INVALID Packet type (2, 4, 5)
+	if ((5 < type) || (type == 2) || (type == 4)) {
 		LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
 		Disconnect(session_id);
 		return;
 	}
 
+	// 1, 3, 5
 	cs_contentsPacket->IncrementRefCount();
 	JobQueuing(session_id, type, cs_contentsPacket);
 }
@@ -89,7 +97,7 @@ void ChattingServer_Single::UpdateFunc() {
 					}
 
 					// Player 반환
-					if (p_player->is_login) {
+					if (p_player->isLogin) {
 						p_player->Reset();
 						playerCount--;
 					}
@@ -106,7 +114,7 @@ void ChattingServer_Single::UpdateFunc() {
 					Player* p_player = iter->second;
 
 					// 이미 로그인 된 플레이어
-					if (p_player->is_login) {
+					if (p_player->isLogin) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // Already login!!");
 						Disconnect(session_id);
 						PacketBuffer::Free(cs_contentsPacket);
@@ -147,13 +155,13 @@ void ChattingServer_Single::UpdateFunc() {
 					}
 
 					// 로그인 성공
-					p_player->is_login = true;
+					p_player->isLogin = true;
 					playerCount++;
 
 					// 로그인 응답 패킷 회신
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
-					*p_packet << (BYTE)p_player->is_login;
+					*p_packet << (BYTE)p_player->isLogin;
 					*p_packet << (INT64)p_player->accountNo;
 					SendPacket(session_id, p_packet);
 					PacketBuffer::Free(p_packet);
@@ -171,7 +179,7 @@ void ChattingServer_Single::UpdateFunc() {
 					Player* p_player = iter->second;
 
 					// 로그인 상태가 아닌 플레이어
-					if (!p_player->is_login) {
+					if (!p_player->isLogin) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // is not login!!");
 						Disconnect(session_id);
 						PacketBuffer::Free(cs_contentsPacket);
@@ -227,7 +235,7 @@ void ChattingServer_Single::UpdateFunc() {
 					}
 
 					// 로그인 상태가 아닌 플레이어
-					if (!p_player->is_login) {
+					if (!p_player->isLogin) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // is not login!!");
 						Disconnect(session_id);
 						PacketBuffer::Free(cs_contentsPacket);
@@ -278,12 +286,12 @@ void ChattingServer_Single::UpdateFunc() {
 					Player* p_player = iter->second;
 
 					// 로그인 성공
-					p_player->is_login = true;
+					p_player->isLogin = true;
 
 					// 로그인 응답 패킷(성공) 회신
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
-					*p_packet << (BYTE)p_player->is_login;
+					*p_packet << (BYTE)p_player->isLogin;
 					*p_packet << (INT64)p_player->accountNo;
 					SendPacket(session_id, p_packet);
 					PacketBuffer::Free(p_packet);
@@ -379,7 +387,7 @@ void ChattingServer_Single::SendSectorAround(Player* p_player, PacketBuffer* sen
 		//SendSector
 		for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); ++iter) {
 			auto p_player = *iter;
-			SendPacket(p_player->session_id, send_packet);
+			SendPacket(p_player->sessionID, send_packet);
 		}
 	}
 }

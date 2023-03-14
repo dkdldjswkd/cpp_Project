@@ -27,7 +27,7 @@ void Player::Set_SectorAround() {
 }
 
 void Player::Set(SESSION_ID session_id) {
-	this->session_id = session_id;
+	this->sessionID = session_id;
 	sectorPos.x = -2;
 	sectorPos.y = -2;
 	sectorAround.count = 0;

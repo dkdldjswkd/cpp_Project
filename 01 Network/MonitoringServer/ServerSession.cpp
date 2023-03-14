@@ -7,6 +7,6 @@ ServerSession::~ServerSession(){
 }
 
 void ServerSession::Login(int serverNo) {
- 	is_login = true;
+ 	isLogin = true;
 	this->serverNo = serverNo;
 }

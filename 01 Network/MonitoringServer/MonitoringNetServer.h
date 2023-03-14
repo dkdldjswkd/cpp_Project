@@ -11,17 +11,20 @@ public:
 	~MonitoringNetServer();
 
 private:
+	// user
 	LFObjectPool<MonitorTool> userPool;
-	std::unordered_map<INT64, MonitorTool*> userMap;
+	std::unordered_map<DWORD64, MonitorTool*> userMap;
 	RecursiveLock userMapLock;
+
+	// protocol
 	char loginKey[32];
 
 private:
 	// Lib callback (Override)
-	void OnClientJoin(SESSION_ID session_id);
-	void OnClientLeave(SESSION_ID session_id);
-	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 	bool OnConnectionRequest(in_addr IP, WORD Port) { return true; }
+	void OnClientJoin(SESSION_ID session_id);
+	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
+	void OnClientLeave(SESSION_ID session_id);
 
 public:
 	void BroadcastMonitoringData(BYTE serverNo, BYTE dataType, int dataValue, int timeStamp);

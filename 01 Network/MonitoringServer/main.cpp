@@ -39,17 +39,17 @@ thread ConsoleMonitoring(MonitoringNetServer* net_server, MonitoringLanServer* l
 						// total
 						PacketBuffer::GetUseCount(),
 						// net server
-						net_server->Get_sessionCount(),
-						net_server->Get_acceptTotal(),
-						net_server->Get_acceptTPS(),
-						net_server->Get_sendTPS(),
-						net_server->Get_recvTPS(),
+						net_server->GetSessionCount(),
+						net_server->GetAcceptTotal(),
+						net_server->GetAcceptTPS(),
+						net_server->GetSendTPS(),
+						net_server->GetRecvTPS(),
 						// lan server
-						lan_server->Get_sessionCount(),
-						lan_server->Get_acceptTotal(),
-						lan_server->Get_acceptTPS(),
-						lan_server->Get_sendTPS(),
-						lan_server->Get_recvTPS()
+						lan_server->GetSessionCount(),
+						lan_server->GetAcceptTotal(),
+						lan_server->GetAcceptTPS(),
+						lan_server->GetSendTPS(),
+						lan_server->GetRecvTPS()
 					);
 				}
 			}

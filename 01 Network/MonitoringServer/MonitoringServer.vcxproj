@@ -165,6 +165,8 @@
     <ClCompile Include="User.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Library Include="..\DBConnector\DBConnector.lib" />
+    <Library Include="..\DBConnector\libmysql.lib" />
     <Library Include="..\NetworkLib\NetworkLib.lib" />
   </ItemGroup>
   <ItemGroup>

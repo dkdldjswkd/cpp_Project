@@ -19,6 +19,9 @@
     <Filter Include="MonitoringNetServer">
       <UniqueIdentifier>{1eb4d155-16ce-4afc-a81c-6246390b2098}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Contents\User">
+      <UniqueIdentifier>{872bc9b1-45d6-42e6-9d12-ec193969c0d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MonitoringLanServer.h">
@@ -27,17 +30,17 @@
     <ClInclude Include="MonitorProtocol.h">
       <Filter>Protocol</Filter>
     </ClInclude>
-    <ClInclude Include="User.h">
-      <Filter>Contents</Filter>
-    </ClInclude>
     <ClInclude Include="MonitoringNetServer.h">
       <Filter>MonitoringNetServer</Filter>
     </ClInclude>
-    <ClInclude Include="ServerSession.h">
-      <Filter>Contents</Filter>
+    <ClInclude Include="User.h">
+      <Filter>Contents\User</Filter>
     </ClInclude>
     <ClInclude Include="MonitorSession.h">
-      <Filter>Contents</Filter>
+      <Filter>Contents\User</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerSession.h">
+      <Filter>Contents\User</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -47,21 +50,27 @@
     <ClCompile Include="main.cpp">
       <Filter>Main</Filter>
     </ClCompile>
-    <ClCompile Include="User.cpp">
-      <Filter>Contents</Filter>
-    </ClCompile>
     <ClCompile Include="MonitoringNetServer.cpp">
       <Filter>MonitoringNetServer</Filter>
     </ClCompile>
-    <ClCompile Include="ServerSession.cpp">
-      <Filter>Contents</Filter>
-    </ClCompile>
     <ClCompile Include="MonitorSession.cpp">
-      <Filter>Contents</Filter>
+      <Filter>Contents\User</Filter>
+    </ClCompile>
+    <ClCompile Include="ServerSession.cpp">
+      <Filter>Contents\User</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>Contents\User</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\NetworkLib\NetworkLib.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="..\DBConnector\DBConnector.lib">
+      <Filter>include</Filter>
+    </Library>
+    <Library Include="..\DBConnector\libmysql.lib">
       <Filter>include</Filter>
     </Library>
   </ItemGroup>
