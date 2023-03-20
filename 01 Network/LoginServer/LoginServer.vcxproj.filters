@@ -1,16 +1,45 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="LoginServer.cpp" />
+    <ClCompile Include="LoginServer.cpp">
+      <Filter>LoginServer</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>LoginServer\Contents</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="LoginServer.h" />
-    <ClInclude Include="CommonProtocol.h" />
+    <ClInclude Include="LoginServer.h">
+      <Filter>LoginServer</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>LoginServer\Contents</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>{7fb21f41-b926-4bf5-a9ec-a657525c4bde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="LoginServer">
+      <UniqueIdentifier>{8cc751ef-d88a-4aa8-b36a-2172ee9057bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{18174916-bf6c-4093-a899-840fd816317e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{d61f2029-2ae8-4c36-beba-68e0963c1077}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{5d32b4aa-92e0-4c84-81f2-f73ddb6d663d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="LoginServer\Contents">
+      <UniqueIdentifier>{1f49950a-e7fb-447c-aba5-2b425897c8f7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -29,5 +58,10 @@
     <Library Include="..\Redis\tacopie.lib">
       <Filter>include</Filter>
     </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini">
+      <Filter>System</Filter>
+    </None>
   </ItemGroup>
 </Project>

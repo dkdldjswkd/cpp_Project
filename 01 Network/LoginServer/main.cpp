@@ -1,32 +1,72 @@
 #include <iostream>
+#include <thread>
+#include <conio.h>
 #include "LoginServer.h"
-#include "../NetworkLib/CrashDump.h"
+#include "../../00 lib_jy/CrashDump.h"
 using namespace std;
 
-void StartLoginServer() {
-	LoginServer loginServer("../ServerConfig.ini", "LoginServer");
-	loginServer.StartUp();
-	printf("StartLoginServer \n");
+thread ConsoleMonitoring(LoginServer* net_server) {
+	thread monitor_thread([net_server]
+		{
+			auto h = GetStdHandle(STD_OUTPUT_HANDLE);
+			for (;;) {
+				// 1초 주기 모니터링
+				Sleep(1000);
+				system("cls");
+				SetConsoleCursorPosition(h, { 0, 0 });
 
-	for (;;) {
-		// 1초 주기 모니터링
-		Sleep(1000);
-		printf("NetworkLib -------------------------------------------------- \n");
-		printf("sessionCount    : %d \n", loginServer.Get_sessionCount());
-		printf("PacketCount     : %d \n", PacketBuffer::Get_UseCount());
-		printf("acceptTotal     : %d \n", loginServer.Get_acceptTotal());
-		printf("acceptTPS       : %d \n", loginServer.Get_acceptTPS());
-		printf("sendMsgTPS      : %d \n", loginServer.Get_sendTPS());
-		printf("recvMsgTPS      : %d \n", loginServer.Get_recvTPS());
-		printf("LoginServer ------------------------------------------------- \n");
-		printf("PlayerCount     : %d \n", loginServer.Get_playerCount());
-		printf("PlayerPoolCount : %d \n", loginServer.Get_playerPoolCount());
-		printf("\n\n\n\n\n\n\n\n\n\n \n\n\n\n\n\n\n\n\n");
-	}
-	loginServer.CleanUp();
+				// 서버 조작
+				if (_kbhit()) {
+					auto c = _getch();
+					if (c == 'q' || c == 'Q') {
+						//net_server->ServerStop();
+					}
+				}
+
+				// 콘솔 출력
+				{
+					printf(
+						"Process : LoginServer ---------------------\n"
+						"LoginServer::NetLib -----------------------\n"
+						"sessionCount    : %d                       \n"
+						"PacketCount     : %d                       \n"
+						"acceptTotal     : %d                       \n"
+						"acceptTPS       : %d                       \n"
+						"sendMsgTPS      : %d                       \n"
+						"recvMsgTPS      : %d                       \n"
+						"LoginServer -------------------------------\n"
+						"PlayerCount     : %d                       \n"
+						"PlayerPoolCount : %d                       \n"
+						,
+						// LoginServer lib
+						net_server->GetSessionCount(),
+						PacketBuffer::GetUseCount(),
+						net_server->GetAcceptTotal(),
+						net_server->GetAcceptTPS(),
+						net_server->GetSendTPS(),
+						net_server->GetRecvTPS(),
+						// LoginServer
+						net_server->GetPlayerCount(),
+						net_server->GetPlayerPoolCount()
+					);
+				}
+			}
+		}
+	);
+	return monitor_thread;
 }
 
 int main() {
 	static CrashDump dump;
-	StartLoginServer();
+	SMALL_RECT rect = { 0,0,45,40 };
+	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), TRUE, &rect);
+
+	// 채팅 서버
+	LoginServer loginServer("../ServerConfig.ini", "LoginServer");
+	loginServer.Start();
+
+	// 콘솔 모니터링 스레드 생성
+	auto t = ConsoleMonitoring(&loginServer);
+
+	Sleep(INFINITE);
 }

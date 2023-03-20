@@ -65,11 +65,11 @@ int main() {
 
 	// 모니터링 넷서버
 	MonitoringNetServer monitoringNetServer("../ServerConfig.ini", "MonitoringNetServer");
-	monitoringNetServer.StartUp();
+	monitoringNetServer.Start();
 
 	// 모니터링 랜서버
 	MonitoringLanServer monitoringLanServer("../ServerConfig.ini", "MonitoringLanServer", &monitoringNetServer);
-	monitoringLanServer.StartUp();
+	monitoringLanServer.Start();
 
 	// 콘솔 모니터링 스레드 생성
 	auto t = ConsoleMonitoring(&monitoringNetServer, &monitoringLanServer);

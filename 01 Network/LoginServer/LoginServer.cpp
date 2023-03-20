@@ -1,9 +1,8 @@
 #include "LoginServer.h"
 #include <string>
 #include "CommonProtocol.h"
-#include "../NetworkLib/Logger.h"
-#include "../NetworkLib/StringUtils.h"
-using namespace J_LIB;
+#include "../../00 lib_jy/Logger.h"
+#include "../../00 lib_jy/StringUtils.h"
 using namespace std;
 
 //------------------------------
@@ -26,9 +25,9 @@ LoginServer::LoginServer(const char* systemFile, const char* server) : NetServer
 	parser.GetValue(server, "DB_LOGTIME", &loggingTime);
 
 	// Set Other Server IP, Port (임시방편, 나중에 시스템 파일에서 전부 긁어올것)
-	strncpy_s(chattingServerIP, 20, "127.0.0.1", strlen("127.0.0.1"));
+	strncpy_s(chatServerIP, 20, "127.0.0.1", strlen("127.0.0.1"));
 	strncpy_s(gameServerIP, 20, "127.0.0.1", strlen("127.0.0.1"));
-	parser.GetValue("ChattingServer_Single", "PORT", (int*)&chattingServerPort);
+	parser.GetValue("ChattingServer_Single", "PORT", (int*)&ChatServerPort);
 	gameServerPort = 2000;
 
 	p_connecterTLS = new DBConnectorTLS(dbAddr, port, loginID, password, schema, loggingTime);
@@ -45,23 +44,23 @@ bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
 }
 
 void LoginServer::OnClientJoin(SESSION_ID session_id) {
-	Player* p_player = playerPool.Alloc();
+	User* p_player = UserPool.Alloc();
 	p_player->Set(session_id);
 
-	playerMap_lock.Lock_Exclusive();
-	playerMap.insert({ session_id, p_player });
-	playerMap_lock.Unlock_Exclusive();
+	UserMapLock.Lock_Exclusive();
+	UserMap.insert({ session_id, p_player });
+	UserMapLock.Unlock_Exclusive();
 }
 
 void LoginServer::OnClientLeave(SESSION_ID session_id) {
-	// Player map 삭제
-	playerMap_lock.Lock_Exclusive();
-	auto iter = playerMap.find(session_id);
-	Player* p_player = iter->second;
-	playerMap.erase(iter);
-	playerMap_lock.Unlock_Exclusive();
+	// User map 삭제
+	UserMapLock.Lock_Exclusive();
+	auto iter = UserMap.find(session_id);
+	User* p_player = iter->second;
+	UserMap.erase(iter);
+	UserMapLock.Unlock_Exclusive();
 
-	playerPool.Free(p_player);
+	UserPool.Free(p_player);
 }
 
 void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
@@ -108,9 +107,9 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	WCHAR	GameServerIP[16] = { 0, };
 	WCHAR	ChatServerIP[16] = { 0, };
 	UTF8ToUTF16(this->gameServerIP, GameServerIP);
-	UTF8ToUTF16(this->chattingServerIP, ChatServerIP);
+	UTF8ToUTF16(this->chatServerIP, ChatServerIP);
 	USHORT	GameServerPort = this->gameServerPort;
-	USHORT	ChatServerPort = this->chattingServerPort;
+	USHORT	ChatServerPort = this->ChatServerPort;
 
 	// 로그인 응답 패킷 생성
 	PacketBuffer* p_packet = PacketBuffer::Alloc();

@@ -19,7 +19,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_DBConnector", "..\Test
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DBConnector", "..\DBConnector\DBConnector.vcxproj", "{89FB9B93-F785-4E54-9874-5ED414214649}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChattingServer_Single", "..\ChattingServer_Single\ChattingServer_Single.vcxproj", "{DCDE2D54-7167-4417-AC33-4644DE891ACC}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChatServerST", "..\ChattingServer_Single\ChatServerST.vcxproj", "{DCDE2D54-7167-4417-AC33-4644DE891ACC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,0 +1,85 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ChatServerST.cpp">
+      <Filter>ChatServerST</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>ChatServerST\Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="Sector.cpp">
+      <Filter>ChatServerST\Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="User.cpp">
+      <Filter>ChatServerST\Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="MonitoringClient.cpp">
+      <Filter>MonitorClient</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ChatServerST.h">
+      <Filter>ChatServerST</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="User.h">
+      <Filter>ChatServerST\Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>ChatServerST\Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Sector.h">
+      <Filter>ChatServerST\Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitoringClient.h">
+      <Filter>MonitorClient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MonitoringServer\MonitorProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\Redis\cpp_redis.lib">
+      <Filter>Include</Filter>
+    </Library>
+    <Library Include="..\NetworkLib\NetworkLib.lib">
+      <Filter>Include</Filter>
+    </Library>
+    <Library Include="..\Redis\tacopie.lib">
+      <Filter>Include</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ChatServerST">
+      <UniqueIdentifier>{316ab0cb-223e-47e4-8870-d01d3c146573}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{fb6d5edf-c28c-4637-a22a-309a2d0f5148}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Include">
+      <UniqueIdentifier>{3558b6f2-dbd8-4335-9d1e-06625d03273f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{866511b7-3b4f-443d-8de0-8d88a890c3f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main">
+      <UniqueIdentifier>{25fae31c-ac06-4f59-8d57-7554be929fb3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ChatServerST\Contents">
+      <UniqueIdentifier>{3e6a5cb4-b3aa-447b-a515-6d0d6fbe6fc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitorClient">
+      <UniqueIdentifier>{7cf6a731-ee3e-4aed-b3cf-0a259930d7d5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ServerConfig.ini">
+      <Filter>System</Filter>
+    </None>
+  </ItemGroup>
+</Project>

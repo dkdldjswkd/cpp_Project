@@ -1,13 +1,13 @@
 #include <iostream>
 #include <conio.h>
-#include "ChattingServer_Single.h"
+#include "ChatServerST.h"
 #include "MonitoringClient.h"
 #include "../../00 lib_jy/CrashDump.h"
 #include "../../00 lib_jy/StringUtils.h"
 #include "../../00 lib_jy/Profiler.h"
 using namespace std;
 
-thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* net_client) {
+thread ConsoleMonitoring(ChatServerST* net_server, MonitoringClient* net_client) {
 	thread monitor_thread([net_server, net_client]
 		{
 			auto h = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -28,7 +28,6 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 					}
 					else if (c == 'q' || c == 'Q') {
 						net_server->ServerStop();
-						break;
 					}
 				}
 
@@ -66,6 +65,7 @@ thread ConsoleMonitoring(ChattingServer_Single* net_server, MonitoringClient* ne
 						net_server->GetAcceptTPS(),
 						net_server->GetSendTPS(),
 						net_server->GetRecvTPS(),
+
 						// MonitoringClient lib
 						net_client->Get_sendTPS(),
 						net_client->Get_recvTPS(),
@@ -97,7 +97,7 @@ int main() {
 	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), TRUE, &rect);
 
 	// 채팅 서버
-	ChattingServer_Single chattingServer("../ServerConfig.ini", "ChattingServer_Single");
+	ChatServerST chattingServer("../ServerConfig.ini", "ChattingServer_Single");
 	chattingServer.Start();
 
 	// 모니터링 클라

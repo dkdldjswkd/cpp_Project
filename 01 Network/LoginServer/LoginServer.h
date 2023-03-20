@@ -4,29 +4,15 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
-#include "../NetworkLib/LFObjectPool.h"
-#include "../NetworkLib/LFQueue.h"
+#include "User.h"
+#include "../../00 lib_jy/LFObjectPool.h"
+#include "../../00 lib_jy/LFQueue.h"
+#include "../../00 lib_jy/RecursiveLock.h"
 #include "../NetworkLib/NetServer.h"
 #include "../DBConnector/DBConnectorTLS.h"
-#include "../NetworkLib/RecursiveLock.h"
 
 struct Token {
 	char buf[64];
-};
-
-struct Player {
-public:
-	Player() {}
-	~Player() {}
-
-public:
-	SESSION_ID session_id = INVALID_SESSION_ID;
-
-public:
-	void Set(SESSION_ID session_id) {
-		this->session_id = session_id;
-	}
-	void Reset() {}
 };
 
 class LoginServer : public NetServer {
@@ -35,15 +21,15 @@ public:
 	~LoginServer();
 
 private:
-	// Player
-	RecursiveLock playerMap_lock;
-	std::unordered_map<DWORD64, Player*> playerMap;
-	J_LIB::LFObjectPool<Player> playerPool;
+	// User
+	RecursiveLock UserMapLock;
+	std::unordered_map<DWORD64, User*> UserMap;
+	LFObjectPool<User> UserPool;
 
 	// Other Server IP, Port
-	char chattingServerIP[20];
+	char chatServerIP[20];
 	char gameServerIP[20];
-	DWORD chattingServerPort;
+	DWORD ChatServerPort;
 	DWORD gameServerPort;
 
 public:
@@ -60,14 +46,15 @@ private:
 
 public:
 	// 모니터링
-	DWORD Get_playerCount();
-	DWORD Get_playerPoolCount();
+	DWORD GetPlayerCount();
+	DWORD GetPlayerPoolCount();
+	//PacketBuffer::GetUseCount(),
 };
 
-inline DWORD LoginServer::Get_playerCount() {
-	return playerMap.size();
+inline DWORD LoginServer::GetPlayerCount() {
+	return UserMap.size();
 }
 
-inline DWORD LoginServer::Get_playerPoolCount() {
-	return playerPool.Get_UseCount();
+inline DWORD LoginServer::GetPlayerPoolCount() {
+	return UserPool.GetUseCount();
 }

@@ -1,4 +1,4 @@
-#include "ChattingServer_Single.h"
+#include "ChatServerST.h"
 #include "MonitoringClient.h"
 #include "MonitorProtocol.h"
 #include <time.h>
@@ -165,10 +165,10 @@ void MonitoringClient::UpdateData() {
 	cpuUsageChat = ProcessMonitor.GetTotalCpuUsage();
 	usingMemoryMbChat = perfCounter.GetUserMemB() / 1024 / 1024;
 	sessionCount = localServer->GetSessionCount();
-	userCount = ((ChattingServer_Single*)localServer)->GetPlayerCount();
-	updateTPS = ((ChattingServer_Single*)localServer)->GetUpdateTPS();
+	userCount = ((ChatServerST*)localServer)->GetPlayerCount();
+	updateTPS = ((ChatServerST*)localServer)->GetUpdateTPS();
 	packetCount = PacketBuffer::GetUseCount();
-	jobCount = ((ChattingServer_Single*)localServer)->GetJobQueueCount();
+	jobCount = ((ChatServerST*)localServer)->GetJobQueueCount();
 	cpuUsageMachine = machineMonitor.GetTotalCpuUsage();
 	usingNonMemoryMbMachine = perfCounter.GetSysNonMemB() / 1024 / 1024;
 	recvKbytes = perfCounter.GetRecvBytes() / 1024;

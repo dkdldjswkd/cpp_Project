@@ -22,6 +22,9 @@
     <Filter Include="Contents\User">
       <UniqueIdentifier>{872bc9b1-45d6-42e6-9d12-ec193969c0d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{fedb2c89-bf4f-44e7-b126-606e29bf17ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MonitoringLanServer.h">
@@ -76,7 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ServerConfig.ini">
-      <Filter>Protocol</Filter>
+      <Filter>System</Filter>
     </None>
   </ItemGroup>
 </Project>
