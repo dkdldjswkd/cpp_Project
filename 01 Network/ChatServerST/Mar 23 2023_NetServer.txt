@@ -1,0 +1,9 @@
+[NetServer] [Mar 23 2023 01:04:30 / INFO] Start NetServer
+[NetServer] [Mar 23 2023 01:04:30 / DEBUG] WSASend() Fail, Error code : 10054
+[NetServer] [Mar 23 2023 01:04:30 / DEBUG] WSASend() Fail, Error code : 10054
+[NetServer] [Mar 23 2023 01:04:30 / DEBUG] WSASend() Fail, Error code : 10054
+[NetServer] [Mar 23 2023 01:04:30 / INFO] Start NetServer
+[NetServer] [Mar 23 2023 01:04:30 / DEBUG] WSASend() Fail, Error code : 10054
+[NetServer] [Mar 23 2023 01:04:30 / DEBUG] WSASend() Fail, Error code : 10054
+[NetServer] [Mar 23 2023 01:04:30 / DEBUG] WSASend() Fail, Error code : 10054
+[NetServer] [Mar 23 2023 01:04:30 / DEBUG] WSASend() Fail, Error code : 10054

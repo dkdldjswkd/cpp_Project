@@ -8,47 +8,79 @@
 
 class MonitoringClient : public NetClient {
 public:
-	MonitoringClient(const char* systemFile, const char* client, NetServer* localServer);
+	MonitoringClient(const char* systemFile, const char* client, ChatServerST* localServer);
 	~MonitoringClient();
 
 private:
 	int serverNo;
 	std::thread updateThread;
+	bool updateRun = true;
 	bool isConnect = false;
 
 	// Control Server
-	NetServer* localServer;
+	ChatServerST* p_chatServer;
 
 	// 모니터링
 	time_t lastUpdateTime;
 	ProcessCpuMonitor  ProcessMonitor;
 	MachineCpuMonitor  machineMonitor;
 	PerformanceCounter perfCounter;
-
-public:
 	// 채팅서버 모니터링 데이터
-	int cpuUsageChat = 0;
-	int usingMemoryMbChat = 0;
-	int packetCount = 0;
-	int sessionCount = 0;
-	int userCount = 0;
-	int updateTPS = 0;
-	int jobCount = 0;
-
+	int processCpuUsage = 0;
+	int processUsingMemMb = 0;
 	// 머신 모니터링 데이터
-	int cpuUsageMachine = 0;
-	int usingNonMemoryMbMachine = 0;
-	int recvKbytes = 0;
-	int sendKbytes = 0;
-	int availMemMb = 0;
+	int machineCpuUsage = 0;
+	int machineUsingNonMemMb = 0;
+	int machineRecvKbytes = 0;
+	int machineSendKbytes = 0;
+	int machineAvailMemMb = 0;
 
 private:
 	// Lib Callback
 	void OnConnect();
 	void OnRecv(PacketBuffer* contents_packet);
 	void OnDisconnect();
+	void OnClientStop();
 
-private:
-	void ReportToMonitoringServer();
+	// Monitor & Report (To.모니터링 서버)
 	void UpdateData();
+	void ReportToMonitoringServer();
+
+public:
+	// Getter
+	int GetProcessCpuUsage();
+	int GetProcessUsingMemMb();
+	int GetMachineCpuUsage();
+	int GetMachineUsingNonMemMb();
+	int GetMachineRecvKbytes();
+	int GetMachineSendKbytes();
+	int GetMachineAvailMemMb();
 };
+
+inline int MonitoringClient::GetProcessCpuUsage() {
+	return processCpuUsage;
+}
+
+inline int MonitoringClient::GetProcessUsingMemMb() {
+	return processUsingMemMb;
+}
+
+inline int MonitoringClient::GetMachineCpuUsage() {
+	return machineCpuUsage;
+}
+
+inline int MonitoringClient::GetMachineUsingNonMemMb() {
+	return machineUsingNonMemMb;
+}
+
+inline int MonitoringClient::GetMachineRecvKbytes() {
+	return machineRecvKbytes;
+}
+
+inline int MonitoringClient::GetMachineSendKbytes() {
+	return machineSendKbytes;
+}
+
+inline int MonitoringClient::GetMachineAvailMemMb() {
+	return machineAvailMemMb;
+}

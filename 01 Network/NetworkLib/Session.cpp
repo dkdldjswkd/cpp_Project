@@ -34,12 +34,12 @@ void Session::Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id) {
 	this->port = port;
 	this->session_id = session_id;
 	recv_buf.Clear();
-	send_flag = false;
+	sendFlag = false;
 	disconnectFlag = false;
 	sendPacketCount = 0;
 	lastRecvTime = timeGetTime();
 
 	// 생성하자 마자 릴리즈 되는것을 방지
-	InterlockedIncrement(&io_count);
-	this->release_flag = false;
+	InterlockedIncrement(&ioCount);
+	this->releaseFlag = false;
 }

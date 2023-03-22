@@ -65,11 +65,14 @@ private:
 	DWORD timeOut;
 
 	// 모니터링
-	DWORD acceptTPS = 0;
+	DWORD acceptCount = 0;
+	DWORD acceptTPS= 0;
 	DWORD acceptTotal = 0;
+	DWORD recvMsgTPS = 0;
+	DWORD sendMsgTPS = 0;
 	alignas(64) DWORD sessionCount = 0;
-	alignas(64) DWORD recvMsgTPS = 0;
-	alignas(64) DWORD sendMsgTPS = 0;
+	alignas(64) DWORD recvMsgCount = 0;
+	alignas(64) DWORD sendMsgCount = 0;
 
 public:
 	// 유틸
@@ -106,6 +109,7 @@ protected:
 	virtual void OnClientJoin(SESSION_ID session_id) = 0;
 	virtual void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet) = 0;
 	virtual void OnClientLeave(SESSION_ID session_id) = 0;
+	virtual void OnServerStop() = 0;
 	// virtual void OnError(int errorcode /* (wchar*) */) = 0;
 	// virtual void OnSend(SessionID, int sendsize) = 0;         
 	// virtual void OnWorkerThreadBegin() = 0;                   
@@ -121,6 +125,7 @@ public:
 	bool Disconnect(SESSION_ID session_id);
 
 	// Getter
+	void UpdateTPS();
 	DWORD GetSessionCount();
 	DWORD GetAcceptTPS();
 	DWORD GetAcceptTotal();
@@ -129,21 +134,21 @@ public:
 };
 
 //////////////////////////////
-/// NetServer Inline Func
+// NetServer Inline Func
 //////////////////////////////
 
 inline void NetServer::IncrementIOCount(Session* p_session) {
-	InterlockedIncrement((LONG*)&p_session->io_count);
+	InterlockedIncrement((LONG*)&p_session->ioCount);
 }
 
 inline void NetServer::DecrementIOCount(Session* p_session) {
-	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+	if (0 == InterlockedDecrement((LONG*)&p_session->ioCount)) {
 		ReleaseSession(p_session);
 	}
 }
 
 inline void NetServer::DecrementIOCountPQCS(Session* p_session) {
-	if (0 == InterlockedDecrement((LONG*)&p_session->io_count)) {
+	if (0 == InterlockedDecrement((LONG*)&p_session->ioCount)) {
 		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::RELEASE_SESSION);
 	}
 }
@@ -154,14 +159,27 @@ inline void NetServer::DisconnectSession(Session* p_session) {
 	CancelIoEx((HANDLE)p_session->sock, NULL);
 }
 
+//////////////////////////////
+// Getter
+//////////////////////////////
+
+inline void NetServer::UpdateTPS() {
+	acceptTPS = acceptCount;
+	acceptCount = 0;
+
+	sendMsgTPS = sendMsgCount;
+	sendMsgCount = 0;
+
+	recvMsgTPS = recvMsgCount;
+	recvMsgCount = 0;
+}
+
 inline DWORD NetServer::GetSessionCount() {
 	return sessionCount;
 }
 
 inline DWORD NetServer::GetAcceptTPS() {
-	auto tmp = acceptTPS;
-	acceptTPS = 0;
-	return tmp;
+	return acceptTPS;
 }
 
 inline DWORD NetServer::GetAcceptTotal() {
@@ -169,13 +187,9 @@ inline DWORD NetServer::GetAcceptTotal() {
 }
 
 inline DWORD NetServer::GetSendTPS() {
-	auto tmp = sendMsgTPS;
-	sendMsgTPS = 0;
-	return tmp;
+	return sendMsgTPS;
 }
 
 inline DWORD NetServer::GetRecvTPS() {
-	auto tmp = recvMsgTPS;
-	recvMsgTPS = 0;
-	return tmp;
+	return recvMsgTPS;
 }

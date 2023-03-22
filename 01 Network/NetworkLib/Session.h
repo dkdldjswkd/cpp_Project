@@ -45,7 +45,7 @@ public:
 	SESSION_ID	session_id = INVALID_SESSION_ID;
 
 	// flag
-	bool send_flag = false;
+	bool sendFlag = false;
 	bool disconnectFlag = false;
 
 	// Send
@@ -60,14 +60,15 @@ public:
 	DWORD lastRecvTime;
 
 	// Overlapped
-	OVERLAPPED recv_overlapped = { 0, };
-	OVERLAPPED send_overlapped = { 0, };
+	OVERLAPPED recvOverlapped = { 0, };
+	OVERLAPPED sendOverlapped = { 0, };
 
 	// 세션 레퍼런스 카운트 역할 (release_flag, io_count가 연속되는 8byte, 같은 캐시라인에 위치하게 의도)
-	alignas(64) BOOL release_flag = true;
-	LONG io_count = 0;
+	alignas(64) BOOL releaseFlag = true;
+	LONG ioCount = 0;
 
 public:
 	void Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id);
+	// Reset : ReleaseSession()
 };
 typedef Session* PSession;

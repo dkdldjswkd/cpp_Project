@@ -1,6 +1,14 @@
 //오후 4:20 2023-02-21
 
-str 손코딩 해보기
+NetClient Stop 구현
+
+서버 종료가 재대로 되는지 테스트
+
+TLSPool 낱개 카운트
+
+UpdateTPS 구현
+
+Server Stop 구현
 
 ----
 
@@ -11,6 +19,4 @@ DB Connector 에서 10분에 한번씩 쿼리 시간 avr, min, max 로깅 하자
 
 모니터링 서버에서 10분에 한번씩 모니터링 내역 DB write
 
-서버 종료가 재대로 되는지 테스트
-
-client ip char배열로 갖고있자
+str 손코딩 해보기

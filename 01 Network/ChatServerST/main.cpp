@@ -7,105 +7,110 @@
 #include "../../00 lib_jy/Profiler.h"
 using namespace std;
 
-thread ConsoleMonitoring(ChatServerST* net_server, MonitoringClient* net_client) {
-	thread monitor_thread([net_server, net_client]
-		{
-			auto h = GetStdHandle(STD_OUTPUT_HANDLE);
-			for (;;) {
-				// 1초 주기 모니터링
-				Sleep(1000);
-				system("cls");
-				SetConsoleCursorPosition(h, { 0, 0 });
+void ServerMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient);
 
-				// 프로파일러 파일 out
-				if (_kbhit()) {
-					auto c = _getch();
-					if (c == 'f' || c == 'F') {
-						PRO_FILEOUT();
-					}
-					else if (c == 'r' || c == 'R') {
-						PRO_RESET();
-					}
-					else if (c == 'q' || c == 'Q') {
-						net_server->ServerStop();
-					}
-				}
-
-				// 콘솔 출력
-				{
-					printf(
-						"Process : ChattingServer_Single------------\n"
-						"                                           \n"
-						"ChattingServer NerServer Lib --------------\n"
-						"acceptTotal          : %u                  \n"
-						"acceptTPS            : %u                  \n"
-						"sendMsgTPS           : %u                  \n"
-						"recvMsgTPS           : %u                  \n"
-						"                                           \n"
-						"MonitoringClient NetClient Lib ------------\n"
-						"sendMsgTPS           : %u                  \n"
-						"recvMsgTPS           : %u                  \n"
-						"ChattingServer Status ---------------------\n"
-						"CPU Usage(server)    : %d                  \n"
-						"Using Memory(MB)     : %d                  \n"
-						"Packet Count         : %d                  \n"
-						"Session Count        : %d                  \n"
-						"User Count           : %d                  \n"
-						"Update TPS           : %d                  \n"
-						"Job Count            : %d                  \n"
-						"Machine Status ----------------------------\n"
-						"CPU Usage(machine)   : %d                  \n"
-						"Using Non Memory(MB) : %d                  \n"
-						"recv Kbytes          : %d                  \n"
-						"send Kbytes          : %d                  \n"
-						"avail Memory(MB)     : %d                  \n"
-						,
-						// ChattingServer lib
-						net_server->GetAcceptTotal(),
-						net_server->GetAcceptTPS(),
-						net_server->GetSendTPS(),
-						net_server->GetRecvTPS(),
-
-						// MonitoringClient lib
-						net_client->Get_sendTPS(),
-						net_client->Get_recvTPS(),
-						// ChattingServer Status
-						net_client->cpuUsageChat,
-						net_client->usingMemoryMbChat,
-						net_client->packetCount,
-						net_client->sessionCount,
-						net_client->userCount,
-						net_client->updateTPS,
-						net_client->jobCount,
-						// Machine Status
-						net_client->cpuUsageMachine,
-						net_client->usingNonMemoryMbMachine,
-						net_client->recvKbytes,
-						net_client->sendKbytes,
-						net_client->availMemMb
-					);
-				}
-			}
-		}
-	);
-	return monitor_thread;
-}
-
+CrashDump dump;
 int main() {
-	static CrashDump dump;
-	SMALL_RECT rect = { 0,0,45,40 };
-	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), TRUE, &rect);
-
 	// 채팅 서버
 	ChatServerST chattingServer("../ServerConfig.ini", "ChattingServer_Single");
 	chattingServer.Start();
 
 	// 모니터링 클라
 	MonitoringClient Monitoringclient("../ServerConfig.ini", "MonitoringClient", &chattingServer);
-	Monitoringclient.StartUp();
+	Monitoringclient.Start();
 
 	// 콘솔 모니터링 스레드 생성
-	auto t = ConsoleMonitoring(&chattingServer, &Monitoringclient);
+	ServerMonitor(&chattingServer, &Monitoringclient);
+}
 
-	Sleep(INFINITE);
+void ServerMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient) {
+	auto h = GetStdHandle(STD_OUTPUT_HANDLE);
+	for (;;) {
+		// 1초 주기 모니터링
+		Sleep(1000);
+		system("cls");
+		SetConsoleCursorPosition(h, { 0, 0 });
+
+		// 프로파일러 파일 out
+		if (_kbhit()) {
+			auto c = _getch();
+			if (c == 'f' || c == 'F') {
+				PRO_FILEOUT();
+			}
+			else if (c == 'r' || c == 'R') {
+				PRO_RESET();
+			}
+			else if (c == 'q' || c == 'Q') {
+				p_chatServer->Stop();
+				p_MonitorClient->Stop();
+			}
+			else if (c == 'e' || c == 'E') {
+				return;
+			}
+		}
+
+		// 모니터링 데이터 업데이트
+		p_chatServer->NetServer::UpdateTPS();
+		p_chatServer->UpdateTPS();
+		p_MonitorClient->NetClient::UpdateTPS();
+
+		// 콘솔 출력
+		{
+			printf(
+				"[ ChatServer ] ----------------------------\n"
+				"acceptTotal          : %u                  \n"
+				"acceptTPS            : %u                  \n"
+				"recvMsgTPS           : %u                  \n"
+				"sendMsgTPS           : %u                  \n"
+				"[ Contents ] ------------------------------\n"
+				"Session Count        : %d                  \n"
+				"User Count           : %d                  \n"
+				"Packet Count         : %d                  \n"
+				"Job Count            : %d                  \n"
+				"Update TPS           : %d                  \n"
+				"                                           \n"
+				"[ MonitorClient ] ------------------------\n"
+				"sendMsgTPS           : %u                  \n"
+				"recvMsgTPS           : %u                  \n"
+				"                                           \n"
+				"[ Process ] -------------------------------\n"
+				"CPU Usage            : %d                  \n"
+				"Using Memory(MB)     : %d                  \n"
+				"                                           \n"
+				"[ Machine ] -------------------------------\n"
+				"CPU Usage            : %d                  \n"
+				"Using Non Memory(MB) : %d                  \n"
+				"avail Memory(MB)     : %d                  \n"
+				"recv Kbytes          : %d                  \n"
+				"send Kbytes          : %d                  \n"
+				,
+				// ChatServer
+				p_chatServer->GetAcceptTotal(),
+				p_chatServer->GetAcceptTPS(),
+				p_chatServer->GetRecvTPS(),
+				p_chatServer->GetSendTPS(),
+				// Contents
+				p_chatServer->GetSessionCount(),
+				p_chatServer->GetUserCount(),
+				PacketBuffer::GetUseCount(),
+				p_chatServer->GetJobPoolCount(),
+				p_chatServer->GetUpdateTPS(),
+
+				// MonitorClient
+				p_MonitorClient->GetRecvTPS(),
+				p_MonitorClient->GetSendTPS(),
+
+				// Process
+				p_MonitorClient->GetProcessCpuUsage(),
+				p_MonitorClient->GetProcessUsingMemMb(),
+
+				// Machine
+				p_MonitorClient->GetMachineCpuUsage(),
+				p_MonitorClient->GetMachineUsingNonMemMb(),
+				p_MonitorClient->GetMachineAvailMemMb(),
+				p_MonitorClient->GetMachineRecvKbytes(),
+				p_MonitorClient->GetMachineSendKbytes()
+			);
+		}
+	}
 }

@@ -34,7 +34,7 @@ private:
 
 	// Count
 	alignas(64) int capacity;
-	alignas(64) int use_count;
+	alignas(64) int useCount;
 
 public:
 	T* Alloc();
@@ -45,7 +45,7 @@ public:
 
 	// Getter
 	inline int GetCapacityCount() const { return capacity; }
-	inline int GetUseCount() const { return use_count; }
+	inline int GetUseCount() const { return useCount; }
 };
 
 //------------------------------
@@ -53,7 +53,7 @@ public:
 //------------------------------
 
 template<typename T>
-LFObjectPool<T>::LFObjectPool(int node_num, bool use_ctor) : integrity((ULONG_PTR)this), use_ctor(use_ctor), topStamp(NULL), capacity(node_num), use_count(0) {
+LFObjectPool<T>::LFObjectPool(int node_num, bool use_ctor) : integrity((ULONG_PTR)this), use_ctor(use_ctor), topStamp(NULL), capacity(node_num), useCount(0) {
 	// Stamp 사용 가능 여부 확인
 	SYSTEM_INFO sys_info;
 	GetSystemInfo(&sys_info);
@@ -104,13 +104,13 @@ T* LFObjectPool<T>::Alloc() {
 				new (&topClean->obejct) T;
 			}
 
-			InterlockedIncrement((LONG*)&use_count);
+			InterlockedIncrement((LONG*)&useCount);
 			return &topClean->obejct;
 		}
 		// empty!!
 		else {
 			InterlockedIncrement((LONG*)&capacity);
-			InterlockedIncrement((LONG*)&use_count);
+			InterlockedIncrement((LONG*)&useCount);
 
 			// Node 중 Object 포인터 ret
 			return &(new Node((ULONG_PTR)this))->obejct;
@@ -149,7 +149,7 @@ void LFObjectPool<T>::Free(T* p_obejct) {
 		if ((DWORD64)copyTopStamp != InterlockedCompareExchange64((LONG64*)&topStamp, (LONG64)newTopStamp, (LONG64)copyTopStamp))
 			continue;
 
-		InterlockedDecrement((LONG*)&use_count);
+		InterlockedDecrement((LONG*)&useCount);
 		return;
 	}
 }

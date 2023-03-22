@@ -29,49 +29,54 @@ private:
 
 	enum class PQCS_TYPE : BYTE {
 		SEND_POST = 1,
-		DECREMENT_IO = 2,
+		RELEASE_SESSION = 2,
+		NONE,
 	};
 
 private:
 	// 프로토콜
-	BYTE protocol_code;
-	BYTE private_key;
+	BYTE protocolCode;
+	BYTE privateKey;
 
 	// 네트워크
 	NetType netType;
-	SOCKET client_sock = INVALID_SOCKET;
+	SOCKET clientSock = INVALID_SOCKET;
 	HANDLE h_iocp = INVALID_HANDLE_VALUE;
-	char server_ip[16] = { 0, };
-	WORD server_port = 0;
+	char serverIP[16] = { 0, };
+	WORD serverPort = 0;
 
 	// 세션
-	Session client_session;
+	Session clientSession;
 
 	// 스레드
 	std::thread workerThread;
-	std::thread acceptThread;
+	std::thread connectThread;
 
 	// 옵션
-	bool nagle_flag;
+	bool reconnectFlag = true;
 
 	// 모니터링
-	alignas(64) DWORD recvMsgTPS = 0;
-	alignas(64) DWORD sendMsgTPS = 0;
+	DWORD recvMsgTPS = 0;
+	DWORD sendMsgTPS = 0;
+	alignas(64) DWORD recvMsgCount = 0;
+	alignas(64) DWORD sendMsgCount = 0;
 
 private:
 	// 스레드
 	void WorkerFunc();
+	void ConnectFunc();
 
 	// IO 완료 통지 루틴
-	void RecvCompletion_LAN();
-	void RecvCompletion_NET();
+	void RecvCompletionLAN();
+	void RecvCompletionNET();
 	void SendCompletion();
 
 	// 세션
-	SESSION_ID Get_SessionID();
-	bool Check_InvalidSession();
-	inline void DecrementIOCount();
+	SESSION_ID GetSessionID();
+	bool ValidateSession();
 	inline void IncrementIOCount();
+	inline void DecrementIOCount();
+	inline void DecrementIOCountPQCS();
 	inline void DisconnectSession();
 
 	// Send/Recv
@@ -80,25 +85,26 @@ private:
 	bool AsyncRecv();
 
 	// 컨텐츠
-	bool ReleaseSession();
+	void ReleaseSession();
 
 protected:
 	// 라이브러리 사용자 측 재정의 하여 사용
-	virtual void OnConnect() = 0;		// 접속 처리 후 호출
+	virtual void OnConnect() = 0;
 	virtual void OnRecv(PacketBuffer* contents_packet) = 0;
-	virtual void OnDisconnect() = 0; // Release 후 호출
+	virtual void OnDisconnect() = 0;
+	virtual void OnClientStop() = 0;
 	// virtual void OnError(int errorcode /* (wchar*) */) = 0;
-	// virtual void OnSend(SessionID, int sendsize) = 0;           // 패킷 송신 완료 후
-	// virtual void OnWorkerThreadBegin() = 0;                    // 워커스레드 GQCS 바로 하단에서 호출
-	// virtual void OnWorkerThreadEnd() = 0;                      // 워커스레드 1루프 종료 후
+	// virtual void OnSend(SessionID, int sendsize) = 0;       
+	// virtual void OnWorkerThreadBegin() = 0;                 
+	// virtual void OnWorkerThreadEnd() = 0;                   
 
 public:
 	// 유틸
 	Parser parser;
 
 public:
-	void StartUp();
-	void CleanUp();
+	void Start();
+	void Stop();
 
 public:
 	void SendPacket(PacketBuffer* send_packet);
@@ -106,33 +112,49 @@ public:
 
 public:
 	// 모니터링 Getter
-	DWORD Get_sendTPS();
-	DWORD Get_recvTPS();
+	void UpdateTPS();
+	DWORD GetSendTPS();
+	DWORD GetRecvTPS();
 };
 
 inline void NetClient::DecrementIOCount() {
-	if (0 == InterlockedDecrement((LONG*)&client_session.io_count))
+	if (0 == InterlockedDecrement((LONG*)&clientSession.ioCount)) {
 		ReleaseSession();
+	}
+}
+
+inline void NetClient::DecrementIOCountPQCS() {
+	if (0 == InterlockedDecrement((LONG*)&clientSession.ioCount)) {
+		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)&clientSession, (LPOVERLAPPED)PQCS_TYPE::RELEASE_SESSION);
+	}
 }
 
 inline void NetClient::IncrementIOCount() {
-	InterlockedIncrement((LONG*)&client_session.io_count);
+	InterlockedIncrement((LONG*)&clientSession.ioCount);
 }
 
 // * 'IO Count == 0' 이 될 수 없을때 사용할것. (그렇지 않다면, 다른세션 끊는문제 발생)
 inline void NetClient::DisconnectSession() {
-	client_session.disconnectFlag = true;
-	CancelIoEx((HANDLE)client_session.sock, NULL);
+	clientSession.disconnectFlag = true;
+	CancelIoEx((HANDLE)clientSession.sock, NULL);
 }
 
-inline DWORD NetClient::Get_sendTPS() {
-	auto tmp = sendMsgTPS;
-	sendMsgTPS = 0;
-	return tmp;
+////////////////////////////// 
+// Getter
+////////////////////////////// 
+
+inline void NetClient::UpdateTPS() {
+	sendMsgTPS = sendMsgCount;
+	sendMsgCount = 0;
+
+	recvMsgTPS = recvMsgCount;
+	recvMsgCount = 0;
 }
 
-inline DWORD NetClient::Get_recvTPS() {
-	auto tmp = recvMsgTPS;
-	recvMsgTPS = 0;
-	return tmp;
+inline DWORD NetClient::GetRecvTPS() {
+	return recvMsgTPS;
+}
+
+inline DWORD NetClient::GetSendTPS() {
+	return sendMsgTPS;
 }

@@ -4,7 +4,7 @@
 #include <time.h>
 using namespace std;
 
-MonitoringClient::MonitoringClient(const char* systemFile, const char* client, NetServer* localServer) : NetClient(systemFile, client), localServer(localServer) {
+MonitoringClient::MonitoringClient(const char* systemFile, const char* client, ChatServerST* localServer) : NetClient(systemFile, client), p_chatServer(localServer) {
 	parser.GetValue(client, "CHATT_SERVER_NO", &serverNo);
 	updateThread = thread([this] { ReportToMonitoringServer(); });
 }
@@ -29,9 +29,37 @@ void MonitoringClient::OnDisconnect() {
 	isConnect = false;
 }
 
+void MonitoringClient::OnClientStop(){
+	updateRun = false;
+	if (updateThread.joinable()) {
+		updateThread.join();
+	}
+}
+
+void MonitoringClient::UpdateData() {
+	time(&lastUpdateTime);
+	ProcessMonitor.UpdateCpuUsage();
+	machineMonitor.UpdateCpuUsage();
+	perfCounter.Update();
+
+	// Process
+	processCpuUsage = ProcessMonitor.GetTotalCpuUsage();
+	processUsingMemMb = perfCounter.GetUserMemB() / 1024 / 1024;
+
+	// Machine
+	machineCpuUsage = machineMonitor.GetTotalCpuUsage();
+	machineUsingNonMemMb = perfCounter.GetSysNonMemB() / 1024 / 1024;
+	machineRecvKbytes = perfCounter.GetRecvBytes() / 1024;
+	machineSendKbytes = perfCounter.GetSendBytes() / 1024;
+	machineAvailMemMb = perfCounter.GetAvailMemMB();
+}
+
 void MonitoringClient::ReportToMonitoringServer() {
 	for (;;) {
 		Sleep(1000);
+		if (!updateRun)
+			break;
+
 		UpdateData();
 		// 연결되어있지 않다면, 데이터 갱신만
 		if (!isConnect)
@@ -50,7 +78,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_SERVER_CPU; // 데이터 항목
-		*p_packet << (int)cpuUsageChat; // 데이터 수치
+		*p_packet << (int)processCpuUsage; // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -59,7 +87,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_SERVER_MEM; // 데이터 항목
-		*p_packet << (int)usingMemoryMbChat; // 데이터 수치
+		*p_packet << (int)processUsingMemMb; // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -68,7 +96,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_SESSION; // 데이터 항목
-		*p_packet << (int)sessionCount; // 데이터 수치
+		*p_packet << (int)p_chatServer->GetSessionCount(); // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -77,7 +105,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_PLAYER; // 데이터 항목
-		*p_packet << (int)userCount; // 데이터 수치
+		*p_packet << (int)p_chatServer->GetUserCount(); // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -86,7 +114,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_UPDATE_TPS; // 데이터 항목
-		*p_packet << (int)updateTPS; // 데이터 수치
+		*p_packet << (int)p_chatServer->GetUpdateTPS(); // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -95,7 +123,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_PACKET_POOL; // 데이터 항목
-		*p_packet << (int)packetCount; // 데이터 수치
+		*p_packet << (int)PacketBuffer::GetUseCount(); // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -104,7 +132,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_UPDATEMSG_POOL; // 데이터 항목
-		*p_packet << (int)jobCount; // 데이터 수치
+		*p_packet << (int)p_chatServer->GetJobQueueCount(); // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -113,7 +141,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_MONITOR_CPU_TOTAL; // 데이터 항목
-		*p_packet << (int)cpuUsageMachine; // 데이터 수치
+		*p_packet << (int)machineCpuUsage; // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -122,7 +150,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_MONITOR_NONPAGED_MEMORY; // 데이터 항목
-		*p_packet << (int)usingNonMemoryMbMachine; // 데이터 수치
+		*p_packet << (int)machineUsingNonMemMb; // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -131,7 +159,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_MONITOR_NETWORK_RECV; // 데이터 항목
-		*p_packet << (int)recvKbytes; // 데이터 수치
+		*p_packet << (int)machineRecvKbytes; // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -140,7 +168,7 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_MONITOR_NETWORK_SEND; // 데이터 항목
-		*p_packet << (int)sendKbytes; // 데이터 수치
+		*p_packet << (int)machineSendKbytes; // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
@@ -149,29 +177,9 @@ void MonitoringClient::ReportToMonitoringServer() {
 		p_packet = PacketBuffer::Alloc();
 		*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
 		*p_packet << (BYTE)dfMONITOR_DATA_TYPE_MONITOR_AVAILABLE_MEMORY; // 데이터 항목
-		*p_packet << (int)availMemMb; // 데이터 수치
+		*p_packet << (int)machineAvailMemMb; // 데이터 수치
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
 	}
-}
-
-void MonitoringClient::UpdateData() {
-	time(&lastUpdateTime);
-	ProcessMonitor.UpdateCpuUsage();
-	machineMonitor.UpdateCpuUsage();
-	perfCounter.Update();
-
-	cpuUsageChat = ProcessMonitor.GetTotalCpuUsage();
-	usingMemoryMbChat = perfCounter.GetUserMemB() / 1024 / 1024;
-	sessionCount = localServer->GetSessionCount();
-	userCount = ((ChatServerST*)localServer)->GetPlayerCount();
-	updateTPS = ((ChatServerST*)localServer)->GetUpdateTPS();
-	packetCount = PacketBuffer::GetUseCount();
-	jobCount = ((ChatServerST*)localServer)->GetJobQueueCount();
-	cpuUsageMachine = machineMonitor.GetTotalCpuUsage();
-	usingNonMemoryMbMachine = perfCounter.GetSysNonMemB() / 1024 / 1024;
-	recvKbytes = perfCounter.GetRecvBytes() / 1024;
-	sendKbytes = perfCounter.GetSendBytes() / 1024;
-	availMemMb = perfCounter.GetAvailMemMB();
 }

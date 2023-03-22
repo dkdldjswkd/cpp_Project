@@ -77,6 +77,7 @@ private:
 
 	// 모니터링
 	int playerCount = 0;
+	int updateCount = 0;
 	int updateTPS = 0;
 
 private:
@@ -85,6 +86,7 @@ private:
 	void OnClientJoin(SESSION_ID session_id);
 	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
 	void OnClientLeave(SESSION_ID session_id);
+	void OnServerStop();
 
 	// Job
 	void UpdateFunc();
@@ -100,22 +102,25 @@ private:
 	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
 
 public:
-	// 서버 종료
-	void ServerStop();
-
 	// 모니터링
-	DWORD GetPlayerCount();
-	DWORD GetPlayerPoolCount();
+	void UpdateTPS();
+	DWORD GetUserCount();
+	DWORD GetUserPoolCount();
 	DWORD GetJobPoolCount();
 	DWORD GetJobQueueCount();
 	DWORD GetUpdateTPS();
 };
 
-inline DWORD ChatServerST::GetPlayerCount() {
+inline void ChatServerST::UpdateTPS() {
+	updateTPS = updateCount;
+	updateCount = 0;
+}
+
+inline DWORD ChatServerST::GetUserCount() {
 	return playerCount;
 }
 
-inline DWORD ChatServerST::GetPlayerPoolCount(){
+inline DWORD ChatServerST::GetUserPoolCount(){
 	return playerPool.GetUseCount();
 }
 
@@ -128,7 +133,5 @@ inline DWORD ChatServerST::GetJobQueueCount(){
 }
 
 inline DWORD ChatServerST::GetUpdateTPS(){
-	auto tmp = updateTPS;
-	updateTPS = 0;
-	return tmp;
+	return updateTPS;
 }

@@ -14,6 +14,10 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lib_jy", "..\..\00 lib_jy\lib_jy.vcxproj", "{AF9D7BE9-1084-43F5-80F4-17F623F003EC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChatServerST", "ChatServerST.vcxproj", "{DCDE2D54-7167-4417-AC33-4644DE891ACC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{FE4739E7-7447-476A-AD9D-6548F4549676} = {FE4739E7-7447-476A-AD9D-6548F4549676}
+		{AF9D7BE9-1084-43F5-80F4-17F623F003EC} = {AF9D7BE9-1084-43F5-80F4-17F623F003EC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

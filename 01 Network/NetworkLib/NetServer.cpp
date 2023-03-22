@@ -141,7 +141,7 @@ void NetServer::AcceptFunc() {
 		if ( acceptSock == INVALID_SOCKET ) {
 			auto errNo = WSAGetLastError();
 			// 서버 종료
-			if (WSAENOTSOCK == errNo) {
+			if (errNo == WSAEINTR || errNo == WSAENOTSOCK ) {
 				acceptTotal--;
 				break;
 			}
@@ -179,7 +179,7 @@ void NetServer::AcceptFunc() {
 		// 세션 자료구조 할당
 		Session* p_acceptSession = &sessionArray[session_id.session_index];
 		p_acceptSession->Set(acceptSock, accept_ip, accept_port, session_id);
-		acceptTPS++;
+		acceptCount++;
 
 		// Bind IOCP
 		CreateIoCompletionPort((HANDLE)acceptSock, h_iocp, (ULONG_PTR)p_acceptSession, 0);
@@ -209,13 +209,13 @@ void NetServer::TimeoutFunc() {
 			SESSION_ID id = p_session->session_id;
 
 			// 타임아웃 처리 대상 아님 (Interlocked 연산 최소화하기 위해)
-			if (sessionArray[i].release_flag || (timeOut > cur_time - sessionArray[i].lastRecvTime))
+			if (sessionArray[i].releaseFlag || (timeOut > cur_time - sessionArray[i].lastRecvTime))
 				continue;
 
 			// 타임아웃 처리 대상일 수 있음
 			IncrementIOCount(p_session);
 			// 릴리즈 세션인지 판단.
-			if (true == p_session->release_flag) {
+			if (true == p_session->releaseFlag) {
 				DecrementIOCount(p_session);
 				continue;
 			}
@@ -247,7 +247,7 @@ void NetServer::WorkerFunc() {
 		}
 		// FIN
 		if (ioSize == 0) {
-			if (&p_session->send_overlapped == p_overlapped)
+			if (&p_session->sendOverlapped == p_overlapped)
 				LOG("NetServer", LOG_LEVEL_FATAL, "Zero Byte Send !!");
 			goto Decrement_IOCount;
 		}
@@ -271,7 +271,7 @@ void NetServer::WorkerFunc() {
 		}
 
 		// recv 완료통지
-		if (&p_session->recv_overlapped == p_overlapped) {
+		if (&p_session->recvOverlapped == p_overlapped) {
 			if (ret_GQCS) {
 				p_session->recv_buf.MoveRear(ioSize);
 				p_session->lastRecvTime = timeGetTime();
@@ -288,7 +288,7 @@ void NetServer::WorkerFunc() {
 			}
 		}
 		// send 완료통지
-		else if (&p_session->send_overlapped == p_overlapped) {
+		else if (&p_session->sendOverlapped == p_overlapped) {
 			if (ret_GQCS) {
 				SendCompletion(p_session);
 			}
@@ -306,11 +306,11 @@ void NetServer::WorkerFunc() {
 }
 
 bool NetServer::ReleaseSession(Session* p_session) {
-	if (0 != p_session->io_count)
+	if (0 != p_session->ioCount)
 		return false;
 
 	// * release_flag(0), iocount(0) -> release_flag(1), iocount(0)
-	if (0 == InterlockedCompareExchange64((long long*)&p_session->release_flag, 1, 0)) {
+	if (0 == InterlockedCompareExchange64((long long*)&p_session->releaseFlag, 1, 0)) {
 		// 리소스 정리 (소켓, 패킷)
 		closesocket(p_session->sock);
 		PacketBuffer* packet;
@@ -337,11 +337,11 @@ void NetServer::SendCompletion(Session* p_session) {
 	for (int i = 0; i < p_session->sendPacketCount ; i++) {
 		PacketBuffer::Free(p_session->sendPacketArr[i]);
 	}
-	InterlockedAdd((LONG*)&sendMsgTPS, p_session->sendPacketCount);
+	InterlockedAdd((LONG*)&sendMsgCount, p_session->sendPacketCount);
 	p_session->sendPacketCount = 0;
 
 	// Send Flag OFF
-	InterlockedExchange8((char*)&p_session->send_flag, false);
+	InterlockedExchange8((char*)&p_session->sendFlag, false);
 
 	// Send 조건 체크
 	if (p_session->disconnectFlag)	return;
@@ -372,7 +372,7 @@ void NetServer::SendPacket(SESSION_ID session_id, PacketBuffer* send_packet) {
 
 	p_session->sendQ.Enqueue(send_packet);
 #if PQCS_SEND
-	if (p_session->send_flag == false) {
+	if (p_session->sendFlag == false) {
 		PostQueuedCompletionStatus(h_iocp, 1, (ULONG_PTR)p_session, (LPOVERLAPPED)PQCS_TYPE::SEND_POST);
 	}
 	else {
@@ -391,14 +391,14 @@ bool NetServer::SendPost(Session* p_session) {
 		return false;
 
 	// Send 1회 체크 (send flag, true 시 send 진행 중)
-	if (p_session->send_flag == true)
+	if (p_session->sendFlag == true)
 		return false;
-	if (InterlockedExchange8((char*)&p_session->send_flag, true) == true)
+	if (InterlockedExchange8((char*)&p_session->sendFlag, true) == true)
 		return false;
 
 	// Empty continue
 	if (p_session->sendQ.GetUseCount() <= 0) {
-		InterlockedExchange8((char*)&p_session->send_flag, false);
+		InterlockedExchange8((char*)&p_session->sendFlag, false);
 		return SendPost(p_session);
 	}
 
@@ -433,8 +433,8 @@ int NetServer::AsyncSend(Session* p_session) {
 	}
 
 	IncrementIOCount(p_session);
-	ZeroMemory(&p_session->send_overlapped, sizeof(p_session->send_overlapped));
-	if (SOCKET_ERROR == WSASend(p_session->sock, wsaBuf, p_session->sendPacketCount , NULL, 0, &p_session->send_overlapped, NULL)) {
+	ZeroMemory(&p_session->sendOverlapped, sizeof(p_session->sendOverlapped));
+	if (SOCKET_ERROR == WSASend(p_session->sock, wsaBuf, p_session->sendPacketCount , NULL, 0, &p_session->sendOverlapped, NULL)) {
 		const auto err_no = WSAGetLastError();
 		if (ERROR_IO_PENDING != err_no) { // Send 실패
 			LOG("NetServer", LOG_LEVEL_DEBUG, "WSASend() Fail, Error code : %d", WSAGetLastError());
@@ -458,8 +458,8 @@ bool NetServer::AsyncRecv(Session* p_session) {
 	wsaBuf[1].len = p_session->recv_buf.Remain_EnqueueSize();
 
 	IncrementIOCount(p_session);
-	ZeroMemory(&p_session->recv_overlapped, sizeof(p_session->recv_overlapped));
-	if (SOCKET_ERROR == WSARecv(p_session->sock, wsaBuf, 2, NULL, &flags, &p_session->recv_overlapped, NULL)) {
+	ZeroMemory(&p_session->recvOverlapped, sizeof(p_session->recvOverlapped));
+	if (SOCKET_ERROR == WSARecv(p_session->sock, wsaBuf, 2, NULL, &flags, &p_session->recvOverlapped, NULL)) {
 		if (WSAGetLastError() != ERROR_IO_PENDING) { // Recv 실패
 			LOG("NetServer", LOG_LEVEL_DEBUG, "WSARecv() Fail, Error code : %d", WSAGetLastError());
 			DecrementIOCount(p_session);
@@ -501,7 +501,7 @@ void NetServer::RecvCompletionLan(Session* p_session) {
 
 		// 사용자 패킷 처리
 		OnRecv(p_session->session_id, contents_packet);
-		InterlockedIncrement(&recvMsgTPS);
+		InterlockedIncrement(&recvMsgCount);
 
 		auto ret = PacketBuffer::Free(contents_packet);
 	}
@@ -554,7 +554,7 @@ void NetServer::RecvCompletionNet(Session* p_session) {
 
 		// 사용자 패킷 처리
 		OnRecv(p_session->session_id, decrypt_packet);
-		InterlockedIncrement(&recvMsgTPS);
+		InterlockedIncrement(&recvMsgCount);
 
 		// 암호패킷, 복호화 패킷 Free
 		PacketBuffer::Free(decrypt_packet);
@@ -573,7 +573,7 @@ Session* NetServer::ValidateSession(SESSION_ID session_id) {
 	IncrementIOCount(p_session);
 
 	// 세션 릴리즈 상태
-	if (true == p_session->release_flag) {
+	if (true == p_session->releaseFlag) {
 		DecrementIOCountPQCS(p_session);
 		return nullptr;
 	}
@@ -605,7 +605,7 @@ void NetServer::Stop() {
 	// 세션 정리
 	for (int i = 0; i < maxSession; i++) {
 		Session* p_session = &sessionArray[i];
-		if (true == p_session->release_flag)
+		if (true == p_session->releaseFlag)
 			continue;
 		DisconnectSession(p_session);
 	}
@@ -628,6 +628,9 @@ void NetServer::Stop() {
 
 	CloseHandle(h_iocp);
 	WSACleanup();
+
+	// 사용자 리소스 정리
+	OnServerStop();
 }
 
 //------------------------------

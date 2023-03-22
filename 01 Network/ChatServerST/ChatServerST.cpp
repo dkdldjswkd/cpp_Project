@@ -26,10 +26,7 @@ ChatServerST::ChatServerST(const char* systemFile, const char* server) : NetServ
 ChatServerST::~ChatServerST() {
 }
 
-void ChatServerST::ServerStop() {
-	// 네트워크 라이브러리 종료
-	Stop(); // Accept Thread 종료, Session 0, Worker 종료
-
+void ChatServerST::OnServerStop() {
 	// 채팅서버 종료
 	while (0 < jobQ.GetUseCount()) Sleep(100);
 #if ON_LOGIN
@@ -303,6 +300,7 @@ void ChatServerST::UpdateFunc() {
 
 					// 로그인 성공
 					p_player->isLogin = true;
+					playerCount++;
 
 					// 로그인 응답 패킷(성공) 회신
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
@@ -335,7 +333,7 @@ void ChatServerST::UpdateFunc() {
 					break;
 				}
 			}
-			updateTPS++;
+			updateCount++;
 			jobPool.Free(p_job);
 			PRO_END("UpdateFunc");
 		}

@@ -2,11 +2,12 @@
 #include "LFObjectPool.h"
 
 #define CHUNCK_SIZE 500
+#define USE_COUNT 1 // 1 : 낱개 단위 카운트, 2 : 청크 단위 카운트
 
 template <typename T>
 class LFObjectPoolTLS {
 public:
-	LFObjectPoolTLS(bool use_ctor = false) : use_ctor(use_ctor), tlsIndex(TlsAlloc()) {};
+	LFObjectPoolTLS(bool use_ctor = false) : useCtor(use_ctor), tlsIndex(TlsAlloc()) {};
 	~LFObjectPoolTLS() {}
 
 private:
@@ -29,43 +30,43 @@ private:
 
 	private:
 		LFObjectPool<Chunk>* p_chunkPool;
-		bool use_ctor;
+		bool useCtor;
 		int tlsIndex;
 
 	private:
 		ChunkData chunkData_array[CHUNCK_SIZE];
-		int alloc_index;
-		alignas(64) int free_index;
+		int allocIndex;
+		alignas(64) int freeIndex;
 
 	public:
 		void Set(LFObjectPool<Chunk>* _p_chunkPool, bool _use_ctor, int _tlsIndex) {
 			p_chunkPool = _p_chunkPool;
-			use_ctor = _use_ctor;
+			useCtor = _use_ctor;
 			tlsIndex = _tlsIndex;
 
-			alloc_index = 0;
-			free_index = 0;
+			allocIndex = 0;
+			freeIndex = 0;
 			for (int i = 0; i < CHUNCK_SIZE; i++) {
 				chunkData_array[i].p_myChunk = this;
 			}
 		}
 
 		T* Alloc() {
-			T* p_object = &(chunkData_array[alloc_index++].object);
-			if (use_ctor) new (p_object) T;
+			T* p_object = &(chunkData_array[allocIndex++].object);
+			if (useCtor) new (p_object) T;
 
-			if (CHUNCK_SIZE == alloc_index) {
+			if (CHUNCK_SIZE == allocIndex) {
 				Chunk* p_chunk = p_chunkPool->Alloc();
-				p_chunk->Set(p_chunkPool, use_ctor, tlsIndex);
+				p_chunk->Set(p_chunkPool, useCtor, tlsIndex);
 				TlsSetValue(tlsIndex, (LPVOID)p_chunk);
 			}
 			return p_object;
 		}
 
 		void Free(T* p_object) {
-			if (use_ctor) p_object->~T();
+			if (useCtor) p_object->~T();
 
-			if (CHUNCK_SIZE == InterlockedIncrement((DWORD*)&free_index)) {
+			if (CHUNCK_SIZE == InterlockedIncrement((DWORD*)&freeIndex)) {
 				p_chunkPool->Free(this);
 			}
 		}
@@ -74,7 +75,8 @@ private:
 private:
 	LFObjectPool<Chunk> chunkPool;
 	const int tlsIndex;
-	const bool use_ctor;
+	const bool useCtor;
+	int count = 0;
 
 public:
 	int GetChunkCapacity() {
@@ -86,14 +88,22 @@ public:
 	}
 
 	int GetUseCount() {
+#if USE_COUNT
+		return count;
+#else
 		return GetChunkUseCount() * CHUNCK_SIZE;
+#endif
 	}
 
 	T* Alloc() {
+#if USE_COUNT
+		InterlockedIncrement((LONG*)&count);
+#endif
+
 		Chunk* p_chunk = (Chunk*)TlsGetValue(tlsIndex);
 		if (nullptr == p_chunk) {
 			p_chunk = chunkPool.Alloc();
-			p_chunk->Set(&chunkPool, use_ctor, tlsIndex);
+			p_chunk->Set(&chunkPool, useCtor, tlsIndex);
 			TlsSetValue(tlsIndex, p_chunk);
 		}
 
@@ -101,6 +111,10 @@ public:
 	}
 
 	void Free(T* p_object) {
+#if USE_COUNT
+		InterlockedDecrement((LONG*)&count);
+#endif
+
 		ChunkData* p_chunkData = (ChunkData*)((char*)p_object - sizeof(Chunk*));
 		p_chunkData->Free();
 	}
