@@ -51,8 +51,8 @@ void ServerMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient
 
 		// 모니터링 데이터 업데이트
 		p_chatServer->NetServer::UpdateTPS();
-		p_chatServer->UpdateTPS();
 		p_MonitorClient->NetClient::UpdateTPS();
+		p_chatServer->UpdateTPS();
 
 		// 콘솔 출력
 		{

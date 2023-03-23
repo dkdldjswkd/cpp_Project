@@ -1,14 +1,6 @@
 //오후 4:20 2023-02-21
 
-NetClient Stop 구현
-
-서버 종료가 재대로 되는지 테스트
-
-TLSPool 낱개 카운트
-
-UpdateTPS 구현
-
-Server Stop 구현
+NetServer 클린코드, NetClient 수정
 
 ----
 
