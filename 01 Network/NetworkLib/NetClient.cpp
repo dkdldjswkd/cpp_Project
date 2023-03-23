@@ -341,7 +341,7 @@ void NetClient::RecvCompletionLAN(){
 		if (recv_len <= LAN_HEADER_SIZE)
 			break;
 
-		LAN_HEADER lanHeader;
+		LanHeader lanHeader;
 		clientSession.recv_buf.Peek(&lanHeader, LAN_HEADER_SIZE);
 
 		// 페이로드 데이터 부족
@@ -355,14 +355,14 @@ void NetClient::RecvCompletionLAN(){
 
 		// 컨텐츠 패킷 생성
 		clientSession.recv_buf.Move_Front(LAN_HEADER_SIZE);
-		clientSession.recv_buf.Dequeue(contents_packet->GetWritePos(), lanHeader.len);
-		contents_packet->Move_Wp(lanHeader.len);
+		clientSession.recv_buf.Dequeue(contents_packet->writePos, lanHeader.len);
+		contents_packet->MoveWp(lanHeader.len);
 
 		// 사용자 패킷 처리
 		OnRecv(contents_packet);
 		InterlockedIncrement(&recvMsgCount);
 
-		auto ret = PacketBuffer::Free(contents_packet);
+		PacketBuffer::Free(contents_packet);
 	}
 
 	//------------------------------
@@ -385,7 +385,7 @@ void NetClient::RecvCompletionNET(){
 		clientSession.recv_buf.Peek(encryptPacket, NET_HEADER_SIZE);
 
 		// code 검사
-		BYTE code = ((NET_HEADER*)encryptPacket)->code;
+		BYTE code = ((NetHeader*)encryptPacket)->code;
 		if (code != protocolCode) {
 			LOG("NetServer", LOG_LEVEL_WARN, "Recv Packet is wrong code!!", WSAGetLastError());
 			DisconnectSession();
@@ -393,7 +393,7 @@ void NetClient::RecvCompletionNET(){
 		}
 
 		// 페이로드 데이터 부족
-		WORD payload_len = ((NET_HEADER*)encryptPacket)->len;
+		WORD payload_len = ((NetHeader*)encryptPacket)->len;
 		if (recv_len < (NET_HEADER_SIZE + payload_len)) {
 			break;
 		}

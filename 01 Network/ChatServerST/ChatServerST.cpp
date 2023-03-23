@@ -138,10 +138,10 @@ void ChatServerST::UpdateFunc() {
 					AccountToken* p_at = tokenPool.Alloc();
 					p_at->sessionID = session_id;
 					try {
-						cs_contentsPacket->Get_Data((char*)&p_at->accountNo, sizeof(ACCOUNT_NO));
-						cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
-						cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
-						cs_contentsPacket->Get_Data((char*)&p_at->token, 64);
+						cs_contentsPacket->GetData((char*)&p_at->accountNo, sizeof(ACCOUNT_NO));
+						cs_contentsPacket->GetData((char*)p_player->id, ID_LEN * 2);
+						cs_contentsPacket->GetData((char*)p_player->nickname, NICKNAME_LEN * 2);
+						cs_contentsPacket->GetData((char*)&p_at->token, 64);
 					}
 					catch (const PacketException& e) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> Login packet");
@@ -263,7 +263,7 @@ void ChatServerST::UpdateFunc() {
 					try {
 						*cs_contentsPacket >> accountNo;
 						*cs_contentsPacket >> msgLen;
-						cs_contentsPacket->Get_Data((char*)msg, msgLen);
+						cs_contentsPacket->GetData((char*)msg, msgLen);
 					}
 					catch (const PacketException& e) {
 						//LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> chatting packet");
@@ -278,10 +278,10 @@ void ChatServerST::UpdateFunc() {
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_MESSAGE;
 					*p_packet << (INT64)accountNo;
-					p_packet->Put_Data((char*)p_player->id, ID_LEN * 2);
-					p_packet->Put_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
+					p_packet->PutData((char*)p_player->id, ID_LEN * 2);
+					p_packet->PutData((char*)p_player->nickname, NICKNAME_LEN * 2);
 					*p_packet << (WORD)msgLen;
-					p_packet->Put_Data((char*)msg, msgLen);
+					p_packet->PutData((char*)msg, msgLen);
 
 					PRO_BEGIN("SendSectorAround");
 					SendSectorAround(p_player, p_packet);

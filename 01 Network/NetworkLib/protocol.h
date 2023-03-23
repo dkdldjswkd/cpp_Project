@@ -1,11 +1,11 @@
 #pragma once
 
 #pragma pack(push, 1)
-struct LAN_HEADER {
+struct LanHeader {
 	WORD len;
 };
 
-struct NET_HEADER {
+struct NetHeader {
 	BYTE code;
 	WORD len;
 	BYTE randKey;
@@ -13,5 +13,5 @@ struct NET_HEADER {
 };
 #pragma pack(pop)
 
-#define LAN_HEADER_SIZE  ((WORD)sizeof(LAN_HEADER))
-#define NET_HEADER_SIZE  ((WORD)sizeof(NET_HEADER))
+#define LAN_HEADER_SIZE  ((WORD)sizeof(LanHeader))
+#define NET_HEADER_SIZE  ((WORD)sizeof(NetHeader))

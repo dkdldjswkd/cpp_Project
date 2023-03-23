@@ -38,45 +38,66 @@ private:
 	static LFObjectPoolTLS<PacketBuffer> packetPool;
 
 private:
+	// 할당 직렬화 버퍼
 	char* begin;
 	char* end;
-	const int buf_size;
-	int ref_count;
-	bool encrypt_flag;
-	char* write_pos;
-	char* payload_pos;
+	const int bufSize;
+
+	// 외부 read/write (직렬화, 역직렬화)
+	char* payloadPos;
+	char* writePos;
+
+	// 관리
+	int refCount;
+	bool encrypted;
 
 private:
-	// 네트워크 라이브러리에서 사용
+	// 패킷 초기화
+	void Set();
+
+	// 헤더 셋팅
 	void SetLanHeader();
-	void SetNetHeader(BYTE protocol_code, BYTE private_key);
-	bool DecryptPacket(char* encryptPacket, BYTE private_key);
+	void SetNetHeader(BYTE protocolCode, BYTE privateKey);
+
+	// 패킷 복호화
+	bool DecryptPacket(char* encryptPacket, BYTE privateKey);
+
+	// 패킷 시작 주소 반환 (payLoadPos - headerLen)
 	char* GetLanPacketPos();
 	char* GetNetPacketPos();
+
+	// 패킷 사이즈 반환 (패킷 헤더 사이즈 포함)
 	inline int GetLanPacketSize();
 	inline int GetNetPacketSize();
 
-private:
+	// 체크섬 반환
 	BYTE GetChecksum();
-	void Set();
 
 public:
+	// 할당, 반환
 	static PacketBuffer* Alloc();
-	static int Free(PacketBuffer* instance);
+	static void Free(PacketBuffer* instance);
+	static void Free(PacketBuffer* instance, bool* isReleased);
 
-public:
+	// Empty & Full
 	inline bool Empty() const;
 	inline bool Full() const;
+
+	// Getter
 	inline int GetFreeSize()const;
 	inline int GetPayloadSize() const;
-	inline int GetBufSize() const;
-	inline char* GetWritePos() const;
-	inline char* GetPayloadPos() const;
+
+	// ref 증가
 	void IncrementRefCount();
+
+	// Pool Count 반환
 	static int GetUseCount();
 
-public:
-	// instream
+	// move pos
+	inline void MoveWp(int size) { writePos += size; }
+	inline void MoveRp(int size) { payloadPos += size; }
+
+	// 직렬화
 	PacketBuffer& operator <<(const char& data);
 	PacketBuffer& operator <<(const unsigned char& data);
 	PacketBuffer& operator <<(const int& data);
@@ -89,11 +110,9 @@ public:
 	PacketBuffer& operator <<(const double& data);
 	PacketBuffer& operator <<(const long long& data);
 	PacketBuffer& operator <<(const unsigned long long& data);
+	void PutData(const char* src, int size);
 
-	PacketBuffer& operator <<(const char* str);
-	PacketBuffer& operator <<(const wchar_t* str);
-
-	// outstream
+	// 역직렬화
 	PacketBuffer& operator >>(char& data);
 	PacketBuffer& operator >>(unsigned char& data);
 	PacketBuffer& operator >>(int& data);
@@ -106,20 +125,11 @@ public:
 	PacketBuffer& operator >>(double& data);
 	PacketBuffer& operator >>(long long& data);
 	PacketBuffer& operator >>(unsigned long long& data);
-
-	void Put_Data(const char* src, int size);
-	void Get_Data(char* dst, int size);
-
-	inline void Move_Wp(int size) { write_pos += size; }
-	inline void Move_Rp(int size) { payload_pos += size; }
+	void GetData(char* dst, int size);
 };
 
-//////////////////////////////
-// 구현 부
-//////////////////////////////
-
 inline PacketBuffer::~PacketBuffer() {
-	free(begin);
+	free((char*)begin);
 }
 
 inline int PacketBuffer::GetUseCount() {
@@ -127,51 +137,39 @@ inline int PacketBuffer::GetUseCount() {
 }
 
 inline int PacketBuffer::GetLanPacketSize() {
-	return (write_pos - payload_pos) + LAN_HEADER_SIZE;
+	return (writePos - payloadPos) + LAN_HEADER_SIZE;
 }
 
 inline int PacketBuffer::GetNetPacketSize() {
-	return (write_pos - payload_pos) + NET_HEADER_SIZE;
+	return (writePos - payloadPos) + NET_HEADER_SIZE;
 }
 
 inline void PacketBuffer::IncrementRefCount() {
-	InterlockedIncrement((DWORD*)&ref_count);
+	InterlockedIncrement((DWORD*)&refCount);
 }
 
 inline char* PacketBuffer::GetLanPacketPos() {
-	return (payload_pos - LAN_HEADER_SIZE);
+	return (payloadPos - LAN_HEADER_SIZE);
 }
 
 inline char* PacketBuffer::GetNetPacketPos() {
-	return (payload_pos - NET_HEADER_SIZE);
+	return (payloadPos - NET_HEADER_SIZE);
 }
 
 inline bool PacketBuffer::Empty() const {
-	if (write_pos <= payload_pos) return true;
+	if (writePos <= payloadPos) return true;
 	return false;
 }
 
 bool PacketBuffer::Full() const {
-	if (write_pos + 1 == end) return true;
+	if (writePos + 1 == end) return true;
 	return false;
 }
 
 inline int PacketBuffer::GetFreeSize() const {
-	return end - write_pos;
+	return end - writePos;
 }
 
 inline int PacketBuffer::GetPayloadSize() const {
-	return write_pos - payload_pos;
-}
-
-inline int PacketBuffer::GetBufSize() const {
-	return buf_size;
-}
-
-inline char* PacketBuffer::GetWritePos() const {
-	return write_pos;
-}
-
-inline char* PacketBuffer::GetPayloadPos() const {
-	return payload_pos;
+	return writePos - payloadPos;
 }

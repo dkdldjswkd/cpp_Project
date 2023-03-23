@@ -1,0 +1,14 @@
+//오후 4:20 2023-02-21
+
+NetServer 클린코드, NetClient 수정
+
+----
+
+atexit 등록??
+
+DB Connector 에서 10분에 한번씩 쿼리 시간 avr, min, max 로깅 하자
+	LOG file 이름 어떻게 할것인가?
+
+모니터링 서버에서 10분에 한번씩 모니터링 내역 DB write
+
+str 손코딩 해보기
