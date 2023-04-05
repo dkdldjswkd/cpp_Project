@@ -31,23 +31,23 @@ private:
 	};
 
 	static struct AccountToken {
-		SESSION_ID sessionID;
+		SessionId sessionID;
 		ACCOUNT_NO accountNo;
 		Token token;
 	};
 
 	static struct Job {
 	public:
-		SESSION_ID session_id;
+		SessionId session_id;
 		WORD type;
 		PacketBuffer* p_packet;
 
 	public:
-		void Set(SESSION_ID session_id, WORD type) {
+		void Set(SessionId session_id, WORD type) {
 			this->session_id = session_id;
 			this->type = type;
 		}
-		void Set(SESSION_ID session_id, WORD type, PacketBuffer* p_packet) {
+		void Set(SessionId session_id, WORD type, PacketBuffer* p_packet) {
 			this->session_id = session_id;
 			this->type = type;
 			this->p_packet = p_packet;
@@ -57,8 +57,8 @@ private:
 private:
 	// Player
 	LFObjectPool<Player> playerPool;
-	std::unordered_map<DWORD64, Player*> player_map;						
-	std::unordered_set<Player*> sectors_set[SECTOR_MAX_Y][SECTOR_MAX_X];
+	std::unordered_map<DWORD64, Player*> playerMap;						
+	std::unordered_set<Player*> sectorsSet[SECTOR_MAX_Y][SECTOR_MAX_X];
 
 	// JOB
 	LFObjectPoolTLS<Job> jobPool;
@@ -83,16 +83,16 @@ private:
 private:
 	// Lib callback (NetLib Override)
 	bool OnConnectionRequest(in_addr IP, WORD Port) { return true; }
-	void OnClientJoin(SESSION_ID session_id);
-	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
-	void OnClientLeave(SESSION_ID session_id);
+	void OnClientJoin(SessionId session_id);
+	void OnRecv(SessionId session_id, PacketBuffer* contents_packet);
+	void OnClientLeave(SessionId session_id);
 	void OnServerStop();
 
 	// Job
 	void UpdateFunc();
 	void UpdateStop();
-	void JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet);
-	void JobQueuing(SESSION_ID session_id, WORD type);
+	void JobQueuing(SessionId session_id, WORD type, PacketBuffer* p_packet);
+	void JobQueuing(SessionId session_id, WORD type);
 
 	// Token
 	void AuthFunc();

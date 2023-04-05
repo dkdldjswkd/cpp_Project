@@ -45,15 +45,15 @@ void ChatServerST::OnServerStop() {
 #endif
 }
 
-void ChatServerST::OnClientJoin(SESSION_ID session_id) {
+void ChatServerST::OnClientJoin(SessionId session_id) {
 	JobQueuing(session_id, JOB_TYPE_CLIENT_JOIN);
 }
 
-void ChatServerST::OnClientLeave(SESSION_ID session_id) {
+void ChatServerST::OnClientLeave(SessionId session_id) {
 	JobQueuing(session_id, JOB_TYPE_CLIENT_LEAVE);
 }
 
-void ChatServerST::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket) {
+void ChatServerST::OnRecv(SessionId session_id, PacketBuffer* cs_contentsPacket) {
 	WORD type;
 	try {
 		*cs_contentsPacket >> type;
@@ -86,27 +86,27 @@ void ChatServerST::UpdateFunc() {
 			jobQ.Dequeue(&p_job);
 
 			PRO_BEGIN("UpdateFunc");
-			SESSION_ID session_id = p_job->session_id;
+			SessionId session_id = p_job->session_id;
 			PacketBuffer* cs_contentsPacket = p_job->p_packet;
 
 			switch (p_job->type) {
 				case JOB_TYPE_CLIENT_JOIN: {
 					Player* p_player = playerPool.Alloc();
 					p_player->Set(session_id);
-					player_map.insert({ session_id, p_player });
+					playerMap.insert({ session_id, p_player });
 					break;
 				}
 				case JOB_TYPE_CLIENT_LEAVE: {
 					// Player 검색
-					auto iter = player_map.find(session_id);
+					auto iter = playerMap.find(session_id);
 					Player* p_player = iter->second;
 
 					// 컨테이너에서 삭제
-					player_map.erase(iter);
+					playerMap.erase(iter);
 
 					// Sector 에서 삭제
 					if (!p_player->sectorPos.Is_Invalid()) {
-						sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
+						sectorsSet[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
 					}
 
 					// Player 반환
@@ -118,8 +118,8 @@ void ChatServerST::UpdateFunc() {
 					break;
 				}
 				case en_PACKET_CS_CHAT_REQ_LOGIN: {
-					auto iter = player_map.find(session_id);
-					if (iter == player_map.end()) {
+					auto iter = playerMap.find(session_id);
+					if (iter == playerMap.end()) {
 						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_LOGIN() : player_map.find(session_id) == player_map.end()");
 						PacketBuffer::Free(cs_contentsPacket);
 						break;
@@ -183,8 +183,8 @@ void ChatServerST::UpdateFunc() {
 					break;
 				}
 				case en_PACKET_CS_CHAT_REQ_SECTOR_MOVE: {
-					auto iter = player_map.find(session_id);
-					if (iter == player_map.end()) {
+					auto iter = playerMap.find(session_id);
+					if (iter == playerMap.end()) {
 						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_SECTOR_MOVE() : player_map.find(session_id) == player_map.end()");
 						PacketBuffer::Free(cs_contentsPacket);
 						break;
@@ -223,10 +223,10 @@ void ChatServerST::UpdateFunc() {
 
 					// 이 전에 위치하던 Sector erase
 					if (!p_player->sectorPos.Is_Invalid()) {
-						sectors_set[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
+						sectorsSet[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
 					}
 					p_player->Set_Sector(cur_sector);
-					sectors_set[cur_sector.y][cur_sector.x].insert(p_player);
+					sectorsSet[cur_sector.y][cur_sector.x].insert(p_player);
 
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_SECTOR_MOVE;
@@ -240,7 +240,7 @@ void ChatServerST::UpdateFunc() {
 				}
 				case en_PACKET_CS_CHAT_REQ_MESSAGE: {
 					PRO_BEGIN("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
-					Player* p_player = player_map.find(session_id)->second;
+					Player* p_player = playerMap.find(session_id)->second;
 					if (nullptr == p_player) {
 						PacketBuffer::Free(cs_contentsPacket);
 						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
@@ -292,8 +292,8 @@ void ChatServerST::UpdateFunc() {
 					break;
 				}
 				case JOB_TYPE_CLIENT_LOGIN_SUCCESS: {
-					auto iter = player_map.find(session_id);
-					if (iter == player_map.end()) { // 로그인 결과 패킷 회신 전 연결끊킴
+					auto iter = playerMap.find(session_id);
+					if (iter == playerMap.end()) { // 로그인 결과 패킷 회신 전 연결끊킴
 						break;
 					}
 					Player* p_player = iter->second;
@@ -312,8 +312,8 @@ void ChatServerST::UpdateFunc() {
 					break;
 				}
 				case JOB_TYPE_CLIENT_LOGIN_FAIL: {
-					auto iter = player_map.find(session_id);
-					if (iter == player_map.end()) {  // 로그인 결과 패킷 회신 전 연결끊킴
+					auto iter = playerMap.find(session_id);
+					if (iter == playerMap.end()) {  // 로그인 결과 패킷 회신 전 연결끊킴
 						break;
 					}
 					Player* p_player = iter->second;
@@ -383,14 +383,14 @@ void ChatServerST::AuthFunc() {
 // OTHER
 //////////////////////////////
 
-void ChatServerST::JobQueuing(SESSION_ID session_id, WORD type, PacketBuffer* p_packet) {
+void ChatServerST::JobQueuing(SessionId session_id, WORD type, PacketBuffer* p_packet) {
 	Job* p_job = jobPool.Alloc();
 	p_job->Set(session_id, type, p_packet);
 	jobQ.Enqueue(p_job);
 	SetEvent(updateEvent);
 }
 
-void ChatServerST::JobQueuing(SESSION_ID session_id, WORD type) {
+void ChatServerST::JobQueuing(SessionId session_id, WORD type) {
 	Job* p_job = jobPool.Alloc();
 	p_job->Set(session_id, type);
 	jobQ.Enqueue(p_job);
@@ -411,7 +411,7 @@ void ChatServerST::SendSectorAround(Player* p_player, PacketBuffer* send_packet)
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
 		auto sector = p_player->sectorAround.around[i];
 		//SendSector
-		for (auto iter = sectors_set[sector.y][sector.x].begin(); iter != sectors_set[sector.y][sector.x].end(); ++iter) {
+		for (auto iter = sectorsSet[sector.y][sector.x].begin(); iter != sectorsSet[sector.y][sector.x].end(); ++iter) {
 			auto p_player = *iter;
 			SendPacket(p_player->sessionID, send_packet);
 		}

@@ -1,10 +1,10 @@
 #include <iostream>
-#include <Windows.h>
-#include <conio.h>
-#include "../../../00 lib_jy/LFStack.h"
-using namespace std;
+#include <queue>
 
-void main() {
-	LFStack<int> s;
-	s.Push(1);
+int main() {
+	int* p = (int*)malloc(sizeof(int));
+	free(p);
+
+	*p = 3;
+	printf("%d \n", *p);
 }

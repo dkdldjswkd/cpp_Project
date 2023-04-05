@@ -9,8 +9,8 @@ RingBuffer::RingBuffer(){
 	front = begin;
 	rear = begin;
 
-	write_pos = front + 1;
-	read_pos = rear + 1;
+	writePos = front + 1;
+	readPos = rear + 1;
 }
 
 RingBuffer::~RingBuffer() {
@@ -37,14 +37,14 @@ int RingBuffer::Enqueue(const void* src, size_t size) {
 	if (free_size < size)
 		size = free_size;
 
-	const int direct_size = Direct_EnqueueSize();
+	const int direct_size = DirectEnqueueSize();
 
 	if (size <= direct_size) {
-		return Must_Enqueue(src, size);
+		return MustEnqueue(src, size);
 	}
 	else {
-		Must_Enqueue(src, direct_size);
-		return direct_size + Must_Enqueue((char*)src + direct_size, size - direct_size);
+		MustEnqueue(src, direct_size);
+		return direct_size + MustEnqueue((char*)src + direct_size, size - direct_size);
 	}
 }
 
@@ -53,14 +53,14 @@ int RingBuffer::Dequeue(void* dst, size_t size) {
 	if (use_size < size)
 		size = use_size;
 
-	const int direct_size = Direct_DequeueSize();
+	const int direct_size = DirectDequeueSize();
 
 	if (size <= direct_size) {
-		return Must_Dequeue(dst, size);
+		return MustDequeue(dst, size);
 	}
 	else {
-		Must_Dequeue(dst, direct_size);
-		return direct_size + Must_Dequeue((char*)dst + direct_size, size - direct_size);
+		MustDequeue(dst, direct_size);
+		return direct_size + MustDequeue((char*)dst + direct_size, size - direct_size);
 	}
 }
 
@@ -69,13 +69,13 @@ int RingBuffer::Peek(void* dst, size_t size) const {
 	if (use_size < size)
 		size = use_size;
 
-	const int direct_size = Direct_DequeueSize();
+	const int direct_size = DirectDequeueSize();
 
 	if (size <= direct_size) {
-		return Must_Peek(dst, read_pos, size);
+		return MustPeek(dst, readPos, size);
 	}
 	else {
-		Must_Peek(dst, read_pos, direct_size);
-		return direct_size + Must_Peek((char*)dst + direct_size, begin, size - direct_size);
+		MustPeek(dst, readPos, direct_size);
+		return direct_size + MustPeek((char*)dst + direct_size, begin, size - direct_size);
 	}
 }

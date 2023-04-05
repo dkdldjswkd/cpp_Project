@@ -1,8 +1,4 @@
 #pragma once
-// typedef
-typedef unsigned __int64 ULONG_PTR;
-typedef unsigned char       BYTE;
-typedef unsigned __int64 DWORD64;
 
 // define Func
 #define CRASH() do{ *((volatile int*)0) = 0; }while(false)

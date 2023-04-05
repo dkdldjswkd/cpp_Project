@@ -4,21 +4,21 @@
 // SESSION ID
 //------------------------------
 
-SESSION_ID::SESSION_ID() {}
-SESSION_ID::SESSION_ID(DWORD64 value) { session_id = value; }
-SESSION_ID::SESSION_ID(DWORD index, DWORD unique_no) { session_index = index, session_unique = unique_no; }
-SESSION_ID::~SESSION_ID() {}
+SessionId::SessionId() {}
+SessionId::SessionId(DWORD64 value) { sessionId = value; }
+SessionId::SessionId(DWORD index, DWORD unique_no) { SESSION_INDEX = index, SESSION_UNIQUE = unique_no; }
+SessionId::~SessionId() {}
 
-void SESSION_ID::operator=(const SESSION_ID& other) {
-	session_id = other.session_id;
+void SessionId::operator=(const SessionId& other) {
+	sessionId = other.sessionId;
 }
 
-void SESSION_ID::operator=(DWORD64 value) {
-	session_id = value;
+void SessionId::operator=(DWORD64 value) {
+	sessionId = value;
 }
 
-SESSION_ID::operator DWORD64() {
-	return session_id;
+SessionId::operator DWORD64() {
+	return sessionId;
 }
 
 //------------------------------
@@ -28,12 +28,12 @@ SESSION_ID::operator DWORD64() {
 Session::Session() {}
 Session::~Session() {}
 
-void Session::Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id) {
+void Session::Set(SOCKET sock, in_addr ip, WORD port, SessionId session_id) {
 	this->sock = sock;
 	this->ip = ip;
 	this->port = port;
-	this->session_id = session_id;
-	recv_buf.Clear();
+	this->sessionId = session_id;
+	recvBuf.Clear();
 	sendFlag = false;
 	disconnectFlag = false;
 	sendPacketCount = 0;

@@ -92,7 +92,7 @@ void NetClient::WorkerFunc() {
 		// recv 완료통지
 		if (&p_session->recvOverlapped == p_overlapped) {
 			if (ret_GQCS) {
-				p_session->recv_buf.MoveRear(io_size);
+				p_session->recvBuf.MoveRear(io_size);
 				p_session->lastRecvTime = timeGetTime();
 				// 내부 통신 외부 통신 구분
 				if (NetType::LAN == netType) {
@@ -310,11 +310,11 @@ bool NetClient::AsyncRecv() {
 	WSABUF wsaBuf[2];
 
 	// Recv Write Pos
-	wsaBuf[0].buf = clientSession.recv_buf.Get_WritePos();
-	wsaBuf[0].len = clientSession.recv_buf.Direct_EnqueueSize();
+	wsaBuf[0].buf = clientSession.recvBuf.GetWritePos();
+	wsaBuf[0].len = clientSession.recvBuf.DirectEnqueueSize();
 	// Recv Remain Pos
-	wsaBuf[1].buf = clientSession.recv_buf.Get_BeginPos();
-	wsaBuf[1].len = clientSession.recv_buf.Remain_EnqueueSize();
+	wsaBuf[1].buf = clientSession.recvBuf.GetBeginPos();
+	wsaBuf[1].len = clientSession.recvBuf.RemainEnqueueSize();
 
 	IncrementIOCount();
 	ZeroMemory(&clientSession.recvOverlapped, sizeof(clientSession.recvOverlapped));
@@ -337,12 +337,12 @@ bool NetClient::AsyncRecv() {
 void NetClient::RecvCompletionLAN(){
 	// 패킷 조립
 	for (;;) {
-		int recv_len = clientSession.recv_buf.GetUseSize();
+		int recv_len = clientSession.recvBuf.GetUseSize();
 		if (recv_len <= LAN_HEADER_SIZE)
 			break;
 
 		LanHeader lanHeader;
-		clientSession.recv_buf.Peek(&lanHeader, LAN_HEADER_SIZE);
+		clientSession.recvBuf.Peek(&lanHeader, LAN_HEADER_SIZE);
 
 		// 페이로드 데이터 부족
 		if (recv_len < lanHeader.len + LAN_HEADER_SIZE)
@@ -354,8 +354,8 @@ void NetClient::RecvCompletionLAN(){
 		PacketBuffer* contents_packet = PacketBuffer::Alloc();
 
 		// 컨텐츠 패킷 생성
-		clientSession.recv_buf.Move_Front(LAN_HEADER_SIZE);
-		clientSession.recv_buf.Dequeue(contents_packet->writePos, lanHeader.len);
+		clientSession.recvBuf.MoveFront(LAN_HEADER_SIZE);
+		clientSession.recvBuf.Dequeue(contents_packet->writePos, lanHeader.len);
 		contents_packet->MoveWp(lanHeader.len);
 
 		// 사용자 패킷 처리
@@ -376,13 +376,13 @@ void NetClient::RecvCompletionLAN(){
 void NetClient::RecvCompletionNET(){
 	// 패킷 조립
 	for (;;) {
-		int recv_len = clientSession.recv_buf.GetUseSize();
+		int recv_len = clientSession.recvBuf.GetUseSize();
 		if (recv_len < NET_HEADER_SIZE)
 			break;
 
 		// 헤더 카피
 		char encryptPacket[200];
-		clientSession.recv_buf.Peek(encryptPacket, NET_HEADER_SIZE);
+		clientSession.recvBuf.Peek(encryptPacket, NET_HEADER_SIZE);
 
 		// code 검사
 		BYTE code = ((NetHeader*)encryptPacket)->code;
@@ -399,8 +399,8 @@ void NetClient::RecvCompletionNET(){
 		}
 
 		// Recv Data 패킷 화
-		clientSession.recv_buf.Move_Front(NET_HEADER_SIZE);
-		clientSession.recv_buf.Dequeue(encryptPacket + NET_HEADER_SIZE, payload_len);
+		clientSession.recvBuf.MoveFront(NET_HEADER_SIZE);
+		clientSession.recvBuf.Dequeue(encryptPacket + NET_HEADER_SIZE, payload_len);
 
 		// 복호패킷 생성
 		PacketBuffer* decrypt_packet = PacketBuffer::Alloc();
@@ -479,9 +479,9 @@ void NetClient::Stop() {
 // SESSION_ID
 //------------------------------
 
-SESSION_ID NetClient::GetSessionID() {
+SessionId NetClient::GetSessionID() {
 	static DWORD unique = 1;
 	DWORD index = 0;
-	SESSION_ID session_id(index, unique++);
+	SessionId session_id(index, unique++);
 	return session_id;
 }

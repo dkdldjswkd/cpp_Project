@@ -2,12 +2,6 @@
 #include <Windows.h>
 #include "LFObjectPool.h"
 
-// 오전 4:18 2023-01-09
-//
-// * 해당 LFQueue 구현 환경 : Release, x64, 최적화 컴파일 OFF
-//		LFObjectPool에 종속적
-// 사본
-
 template <typename T>
 class LFQueue {
 private:
@@ -27,16 +21,12 @@ public:
 	~LFQueue();
 
 private:
-	LFObjectPool<Node> node_pool;
-
-private:
-	const DWORD64 node_mask  = 0x00007FFFFFFFFFFF; // 노드 추출 목적 (상위 17bit 제거)
-	const DWORD64 stamp_mask = 0xFFFF800000000000; // 노드 부 제거 (스탬프 추출 목적)
+	LFObjectPool<Node> nodePool;
 
 public:
-	alignas(64) DWORD64 head_ABA;
-	alignas(64) DWORD64 tail_ABA;
-	alignas(64) int size = 0;
+	alignas(64) DWORD64 headStamp;
+	alignas(64) DWORD64 tailStamp;
+	alignas(64) int nodeCount = 0;
 
 public:
 	void Enqueue(T data);
@@ -49,96 +39,96 @@ public:
 //------------------------------
 
 template<typename T>
-LFQueue<T>::LFQueue() : node_pool(0, true) {
-	head_ABA = (DWORD64)node_pool.Alloc();
-	((Node*)head_ABA)->next = NULL;
-	tail_ABA = head_ABA;
+LFQueue<T>::LFQueue() : nodePool(0, true) {
+	headStamp = (DWORD64)nodePool.Alloc();
+	((Node*)headStamp)->next = NULL;
+	tailStamp = headStamp;
 }
 
 template<typename T>
 LFQueue<T>::~LFQueue() {
-	Node* head = (Node*)(head_ABA & node_mask);
+	Node* head = (Node*)(headStamp & useBitMask);
 
 	for (; head != nullptr;) {
-		Node* delete_node = head;
+		Node* deleteNode = head;
 		head = head->next;
-		node_pool.Free(delete_node);
+		nodePool.Free(deleteNode);
 	}
 }
 
 template<typename T>
 void LFQueue<T>::Enqueue(T data) {
-	Node* insert_node = node_pool.Alloc();
-	insert_node->data = data;
+	Node* enqueNode = nodePool.Alloc();
+	enqueNode->data = data;
 
 	for (;;) {
-		DWORD64 copy_tail_ABA = tail_ABA;
-		Node* copy_tail = (Node*)(copy_tail_ABA & node_mask);
-		Node* copy_tail_next = copy_tail->next;
+		DWORD64 copyTailStamp = tailStamp;
+		Node* tailClean = (Node*)(copyTailStamp & useBitMask);
+		Node* tailNext = tailClean->next;
 
-		if (copy_tail_next == nullptr) {
+		if (tailNext == nullptr) {
 			// Enqueue 시도
-			if (InterlockedCompareExchange64((LONG64*)&copy_tail->next, (LONG64)insert_node, NULL) == NULL) {
-				InterlockedIncrement((LONG*)&size);
+			if (InterlockedCompareExchange64((LONG64*)&tailClean->next, (LONG64)enqueNode, NULL) == NULL) {
+				InterlockedIncrement((LONG*)&nodeCount);
 
 				// tail 이동
-				DWORD64 new_tail_ABA = ((copy_tail_ABA + stampCount) & stamp_mask) | (DWORD64)insert_node;
-				LONG64 ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)new_tail_ABA, (LONG64)copy_tail_ABA);
+				DWORD64 newTailStamp = ((copyTailStamp + stampCount) & stampMask) | (DWORD64)enqueNode;
+				LONG64 ret = InterlockedCompareExchange64((LONG64*)&tailStamp, (LONG64)newTailStamp, (LONG64)copyTailStamp);
 				return;
 			}
 		}
 		else {
 			// tail 이동
-			DWORD64 next_tail_ABA = ((copy_tail_ABA + stampCount) & stamp_mask) | (DWORD64)copy_tail_next;
-			LONG64 ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA);
+			DWORD64 newTailStamp = ((copyTailStamp + stampCount) & stampMask) | (DWORD64)tailNext;
+			InterlockedCompareExchange64((LONG64*)&tailStamp, (LONG64)newTailStamp, (LONG64)copyTailStamp);
 		}
 	}
 }
 
 template<typename T>
 bool LFQueue<T>::Dequeue(T* data) {
-	if (InterlockedDecrement((LONG*)&size) < 0) {
-		InterlockedIncrement((LONG*)&size);
+	if (InterlockedDecrement((LONG*)&nodeCount) < 0) {
+		InterlockedIncrement((LONG*)&nodeCount);
 		return false;
 	}
 
-	for (int i = 0;; i++) {
-		DWORD64 copy_head_ABA = head_ABA;
-		DWORD64 copy_tail_ABA = tail_ABA;
+	for (;;) {
+		DWORD64 copyHeadStamp = headStamp;
+		DWORD64 copyTailStamp = tailStamp;
 
 		//------------------------------
 		// head, tail 역전 방지
 		//------------------------------
-		if (copy_head_ABA == copy_tail_ABA) {
-			Node* copy_tail = (Node*)(copy_tail_ABA & node_mask);
-			Node* copy_tail_next = copy_tail->next;
+		if (copyHeadStamp == copyTailStamp) {
+			Node* tailClean = (Node*)(copyTailStamp & useBitMask);
+			Node* tailNext = tailClean->next;
 
-			// ABA or 큐에 Eq 반영 안됨
-			if (copy_tail_next == nullptr)
+			// ABA or 큐에 Eq 반영 안됨 headNext
+			if (tailNext == nullptr)
 				continue;
 
 			// tail 밀기
-			DWORD64 next_tail_ABA = ((copy_tail_ABA + stampCount) & stamp_mask) | (DWORD64)copy_tail_next;
-			auto ret = InterlockedCompareExchange64((LONG64*)&tail_ABA, (LONG64)next_tail_ABA, (LONG64)copy_tail_ABA);
+			DWORD64 newTailStamp = ((copyTailStamp + stampCount) & stampMask) | (DWORD64)tailNext;
+			auto ret = InterlockedCompareExchange64((LONG64*)&tailStamp, (LONG64)newTailStamp, (LONG64)copyTailStamp);
 		}
 
 		//------------------------------
 		// Dequeue
 		//------------------------------
-		Node* copy_head = (Node*)(copy_head_ABA & node_mask);
-		Node* copy_head_next = copy_head->next;
+		Node* headClean = (Node*)(copyHeadStamp & useBitMask);
+		Node* headNext = headClean->next;
 
 		// ABA
-		if (copy_head_next == nullptr)
+		if (headNext == nullptr)
 			continue;
 
-		T dq_data = copy_head_next->data;
+		T dqData = headNext->data;
 
 		// Dequeue 시도
-		DWORD64 next_head_ABA = ((copy_head_ABA + stampCount) & stamp_mask) | (DWORD64)copy_head_next;
-		if (InterlockedCompareExchange64((LONG64*)&head_ABA, (LONG64)next_head_ABA, (LONG64)copy_head_ABA) == (DWORD64)copy_head_ABA) {
-			*data = dq_data;
-			node_pool.Free(copy_head);
+		DWORD64 newHeadStamp = ((copyHeadStamp + stampCount) & stampMask) | (DWORD64)headNext;
+		if (InterlockedCompareExchange64((LONG64*)&headStamp, (LONG64)newHeadStamp, (LONG64)copyHeadStamp) == (DWORD64)copyHeadStamp) {
+			*data = dqData;
+			nodePool.Free(headClean);
 			return true;
 		}
 	}
@@ -146,7 +136,7 @@ bool LFQueue<T>::Dequeue(T* data) {
 
 template<typename T>
 int LFQueue<T>::GetUseCount() {
-	return size;
+	return nodeCount;
 }
 
 //------------------------------

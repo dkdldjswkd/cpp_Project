@@ -10,13 +10,13 @@ class LFObjectPool {
 private:
 	static struct Node {
 	public:
-		Node(ULONG_PTR integrity) : integrity(integrity), under_guard(memGuard), obejct(), over_guard(memGuard), next(nullptr) {};
+		Node(ULONG_PTR integrity) : integrity(integrity), underGuard(memGuard), obejct(), overGuard(memGuard), next(nullptr) {};
 
 	public:
 		const ULONG_PTR integrity;
-		const size_t under_guard;
+		const size_t underGuard;
 		T obejct;
-		const size_t over_guard;
+		const size_t overGuard;
 		Node* next = nullptr;
 	};
 
@@ -27,10 +27,10 @@ public:
 private:
 	const ULONG_PTR integrity;
 	alignas(64) ULONG_PTR topStamp;
-	int object_offset;
+	int objectOffset;
 
 	// Opt
-	bool use_ctor;
+	bool useCtor;
 
 	// Count
 	alignas(64) int capacity;
@@ -41,7 +41,7 @@ public:
 	void Free(T* p_obejct);
 
 	// Opt
-	void SetUseCtor(bool isUse) { use_ctor = isUse; }
+	void SetUseCtor(bool isUse) { useCtor = isUse; }
 
 	// Getter
 	inline int GetCapacityCount() const { return capacity; }
@@ -53,22 +53,22 @@ public:
 //------------------------------
 
 template<typename T>
-LFObjectPool<T>::LFObjectPool(int node_num, bool use_ctor) : integrity((ULONG_PTR)this), use_ctor(use_ctor), topStamp(NULL), capacity(node_num), useCount(0) {
+LFObjectPool<T>::LFObjectPool(int node_num, bool use_ctor) : integrity((ULONG_PTR)this), useCtor(use_ctor), topStamp(NULL), capacity(node_num), useCount(0) {
 	// Stamp 사용 가능 여부 확인
-	SYSTEM_INFO sys_info;
-	GetSystemInfo(&sys_info);
-	if (0 != ((ULONG_PTR)sys_info.lpMaximumApplicationAddress & stampMask))
+	SYSTEM_INFO sysInfo;
+	GetSystemInfo(&sysInfo);
+	if (0 != ((ULONG_PTR)sysInfo.lpMaximumApplicationAddress & stampMask))
 		throw std::exception("STAMP_N/A");
 
 	// object_offset 초기화
 	Node tmpNode((ULONG_PTR)this);
-	object_offset = ((ULONG_PTR)(&tmpNode.obejct) - (ULONG_PTR)&tmpNode);
+	objectOffset = ((ULONG_PTR)(&tmpNode.obejct) - (ULONG_PTR)&tmpNode);
 
 	// 사용자 요청 노드 생성
 	for (int i = 0; i < node_num; i++) {
-		Node* new_node = new Node((ULONG_PTR)this);
-		new_node->next = (Node*)topStamp;
-		topStamp = (ULONG_PTR)new_node;
+		Node* newNode = new Node((ULONG_PTR)this);
+		newNode->next = (Node*)topStamp;
+		topStamp = (ULONG_PTR)newNode;
 	}
 }
 
@@ -77,9 +77,9 @@ LFObjectPool<T>::~LFObjectPool() {
 	Node* top = (Node*)(topStamp & useBitMask);
 
 	for (; top != nullptr;) {
-		Node* delete_node = top;
+		Node* deleteNode = top;
 		top = top->next;
-		delete delete_node;
+		delete deleteNode;
 	}
 }
 
@@ -87,20 +87,20 @@ LFObjectPool<T>::~LFObjectPool() {
 template<typename T>
 T* LFObjectPool<T>::Alloc() {
 	for (;;) {
-		ULONG_PTR copyTopStamp = topStamp;
+		DWORD64 copyTopStamp = topStamp;
 		Node* topClean = (Node*)(copyTopStamp & useBitMask);
 
 		// Not empty!!
 		if (topClean) {
-			// aba count 추출 및 newTopStamp 생성
-			ULONG_PTR nextStamp = (copyTopStamp + stampCount) & stampMask;
-			Node* newTopStamp = (Node*)(nextStamp | (ULONG_PTR)topClean->next);
+			// Stamp 추출 및 newTopStamp 생성
+			DWORD64 nextStamp = (copyTopStamp + stampCount) & stampMask;
+			DWORD64 newTopStamp = nextStamp | (DWORD64)topClean->next;
 
 			// 스택에 변화가 있었다면 다시시도
 			if (copyTopStamp != InterlockedCompareExchange64((LONG64*)&topStamp, (LONG64)newTopStamp, (LONG64)copyTopStamp))
 				continue;
 
-			if (use_ctor) {
+			if (useCtor) {
 				new (&topClean->obejct) T;
 			}
 
@@ -122,16 +122,16 @@ T* LFObjectPool<T>::Alloc() {
 template<typename T>
 void LFObjectPool<T>::Free(T* p_obejct) {
 	// 오브젝트 노드로 변환
-	Node* node = (Node*)((char*)p_obejct - object_offset);
+	Node* pushNode = (Node*)((char*)p_obejct - objectOffset);
 
-	if (integrity != node->integrity)
+	if (integrity != pushNode->integrity)
 		throw std::exception("ERROR_INTEGRITY");
-	if (memGuard != node->over_guard)
+	if (memGuard != pushNode->overGuard)
 		throw std::exception("ERROR_INVAID_OVER");
-	if (memGuard != node->under_guard)
+	if (memGuard != pushNode->underGuard)
 		throw std::exception("ERROR_INVAID_UNDER");
 
-	if (use_ctor) {
+	if (useCtor) {
 		p_obejct->~T();
 	}
 
@@ -139,14 +139,14 @@ void LFObjectPool<T>::Free(T* p_obejct) {
 		DWORD64 copyTopStamp = topStamp;
 
 		// top에 이어줌
-		node->next = (Node*)(copyTopStamp & useBitMask);
+		pushNode->next = (Node*)(copyTopStamp & useBitMask);
 
-		// aba count 추출 및 newTopStamp 생성
-		DWORD64 newStamp = (copyTopStamp + stampCount) & stampMask;
-		Node* newTopStamp = (Node*)(newStamp | (DWORD64)node);
+		// Stamp 추출 및 newTopStamp 생성
+		DWORD64 nextStamp = (copyTopStamp + stampCount) & stampMask;
+		DWORD64 newTopStamp = nextStamp | (DWORD64)pushNode;
 
 		// 스택에 변화가 있었다면 다시시도
-		if ((DWORD64)copyTopStamp != InterlockedCompareExchange64((LONG64*)&topStamp, (LONG64)newTopStamp, (LONG64)copyTopStamp))
+		if (copyTopStamp != InterlockedCompareExchange64((LONG64*)&topStamp, (LONG64)newTopStamp, (LONG64)copyTopStamp))
 			continue;
 
 		InterlockedDecrement((LONG*)&useCount);

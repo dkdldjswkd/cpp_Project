@@ -6,7 +6,7 @@
 #include "../NetworkLib/LFObjectPool.h"
 #include "../NetworkLib/LFQueue.h"
 #include "../NetworkLib/NetServer.h"
-#include "../NetworkLib/RecursiveLock.h"
+#include "../../00 lib_jy/RecursiveLock.h"
 #include "Player.h"
 
 class ChattingServer_Multi : public NetServer {

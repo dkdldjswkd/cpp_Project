@@ -72,7 +72,7 @@ private:
 	void SendCompletion();
 
 	// ¼¼¼Ç
-	SESSION_ID GetSessionID();
+	SessionId GetSessionID();
 	bool ValidateSession();
 	inline void IncrementIOCount();
 	inline void DecrementIOCount();

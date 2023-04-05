@@ -4,7 +4,7 @@ User::User() {}
 
 User::~User() {}
 
-void User::Set(SESSION_ID session_id){
+void User::Set(SessionId session_id){
 	this->sessionID = session_id;
 }
 

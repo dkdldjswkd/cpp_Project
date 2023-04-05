@@ -48,7 +48,6 @@ public:
 	// 모니터링
 	DWORD GetPlayerCount();
 	DWORD GetPlayerPoolCount();
-	//PacketBuffer::GetUseCount(),
 };
 
 inline DWORD LoginServer::GetPlayerCount() {

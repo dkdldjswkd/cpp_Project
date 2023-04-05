@@ -19,59 +19,57 @@ public:
 	~RingBuffer();
 
 private:
-	// 변경 금지
 	char* begin;
 	char* end;
 
 	char* front;
 	char* rear;
 
-	char* read_pos;
-	char* write_pos;
+	char* readPos;
+	char* writePos;
 
 private:
-	// inline 적용 안됨
-	inline int Must_Enqueue(const void* src, size_t size);
-	inline int Must_Dequeue(void* dst, size_t size);
+	inline int MustEnqueue(const void* src, size_t size);
+	inline int MustDequeue(void* dst, size_t size);
 
-	inline void Set_ReadPos() { read_pos = begin + MASKING_BIT((ULONG_PTR)front + 1); }
-	inline void Set_WritePos() { write_pos = begin + MASKING_BIT((ULONG_PTR)rear + 1); }
+	inline void SetReadPos() { readPos = begin + MASKING_BIT((ULONG_PTR)front + 1); }
+	inline void SetWritePos() { writePos = begin + MASKING_BIT((ULONG_PTR)rear + 1); }
 
 public:
-	inline void Move_Front(int size) { front = begin + MASKING_BIT((ULONG_PTR)front + size); Set_ReadPos();  }
-	inline void MoveRear(int size) { rear = begin + MASKING_BIT((ULONG_PTR)rear + size);    Set_WritePos(); }
+	inline void MoveFront(int size) { front = begin + MASKING_BIT((ULONG_PTR)front + size); SetReadPos();  }
+	inline void MoveRear(int size) { rear = begin + MASKING_BIT((ULONG_PTR)rear + size);    SetWritePos(); }
 
 	inline bool Empty() const { return front == rear; }
-	inline bool Full() const { return front == write_pos; }
+	inline bool Full() const { return front == writePos; }
 	inline void Clear();
 
-	inline int Direct_EnqueueSize() const;
-	inline int Direct_DequeueSize() const;
-	inline int Remain_EnqueueSize() const;
-	inline int Remain_DequeueSize() const;
+	inline int DirectEnqueueSize() const;
+	inline int DirectDequeueSize() const;
+	inline int RemainEnqueueSize() const;
+	inline int RemainDequeueSize() const;
 
 	// inline 적용 안됨
 	inline int GetFreeSize() const;
 	inline int GetUseSize() const;
 
-	inline char* Get_ReadPos() const { return read_pos; }
-	inline char* Get_WritePos()  const { return write_pos; }
-	inline char* Get_BeginPos() const { return begin; }
+	inline char* GetReadPos() const { return readPos; }
+	inline char* GetWritePos()  const { return writePos; }
+	inline char* GetBeginPos() const { return begin; }
 
 	int Enqueue(const void* src, size_t size);
 	int Dequeue(void* dst, size_t size);
 	int Peek(void* dst, size_t size) const;
 };
 
-inline int RingBuffer::Must_Enqueue(const void* src, size_t size) {
-	memmove(write_pos, src, size);
+inline int RingBuffer::MustEnqueue(const void* src, size_t size) {
+	memmove(writePos, src, size);
 	MoveRear(size);
 	return size;
 }
 
-inline int RingBuffer::Must_Dequeue(void* dst, size_t size) {
-	memmove(dst, read_pos, size);
-	Move_Front(size);
+inline int RingBuffer::MustDequeue(void* dst, size_t size) {
+	memmove(dst, readPos, size);
+	MoveFront(size);
 	return size;
 }
 
@@ -79,8 +77,8 @@ inline void RingBuffer::Clear(){
 	front = begin;
 	rear = begin;
 
-	write_pos = front + 1;
-	read_pos = rear + 1;
+	writePos = front + 1;
+	readPos = rear + 1;
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -90,34 +88,34 @@ inline void RingBuffer::Clear(){
 // 다시 begin 부터 첫번째 벽(wp, rp)까지 계산해야함
 ///////////////////////////////////////////////////////////////////////
 
-inline int RingBuffer::Direct_EnqueueSize() const {
-	if (front < write_pos) return end - write_pos; // 첫번째 벽 (front) 이후
-	else return front - write_pos;
+inline int RingBuffer::DirectEnqueueSize() const {
+	if (front < writePos) return end - writePos; // 첫번째 벽 (front) 이후
+	else return front - writePos;
 }
 
-inline int RingBuffer::Remain_EnqueueSize() const {
-	if (write_pos <= front) return 0; // 첫번째 벽 이전
+inline int RingBuffer::RemainEnqueueSize() const {
+	if (writePos <= front) return 0; // 첫번째 벽 이전
 	else return front - begin;
 }
 
-inline int RingBuffer::Direct_DequeueSize() const {
-	if (write_pos < read_pos) return end - read_pos; // 첫번째 벽  (write pos) 이후
-	else return write_pos - read_pos;
+inline int RingBuffer::DirectDequeueSize() const {
+	if (writePos < readPos) return end - readPos; // 첫번째 벽  (write pos) 이후
+	else return writePos - readPos;
 }
 
-inline int RingBuffer::Remain_DequeueSize() const {
-	if (read_pos <= write_pos) return 0; // 첫번째 벽 이전
-	else return write_pos - begin;
+inline int RingBuffer::RemainDequeueSize() const {
+	if (readPos <= writePos) return 0; // 첫번째 벽 이전
+	else return writePos - begin;
 }
 
 int RingBuffer::GetFreeSize() const {
-	return  Direct_EnqueueSize() + Remain_EnqueueSize();
+	return  DirectEnqueueSize() + RemainEnqueueSize();
 }
 inline int RingBuffer::GetUseSize() const {
-	return  Direct_DequeueSize() + Remain_DequeueSize();
+	return  DirectDequeueSize() + RemainDequeueSize();
 };
 
-inline static int Must_Peek(void* dst, const void* src, size_t size) {
+inline static int MustPeek(void* dst, const void* src, size_t size) {
 	memmove(dst, src, size);
 	return size;
 }

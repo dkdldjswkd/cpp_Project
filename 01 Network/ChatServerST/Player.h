@@ -31,7 +31,7 @@ public:
 	WCHAR nickname[NICKNAME_LEN];
 
 public:
-	void Set(SESSION_ID session_id);
+	void Set(SessionId session_id);
 
 public:
 	void Set_Sector(Sector sectorPos);

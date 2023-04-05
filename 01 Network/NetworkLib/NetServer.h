@@ -90,8 +90,8 @@ private:
 	void SendCompletion(Session* p_session);
 
 	// 세션
-	SESSION_ID GetSessionId();
-	Session* ValidateSession(SESSION_ID session_id);
+	SessionId GetSessionId();
+	Session* ValidateSession(SessionId session_id);
 	void IncrementIOCount(Session* p_session);
 	void DecrementIOCount(Session* p_session);
 	void DecrementIOCountPQCS(Session* p_session);
@@ -105,13 +105,13 @@ private:
 
 protected:
 	// 라이브러리 사용자 측 재정의 하여 사용
-	virtual bool OnConnectionRequest(in_addr IP, WORD Port) = 0;
-	virtual void OnClientJoin(SESSION_ID session_id) = 0;
-	virtual void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet) = 0;
-	virtual void OnClientLeave(SESSION_ID session_id) = 0;
+	virtual bool OnConnectionRequest(in_addr ip, WORD port) = 0;
+	virtual void OnClientJoin(SessionId sessionId) = 0;
+	virtual void OnRecv(SessionId sessionId, PacketBuffer* contentsPacket) = 0;
+	virtual void OnClientLeave(SessionId sessionId) = 0;
 	virtual void OnServerStop() = 0;
 	// virtual void OnError(int errorcode /* (wchar*) */) = 0;
-	// virtual void OnSend(SessionID, int sendsize) = 0;         
+	// virtual void OnSend(sessionId, int sendSize) = 0;         
 	// virtual void OnWorkerThreadBegin() = 0;                   
 	// virtual void OnWorkerThreadEnd() = 0;                     
 
@@ -121,8 +121,8 @@ public:
 	void Stop();
 
 	// 라이브러리 제공 API
-	void SendPacket(SESSION_ID session_id, PacketBuffer* send_packet);
-	bool Disconnect(SESSION_ID session_id);
+	void SendPacket(SessionId sessionId, PacketBuffer* sendPacket);
+	void Disconnect(SessionId sessionId);
 
 	// Getter
 	void UpdateTPS();

@@ -10,21 +10,21 @@
 //------------------------------
 // SESSION_ID
 //------------------------------
-union SESSION_ID {
+union SessionId {
 public:
 	struct { DWORD index, unique; } s;
-	DWORD64	session_id = 0;
-#define		session_index  s.index   
-#define		session_unique s.unique
+	DWORD64	sessionId = 0;
+#define		SESSION_INDEX  s.index   
+#define		SESSION_UNIQUE s.unique
 
 public:
-	SESSION_ID();
-	SESSION_ID(DWORD64 value);
-	SESSION_ID(DWORD index, DWORD unique_no);
-	~SESSION_ID();
+	SessionId();
+	SessionId(DWORD64 value);
+	SessionId(DWORD index, DWORD unique_no);
+	~SessionId();
 
 public:
-	void operator=(const SESSION_ID& other);
+	void operator=(const SessionId& other);
 	void operator=(DWORD64 value);
 	operator DWORD64();
 };
@@ -42,7 +42,7 @@ public:
 	SOCKET sock = INVALID_SOCKET;
 	in_addr ip;
 	WORD port;
-	SESSION_ID	session_id = INVALID_SESSION_ID;
+	SessionId sessionId = INVALID_SESSION_ID;
 
 	// flag
 	bool sendFlag = false;
@@ -54,7 +54,7 @@ public:
 	LONG sendPacketCount = 0;
 
 	// Recv
-	RingBuffer recv_buf;
+	RingBuffer recvBuf;
 
 	// TimeOut
 	DWORD lastRecvTime;
@@ -63,12 +63,12 @@ public:
 	OVERLAPPED recvOverlapped = { 0, };
 	OVERLAPPED sendOverlapped = { 0, };
 
-	// 세션 레퍼런스 카운트 역할 (release_flag, io_count가 연속되는 8byte, 같은 캐시라인에 위치하게 의도)
+	// 세션 레퍼런스 카운트 역할 (releaseFlag, ioCount가 연속되는 8byte, 같은 캐시라인에 위치하게 의도)
 	alignas(64) BOOL releaseFlag = true;
 	LONG ioCount = 0;
 
 public:
-	void Set(SOCKET sock, in_addr ip, WORD port, SESSION_ID session_id);
+	void Set(SOCKET sock, in_addr ip, WORD port, SessionId sessionId);
 	// Reset : ReleaseSession()
 };
 typedef Session* PSession;

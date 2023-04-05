@@ -16,7 +16,7 @@ public:
 		Node* next;
 
 	public:
-		void Clear();
+		void Set();
 	};
 
 public:
@@ -27,7 +27,7 @@ private:
 	LFObjectPool<Node> nodePool;
 
 private:
-	alignas(64) DWORD64 top_ABA = NULL;
+	alignas(64) DWORD64 topStamp = NULL;
 	alignas(64) int nodeCount = 0;
 
 public:
@@ -46,7 +46,7 @@ LFStack<T>::LFStack() : nodePool(0, true) {
 
 template <typename T>
 LFStack<T>::~LFStack() {
-	Node* top = (Node*)(top_ABA & useBitMask);
+	Node* top = (Node*)(topStamp & useBitMask);
 
 	for (; top != nullptr;) {
 		Node* delete_node = top;
@@ -58,22 +58,22 @@ LFStack<T>::~LFStack() {
 template <typename T>
 void LFStack<T>::Push(T data) {
 	// Create Node
-	Node* insert_node = nodePool.Alloc();
-	insert_node->Clear();
-	insert_node->data = data;
+	Node* pushNode = nodePool.Alloc();
+	pushNode->Set();
+	pushNode->data = data;
 
 	for (;;) {
-		DWORD64 copy_ABA = top_ABA;
+		DWORD64 copyTopStamp = topStamp;
 
 		// top에 이어줌
-		insert_node->next = (Node*)(copy_ABA & useBitMask);
+		pushNode->next = (Node*)(copyTopStamp & useBitMask);
 
-		// aba count 추출 및 new_ABA 생성
-		DWORD64 aba_count = (copy_ABA + stampCount) & stampMask;
-		Node* new_ABA = (Node*)(aba_count | (DWORD64)insert_node);
+		// Stamp 추출 및 newTopStamp 생성
+		DWORD64 nextStamp = (copyTopStamp + stampCount) & stampMask;
+		DWORD64 newTopStamp = nextStamp | (DWORD64)pushNode;
 
 		// 스택에 변화가 있었다면 다시시도
-		if ((DWORD64)copy_ABA != InterlockedCompareExchange64((LONG64*)&top_ABA, (LONG64)new_ABA, (LONG64)copy_ABA))
+		if (copyTopStamp != InterlockedCompareExchange64((LONG64*)&topStamp, (LONG64)newTopStamp, (LONG64)copyTopStamp))
 			continue;
 
 		InterlockedIncrement((LONG*)&nodeCount);
@@ -84,22 +84,22 @@ void LFStack<T>::Push(T data) {
 template <typename T>
 bool LFStack<T>::Pop(T* dst) {
 	for (;;) {
-		DWORD64 copy_ABA = top_ABA;
-		Node* copy_top = (Node*)(copy_ABA & useBitMask);
+		DWORD64 copyTopStamp = topStamp;
+		Node* topClean = (Node*)(copyTopStamp & useBitMask);
 
 		// Not empty!!
-		if (copy_top) {
-			// aba count 추출 및 new_ABA 생성
-			DWORD64 aba_count = (copy_ABA + stampCount) & stampMask;
-			Node* new_ABA = (Node*)(aba_count | (DWORD64)copy_top->next);
+		if (topClean) {
+			// Stamp 추출 및 newTopStamp 생성
+			DWORD64 nextStamp = (copyTopStamp + stampCount) & stampMask;
+			DWORD64 newTopStamp = nextStamp | (DWORD64)topClean->next;
 
 			// 스택에 변화가 있었다면 다시시도
-			if (copy_ABA != InterlockedCompareExchange64((LONG64*)&top_ABA, (LONG64)new_ABA, (LONG64)copy_ABA))
+			if (copyTopStamp != InterlockedCompareExchange64((LONG64*)&topStamp, (LONG64)newTopStamp, (LONG64)copyTopStamp))
 				continue;
 
 			InterlockedDecrement((LONG*)&nodeCount);
-			*dst = copy_top->data;
-			nodePool.Free(copy_top);
+			*dst = topClean->data;
+			nodePool.Free(topClean);
 			return true;
 		}
 		// empty!!
@@ -131,6 +131,6 @@ LFStack<T>::Node::~Node() {
 }
 
 template<typename T>
-void LFStack<T>::Node::Clear() {
+void LFStack<T>::Node::Set() {
 	next = nullptr;
 }

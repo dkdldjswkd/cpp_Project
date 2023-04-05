@@ -79,7 +79,7 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 			return;
 		}
 		*contents_packet >> accountNo;
-		contents_packet->Get_Data((char*)&token, sizeof(Token));
+		contents_packet->GetData((char*)&token, sizeof(Token));
 	}
 	catch (const PacketException& e) {
 		LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // impossible : >> type");
@@ -116,11 +116,11 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	*p_packet << (WORD)en_PACKET_CS_LOGIN_RES_LOGIN;
 	*p_packet << (INT64)accountNo;
 	*p_packet << (BYTE)dfLOGIN_STATUS_OK;
-	p_packet->Put_Data((char*)id, 40);
-	p_packet->Put_Data((char*)nickname, 40);
-	p_packet->Put_Data((char*)GameServerIP, 32);
+	p_packet->PutData((char*)id, 40);
+	p_packet->PutData((char*)nickname, 40);
+	p_packet->PutData((char*)GameServerIP, 32);
 	*p_packet << (USHORT)GameServerPort;
-	p_packet->Put_Data((char*)ChatServerIP, 32);
+	p_packet->PutData((char*)ChatServerIP, 32);
 	*p_packet << (USHORT)ChatServerPort;
 
 	// Redis에 유저 토큰 추가
