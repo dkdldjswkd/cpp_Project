@@ -11,15 +11,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoginServer", "LoginServer.
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkLib", "..\NetworkLib\NetworkLib.vcxproj", "{FE4739E7-7447-476A-AD9D-6548F4549676}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChattingServer_Multi", "..\ChattingServer_Multi\ChattingServer_Multi.vcxproj", "{CCB4E189-B3EB-4E7A-A219-081DBF63E745}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "99 Test", "Test\Test.vcxproj", "{07C1687E-E13C-427A-B296-33C318E35982}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test_DBConnector", "..\Test\Test_DBConnector\Test_DBConnector.vcxproj", "{C0A6B608-4D62-491A-8519-8BF484676E82}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DBConnector", "..\DBConnector\DBConnector.vcxproj", "{89FB9B93-F785-4E54-9874-5ED414214649}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChatServerST", "..\ChattingServer_Single\ChatServerST.vcxproj", "{DCDE2D54-7167-4417-AC33-4644DE891ACC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,14 +41,6 @@ Global
 		{FE4739E7-7447-476A-AD9D-6548F4549676}.Release|x64.Build.0 = Release|x64
 		{FE4739E7-7447-476A-AD9D-6548F4549676}.Release|x86.ActiveCfg = Release|Win32
 		{FE4739E7-7447-476A-AD9D-6548F4549676}.Release|x86.Build.0 = Release|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x64.ActiveCfg = Debug|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x64.Build.0 = Debug|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x86.ActiveCfg = Debug|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x86.Build.0 = Debug|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x64.ActiveCfg = Release|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x64.Build.0 = Release|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x86.ActiveCfg = Release|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x86.Build.0 = Release|Win32
 		{07C1687E-E13C-427A-B296-33C318E35982}.Debug|x64.ActiveCfg = Debug|x64
 		{07C1687E-E13C-427A-B296-33C318E35982}.Debug|x64.Build.0 = Debug|x64
 		{07C1687E-E13C-427A-B296-33C318E35982}.Debug|x86.ActiveCfg = Debug|Win32
@@ -77,14 +65,6 @@ Global
 		{89FB9B93-F785-4E54-9874-5ED414214649}.Release|x64.Build.0 = Release|x64
 		{89FB9B93-F785-4E54-9874-5ED414214649}.Release|x86.ActiveCfg = Release|Win32
 		{89FB9B93-F785-4E54-9874-5ED414214649}.Release|x86.Build.0 = Release|Win32
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Debug|x64.ActiveCfg = Debug|x64
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Debug|x64.Build.0 = Debug|x64
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Debug|x86.ActiveCfg = Debug|Win32
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Debug|x86.Build.0 = Debug|Win32
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Release|x64.ActiveCfg = Release|x64
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Release|x64.Build.0 = Release|x64
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Release|x86.ActiveCfg = Release|Win32
-		{DCDE2D54-7167-4417-AC33-4644DE891ACC}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

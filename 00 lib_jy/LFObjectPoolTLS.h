@@ -7,7 +7,7 @@
 template <typename T>
 class LFObjectPoolTLS {
 public:
-	LFObjectPoolTLS(bool use_ctor = false) : useCtor(use_ctor), tlsIndex(TlsAlloc()) {};
+	LFObjectPoolTLS(bool useCtor = false) : useCtor(useCtor), tlsIndex(TlsAlloc()) {};
 	~LFObjectPoolTLS() {}
 
 private:
@@ -34,25 +34,25 @@ private:
 		int tlsIndex;
 
 	private:
-		ChunkData chunkData_array[CHUNCK_SIZE];
+		ChunkData chunkDataArray[CHUNCK_SIZE];
 		int allocIndex;
 		alignas(64) int freeIndex;
 
 	public:
-		void Set(LFObjectPool<Chunk>* _p_chunkPool, bool _use_ctor, int _tlsIndex) {
-			p_chunkPool = _p_chunkPool;
-			useCtor = _use_ctor;
-			tlsIndex = _tlsIndex;
+		void Set(LFObjectPool<Chunk>* p_chunkPool, bool useCtor, int tlsIndex) {
+			this->p_chunkPool = p_chunkPool;
+			this->useCtor = useCtor;
+			this->tlsIndex = tlsIndex;
 
 			allocIndex = 0;
 			freeIndex = 0;
 			for (int i = 0; i < CHUNCK_SIZE; i++) {
-				chunkData_array[i].p_myChunk = this;
+				chunkDataArray[i].p_myChunk = this;
 			}
 		}
 
 		T* Alloc() {
-			T* p_object = &(chunkData_array[allocIndex++].object);
+			T* p_object = &(chunkDataArray[allocIndex++].object);
 			if (useCtor) new (p_object) T;
 
 			if (CHUNCK_SIZE == allocIndex) {

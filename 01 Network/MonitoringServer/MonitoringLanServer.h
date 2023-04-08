@@ -74,9 +74,9 @@ private:
 private:
 	// Lib callback (NetServer Override)
 	bool OnConnectionRequest(in_addr IP, WORD Port) { return true; }
-	void OnClientJoin(SESSION_ID session_id);
-	void OnClientLeave(SESSION_ID session_id);
-	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
+	void OnClientJoin(SessionId sessionId);
+	void OnClientLeave(SessionId sessionId);
+	void OnRecv(SessionId sessionId, PacketBuffer* contents_packet);
 
 private:
 	// DB

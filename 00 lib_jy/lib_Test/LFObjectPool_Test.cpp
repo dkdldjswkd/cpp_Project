@@ -15,7 +15,7 @@ struct Node {
 	int data;
 };
 
-J_LIB::LFObjectPool<Node> nodePool(0, true);
+LFObjectPool<Node> nodePool(0, true);
 
 void func() {
 	printf("Ω√¿€ \n");
@@ -47,7 +47,7 @@ void monitor_func() {
 	for (;;) {
 		Sleep(1000);
 		system("cls");
-		int a = nodePool.Get_UseCount();
+		int a = nodePool.GetUseCount();
 		int b = nodePool.GetCapacityCount();
 		printf("GetUseCount : %d \n", a);
 		printf("GetCapacityCount : %d \n", b);

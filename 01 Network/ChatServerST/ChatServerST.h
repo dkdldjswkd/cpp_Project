@@ -12,7 +12,7 @@
 #include "../../00 lib_jy/ThreadCpuMonitor.h"
 
 // Login On/Off
-#define ON_LOGIN	1
+#define ON_LOGIN	0
 
 // JOB
 #define JOB_TYPE_CLIENT_JOIN			100
@@ -31,24 +31,24 @@ private:
 	};
 
 	static struct AccountToken {
-		SessionId sessionID;
-		ACCOUNT_NO accountNo;
+		SessionId sessionId;
+		AccountNo accountNo;
 		Token token;
 	};
 
 	static struct Job {
 	public:
-		SessionId session_id;
+		SessionId sessionId;
 		WORD type;
 		PacketBuffer* p_packet;
 
 	public:
-		void Set(SessionId session_id, WORD type) {
-			this->session_id = session_id;
+		void Set(SessionId sessionId, WORD type) {
+			this->sessionId = sessionId;
 			this->type = type;
 		}
-		void Set(SessionId session_id, WORD type, PacketBuffer* p_packet) {
-			this->session_id = session_id;
+		void Set(SessionId sessionId, WORD type, PacketBuffer* p_packet) {
+			this->sessionId = sessionId;
 			this->type = type;
 			this->p_packet = p_packet;
 		}
@@ -58,7 +58,7 @@ private:
 	// Player
 	LFObjectPool<Player> playerPool;
 	std::unordered_map<DWORD64, Player*> playerMap;						
-	std::unordered_set<Player*> sectorsSet[SECTOR_MAX_Y][SECTOR_MAX_X];
+	std::unordered_set<Player*> sectorSet[SECTOR_MAX_Y][SECTOR_MAX_X];
 
 	// JOB
 	LFObjectPoolTLS<Job> jobPool;
@@ -83,16 +83,16 @@ private:
 private:
 	// Lib callback (NetLib Override)
 	bool OnConnectionRequest(in_addr IP, WORD Port) { return true; }
-	void OnClientJoin(SessionId session_id);
-	void OnRecv(SessionId session_id, PacketBuffer* contents_packet);
-	void OnClientLeave(SessionId session_id);
+	void OnClientJoin(SessionId sessionId);
+	void OnRecv(SessionId sessionId, PacketBuffer* contents_packet);
+	void OnClientLeave(SessionId sessionId);
 	void OnServerStop();
 
 	// Job
 	void UpdateFunc();
 	void UpdateStop();
-	void JobQueuing(SessionId session_id, WORD type, PacketBuffer* p_packet);
-	void JobQueuing(SessionId session_id, WORD type);
+	void JobQueuing(SessionId sessionId, WORD type, PacketBuffer* p_packet);
+	void JobQueuing(SessionId sessionId, WORD type);
 
 	// Token
 	void AuthFunc();

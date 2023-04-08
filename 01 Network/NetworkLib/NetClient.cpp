@@ -476,12 +476,12 @@ void NetClient::Stop() {
 }
 
 //------------------------------
-// SESSION_ID
+// SessionId
 //------------------------------
 
 SessionId NetClient::GetSessionID() {
 	static DWORD unique = 1;
 	DWORD index = 0;
-	SessionId session_id(index, unique++);
-	return session_id;
+	SessionId sessionId(index, unique++);
+	return sessionId;
 }

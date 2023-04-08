@@ -4,8 +4,8 @@ User::User() {}
 
 User::~User() {}
 
-void User::Set(SessionId session_id){
-	this->sessionID = session_id;
+void User::Set(SessionId sessionId){
+	this->sessionId = sessionId;
 }
 
 void User::Reset(){

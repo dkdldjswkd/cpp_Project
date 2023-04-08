@@ -22,9 +22,9 @@ private:
 private:
 	// Lib callback (Override)
 	bool OnConnectionRequest(in_addr IP, WORD Port) { return true; }
-	void OnClientJoin(SESSION_ID session_id);
-	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
-	void OnClientLeave(SESSION_ID session_id);
+	void OnClientJoin(SessionId sessionId);
+	void OnRecv(SessionId sessionId, PacketBuffer* contents_packet);
+	void OnClientLeave(SessionId sessionId);
 
 public:
 	void BroadcastMonitoringData(BYTE serverNo, BYTE dataType, int dataValue, int timeStamp);

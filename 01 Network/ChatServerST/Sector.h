@@ -10,5 +10,5 @@ public:
 	short y;
 
 public:
-	bool Is_Invalid();
+	bool IsInvalid();
 };

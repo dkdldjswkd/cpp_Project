@@ -43,27 +43,27 @@ bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
 	return true;
 }
 
-void LoginServer::OnClientJoin(SESSION_ID session_id) {
+void LoginServer::OnClientJoin(SessionId sessionId) {
 	User* p_player = UserPool.Alloc();
-	p_player->Set(session_id);
+	p_player->Set(sessionId);
 
-	UserMapLock.Lock_Exclusive();
-	UserMap.insert({ session_id, p_player });
-	UserMapLock.Unlock_Exclusive();
+	UserMapLock.Lock();
+	UserMap.insert({ sessionId, p_player });
+	UserMapLock.Unlock();
 }
 
-void LoginServer::OnClientLeave(SESSION_ID session_id) {
+void LoginServer::OnClientLeave(SessionId sessionId) {
 	// User map 삭제
-	UserMapLock.Lock_Exclusive();
-	auto iter = UserMap.find(session_id);
+	UserMapLock.Lock();
+	auto iter = UserMap.find(sessionId);
 	User* p_player = iter->second;
 	UserMap.erase(iter);
-	UserMapLock.Unlock_Exclusive();
+	UserMapLock.Unlock();
 
 	UserPool.Free(p_player);
 }
 
-void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
+void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* contents_packet){
 	MYSQL_RES* sql_result;
 	MYSQL_ROW sql_row;
 
@@ -75,7 +75,7 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 		// INVALID Packet type
 		if (type != en_PACKET_CS_LOGIN_REQ_LOGIN) { // 메시지 타입은 하나만 존재
 			LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
-			Disconnect(session_id);
+			Disconnect(sessionId);
 			return;
 		}
 		*contents_packet >> accountNo;
@@ -83,7 +83,7 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	}
 	catch (const PacketException& e) {
 		LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // impossible : >> type");
-		Disconnect(session_id);
+		Disconnect(sessionId);
 		return;
 	}
 
@@ -133,6 +133,6 @@ void LoginServer::OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet){
 	connectorRedis.sync_commit();
 	//LOG("LoginServer", LOG_LEVEL_DEBUG, "Set Token // accountNo(%d) Token(%.*s)", accountNo, sizeof(Token), (char*)&token);
 
-	SendPacket(session_id, p_packet);
+	SendPacket(sessionId, p_packet);
 	PacketBuffer::Free(p_packet);
 }

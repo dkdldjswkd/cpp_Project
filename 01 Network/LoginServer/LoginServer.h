@@ -40,9 +40,9 @@ public:
 private:
 	// Lib callback
 	bool OnConnectionRequest(in_addr IP, WORD Port);
-	void OnClientJoin(SESSION_ID session_id);
-	void OnRecv(SESSION_ID session_id, PacketBuffer* contents_packet);
-	void OnClientLeave(SESSION_ID session_id);
+	void OnClientJoin(SessionId sessionId);
+	void OnRecv(SessionId sessionId, PacketBuffer* contentsPacket);
+	void OnClientLeave(SessionId sessionId);
 
 public:
 	// 모니터링

@@ -586,8 +586,8 @@ Session* NetServer::ValidateSession(SessionId sessionId) {
 	return p_session;
 }
 
-void NetServer::Disconnect(SessionId session_id) {
-	Session* p_session = ValidateSession(session_id);
+void NetServer::Disconnect(SessionId sessionId) {
+	Session* p_session = ValidateSession(sessionId);
 	if (nullptr == p_session) return;
 	DisconnectSession(p_session);
 	DecrementIOCountPQCS(p_session);
@@ -632,7 +632,7 @@ void NetServer::Stop() {
 }
 
 //------------------------------
-// SESSION_ID
+// SessionId
 //------------------------------
 
 SessionId NetServer::GetSessionId() {

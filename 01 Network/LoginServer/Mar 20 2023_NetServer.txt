@@ -111,3 +111,4 @@
 [NetServer] [Mar 20 2023 00:22:39 / DEBUG] WSASend() Fail, Error code : 10054
 [NetServer] [Mar 20 2023 00:22:39 / DEBUG] WSASend() Fail, Error code : 10054
 [NetServer] [Mar 20 2023 00:22:39 / DEBUG] WSASend() Fail, Error code : 10054
+[NetServer] [Mar 20 2023 00:22:39 / INFO] Start NetServer

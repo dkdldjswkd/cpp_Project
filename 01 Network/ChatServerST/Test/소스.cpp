@@ -3,8 +3,8 @@
 
 int main() {
 	int* p = (int*)malloc(sizeof(int));
+	*p = 3;
 	free(p);
 
-	*p = 3;
 	printf("%d \n", *p);
 }

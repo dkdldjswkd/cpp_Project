@@ -8,10 +8,10 @@ public:
 
 public:
 	// 연결 정보
-	SessionId sessionID = INVALID_SESSION_ID;
+	SessionId sessionId = INVALID_SESSION_ID;
 	bool isLogin = false;
 
 public:
-	virtual void Set(SessionId session_id);
+	virtual void Set(SessionId sessionId);
 	virtual void Reset();
 };

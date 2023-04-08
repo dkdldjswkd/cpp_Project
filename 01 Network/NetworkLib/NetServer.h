@@ -91,7 +91,7 @@ private:
 
 	// ¼¼¼Ç
 	SessionId GetSessionId();
-	Session* ValidateSession(SessionId session_id);
+	Session* ValidateSession(SessionId sessionId);
 	void IncrementIOCount(Session* p_session);
 	void DecrementIOCount(Session* p_session);
 	void DecrementIOCountPQCS(Session* p_session);

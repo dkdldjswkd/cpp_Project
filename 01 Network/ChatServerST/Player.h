@@ -4,11 +4,11 @@
 
 #define ID_LEN				20
 #define NICKNAME_LEN		20
-typedef INT64 ACCOUNT_NO;
+typedef INT64 AccountNo;
 
-struct Player  : public User {
+struct Player : public User {
 public:
-	Player() ;
+	Player();
 	~Player();
 
 private:
@@ -18,7 +18,7 @@ private:
 	};
 
 private:
-	void Set_SectorAround();
+	void SetSectorAround();
 
 public:
 	// Sector
@@ -26,13 +26,11 @@ public:
 	SectorAround sectorAround;
 
 public:
-	ACCOUNT_NO accountNo;
+	AccountNo accountNo;
 	WCHAR id[ID_LEN];
 	WCHAR nickname[NICKNAME_LEN];
 
 public:
-	void Set(SessionId session_id);
-
-public:
-	void Set_Sector(Sector sectorPos);
+	void Set(SessionId sessionId);
+	void SetSector(Sector sectorPos);
 };

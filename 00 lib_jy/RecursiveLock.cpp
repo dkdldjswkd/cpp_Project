@@ -8,7 +8,7 @@ RecursiveLock::~RecursiveLock() {
 }
 
 // Àç±Í lock ±¸Çö
-void RecursiveLock::Lock_Exclusive() {
+void RecursiveLock::Lock() {
 	auto id = GetCurrentThreadId();
 
 	// Àç±Í lock ÆÇ´Ü
@@ -24,7 +24,7 @@ void RecursiveLock::Lock_Exclusive() {
 }
 
 // Àç±Í unlock ±¸Çö
-void RecursiveLock::Unlock_Exclusive() {
+void RecursiveLock::Unlock() {
 	// Àç±Í unlock ÆÇ´Ü
 	if (1 < lockCount) {
 		lockCount--;

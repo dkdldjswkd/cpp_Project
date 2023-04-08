@@ -9,38 +9,38 @@ MonitoringNetServer::MonitoringNetServer(const char* systemFile, const char* ser
 MonitoringNetServer::~MonitoringNetServer() {
 }
 
-void MonitoringNetServer::OnClientJoin(SESSION_ID session_id) {
+void MonitoringNetServer::OnClientJoin(SessionId sessionId) {
 	// User Alloc
 	MonitorTool* p_user = userPool.Alloc();
-	p_user->Set(session_id);
+	p_user->Set(sessionId);
 
 	// UserMap Insert
-	userMapLock.Lock_Exclusive();
-	userMap.insert({ session_id, p_user });
-	userMapLock.Unlock_Exclusive();
+	userMapLock.Lock();
+	userMap.insert({ sessionId, p_user });
+	userMapLock.Unlock();
 }
 
-void MonitoringNetServer::OnClientLeave(SESSION_ID session_id) {
+void MonitoringNetServer::OnClientLeave(SessionId sessionId) {
 	// UserMap Erase
-	userMapLock.Lock_Exclusive();
-	auto iter = userMap.find(session_id);
+	userMapLock.Lock();
+	auto iter = userMap.find(sessionId);
 	MonitorTool* p_user = iter->second;
 	userMap.erase(iter);
-	userMapLock.Unlock_Exclusive();
+	userMapLock.Unlock();
 
 	// User Free
 	p_user->Reset();
 	userPool.Free(p_user);
 } 
 
-void MonitoringNetServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
+void MonitoringNetServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket){
 	WORD type;
 	try {
-		*cs_contentsPacket >> type;
+		*csContentsPacket >> type;
 	}
 	catch (const PacketException& e) {
 		LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
-		Disconnect(session_id);
+		Disconnect(sessionId);
 		return;
 	}
 
@@ -48,19 +48,19 @@ void MonitoringNetServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 		case en_PACKET_CS_MONITOR_TOOL_REQ_LOGIN: {
 			char loginSessionKey[32];
 			try {
-				cs_contentsPacket->Get_Data(loginSessionKey, 32);
+				csContentsPacket->GetData(loginSessionKey, 32);
 			}
 			catch (const PacketException& e) {
 				LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
-				Disconnect(session_id);
+				Disconnect(sessionId);
 				return;
 			}
 
 			// User Find
-			userMapLock.Lock_Shared();
-			auto iter = userMap.find(session_id);
+			userMapLock.SharedLock();
+			auto iter = userMap.find(sessionId);
 			MonitorTool* p_user = iter->second;
-			userMapLock.Unlock_Shared();
+			userMapLock.ReleaseSharedLock();
 
 			// Key 불일치
 			if (0 != strncmp(loginKey, loginSessionKey, 32)) {
@@ -70,7 +70,7 @@ void MonitoringNetServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 				PacketBuffer* p_packet = PacketBuffer::Alloc();
 				*p_packet << (WORD)en_PACKET_CS_MONITOR_TOOL_RES_LOGIN;
 				*p_packet << (BYTE)dfMONITOR_TOOL_LOGIN_ERR_SESSIONKEY;
-				SendPacket(session_id, p_packet);
+				SendPacket(sessionId, p_packet);
 				PacketBuffer::Free(p_packet);
 				return;
 			}
@@ -82,7 +82,7 @@ void MonitoringNetServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 			PacketBuffer* p_packet = PacketBuffer::Alloc();
 			*p_packet << (WORD)en_PACKET_CS_MONITOR_TOOL_RES_LOGIN;
 			*p_packet << (BYTE)dfMONITOR_TOOL_LOGIN_OK;
-			SendPacket(session_id, p_packet);
+			SendPacket(sessionId, p_packet);
 			PacketBuffer::Free(p_packet);
 			return;
 		}
@@ -99,7 +99,7 @@ void MonitoringNetServer::BroadcastMonitoringData(BYTE serverNo, BYTE dataType, 
 	*p_packet << (int)timeStamp;
 
 	// 붙어있는 모니터링 툴에게 브로드 캐스트
-	userMapLock.Lock_Shared();
+	userMapLock.SharedLock();
 	auto userMapEnd = userMap.end();
 	for (auto iter = userMap.begin(); iter != userMapEnd; ++iter) {
 		auto* p_user = iter->second;
@@ -107,7 +107,7 @@ void MonitoringNetServer::BroadcastMonitoringData(BYTE serverNo, BYTE dataType, 
 			SendPacket(p_user->sessionID, p_packet);
 		}
 	}
-	userMapLock.Unlock_Shared();
+	userMapLock.ReleaseSharedLock();
 
 	PacketBuffer::Free(p_packet);
 	return;

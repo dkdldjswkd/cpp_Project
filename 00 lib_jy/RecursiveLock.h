@@ -12,16 +12,16 @@ public:
 	int lockCount = 0;
 
 public:
-	void Lock_Exclusive();
-	void Unlock_Exclusive();
-	inline void Lock_Shared();
-	inline void Unlock_Shared();
+	void Lock();
+	void Unlock();
+	inline void SharedLock();
+	inline void ReleaseSharedLock();
 };
 
-inline void RecursiveLock::Lock_Shared() {
+inline void RecursiveLock::SharedLock() {
 	AcquireSRWLockShared(&lock);
 }
 
-inline void RecursiveLock::Unlock_Shared() {
+inline void RecursiveLock::ReleaseSharedLock() {
 	ReleaseSRWLockShared(&lock);
 }

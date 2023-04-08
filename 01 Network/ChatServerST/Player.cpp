@@ -3,10 +3,10 @@
 Player::Player() {}
 Player::~Player() {}
 
-void Player::Set_SectorAround() {
+void Player::SetSectorAround() {
 	sectorAround.count = 0;
 
-	if (true == sectorPos.Is_Invalid())
+	if (true == sectorPos.IsInvalid())
 		return;
 
 	int sector_x = sectorPos.x - 1;
@@ -26,14 +26,14 @@ void Player::Set_SectorAround() {
 	}
 }
 
-void Player::Set(SessionId session_id) {
-	this->sessionID = session_id;
+void Player::Set(SessionId sessionId) {
+	this->sessionId = sessionId;
 	sectorPos.x = -2;
 	sectorPos.y = -2;
 	sectorAround.count = 0;
 }
 
-void Player::Set_Sector(Sector sectorPos) {
+void Player::SetSector(Sector sectorPos) {
 	this->sectorPos = sectorPos;
-	Set_SectorAround();
+	SetSectorAround();
 }

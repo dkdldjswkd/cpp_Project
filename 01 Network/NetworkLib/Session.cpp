@@ -28,11 +28,11 @@ SessionId::operator DWORD64() {
 Session::Session() {}
 Session::~Session() {}
 
-void Session::Set(SOCKET sock, in_addr ip, WORD port, SessionId session_id) {
+void Session::Set(SOCKET sock, in_addr ip, WORD port, SessionId sessionId) {
 	this->sock = sock;
 	this->ip = ip;
 	this->port = port;
-	this->sessionId = session_id;
+	this->sessionId = sessionId;
 	recvBuf.Clear();
 	sendFlag = false;
 	disconnectFlag = false;

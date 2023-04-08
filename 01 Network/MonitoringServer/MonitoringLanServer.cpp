@@ -27,57 +27,57 @@ MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* ser
 MonitoringLanServer::~MonitoringLanServer() {
 }
 
-void MonitoringLanServer::OnClientJoin(SESSION_ID session_id) {
+void MonitoringLanServer::OnClientJoin(SessionId sessionId) {
 	// User Alloc
 	ServerSession* p_user = serverSessionPool.Alloc();
-	p_user->Set(session_id);
+	p_user->Set(sessionId);
 
 	// UserMap Insert
-	serverSessionMapLock.Lock_Exclusive();
-	serverSessionMap.insert({ session_id, p_user });
-	serverSessionMapLock.Unlock_Exclusive();
+	serverSessionMapLock.Lock();
+	serverSessionMap.insert({ sessionId, p_user });
+	serverSessionMapLock.Unlock();
 }
 
-void MonitoringLanServer::OnClientLeave(SESSION_ID session_id) {
+void MonitoringLanServer::OnClientLeave(SessionId sessionId) {
 	// UserMap Erase
-	serverSessionMapLock.Lock_Exclusive();
-	auto iter = serverSessionMap.find(session_id);
+	serverSessionMapLock.Lock();
+	auto iter = serverSessionMap.find(sessionId);
 	ServerSession* p_user = iter->second;
 	serverSessionMap.erase(iter);
-	serverSessionMapLock.Unlock_Exclusive();
+	serverSessionMapLock.Unlock();
 
 	// User Free
 	p_user->Reset();
 	serverSessionPool.Free(p_user);
 } 
 
-void MonitoringLanServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_contentsPacket){
+void MonitoringLanServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket){
 	WORD type;
 	try {
-		*cs_contentsPacket >> type;
+		*csContentsPacket >> type;
 	}
 	catch (const PacketException& e) {
 		LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
-		Disconnect(session_id);
+		Disconnect(sessionId);
 		return;
 	}
 	switch (type) {
 		case en_PACKET_SS_MONITOR_LOGIN: {
 			int serverNo;
 			try {
-				*cs_contentsPacket >> serverNo;
+				*csContentsPacket >> serverNo;
 			}
 			catch (const PacketException& e) {
 				LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
-				Disconnect(session_id);
+				Disconnect(sessionId);
 				return;
 			}
 
 			// User Find
-			serverSessionMapLock.Lock_Shared();
-			auto iter = serverSessionMap.find(session_id);
+			serverSessionMapLock.SharedLock();
+			auto iter = serverSessionMap.find(sessionId);
 			ServerSession* p_user = iter->second;
-			serverSessionMapLock.Unlock_Shared();
+			serverSessionMapLock.ReleaseSharedLock();
 
 			// 이미 로그인 되있던 유저
 			if (p_user->isLogin == true) {
@@ -96,21 +96,21 @@ void MonitoringLanServer::OnRecv(SESSION_ID session_id, PacketBuffer* cs_content
 			int	dataValue;
 			int	timeStamp;
 			try {
-				*cs_contentsPacket >> dataType;
-				*cs_contentsPacket >> dataValue;
-				*cs_contentsPacket >> timeStamp;
+				*csContentsPacket >> dataType;
+				*csContentsPacket >> dataValue;
+				*csContentsPacket >> timeStamp;
 			}
 			catch (const PacketException& e) {
 				LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
-				Disconnect(session_id);
+				Disconnect(sessionId);
 				return;
 			}
 
 			// User Find
-			serverSessionMapLock.Lock_Shared();
-			auto iter = serverSessionMap.find(session_id);
+			serverSessionMapLock.SharedLock();
+			auto iter = serverSessionMap.find(sessionId);
 			ServerSession* p_user = iter->second;
-			serverSessionMapLock.Unlock_Shared();
+			serverSessionMapLock.ReleaseSharedLock();
 
 			// 세션 로그인 판단 (비정상적 세션 판단)
 			if (p_user->isLogin == false) {

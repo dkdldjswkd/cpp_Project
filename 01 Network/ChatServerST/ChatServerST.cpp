@@ -15,10 +15,10 @@ using namespace std;
 
 ChatServerST::ChatServerST(const char* systemFile, const char* server) : NetServer(systemFile, server) {
 	updateEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	updateThread = thread([this] {UpdateFunc(); });
+	updateThread = thread([this] { UpdateFunc(); });
 #if ON_LOGIN
 	authEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	authThread = thread([this] {AuthFunc(); });
+	authThread = thread([this] { AuthFunc(); });
 	connectorRedis.connect();
 #endif
 }
@@ -45,35 +45,35 @@ void ChatServerST::OnServerStop() {
 #endif
 }
 
-void ChatServerST::OnClientJoin(SessionId session_id) {
-	JobQueuing(session_id, JOB_TYPE_CLIENT_JOIN);
+void ChatServerST::OnClientJoin(SessionId sessionId) {
+	JobQueuing(sessionId, JOB_TYPE_CLIENT_JOIN);
 }
 
-void ChatServerST::OnClientLeave(SessionId session_id) {
-	JobQueuing(session_id, JOB_TYPE_CLIENT_LEAVE);
+void ChatServerST::OnClientLeave(SessionId sessionId) {
+	JobQueuing(sessionId, JOB_TYPE_CLIENT_LEAVE);
 }
 
-void ChatServerST::OnRecv(SessionId session_id, PacketBuffer* cs_contentsPacket) {
+void ChatServerST::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 	WORD type;
 	try {
-		*cs_contentsPacket >> type;
+		*csContentsPacket >> type;
 	}
 	catch (const PacketException& e) {
 		LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> type");
-		Disconnect(session_id);
+		Disconnect(sessionId);
 		return;
 	}
 
 	// Packet type : 2, 4, 5 (INVALID PACKET TYPE)
 	if ((5 < type) || (type == 2) || (type == 4)) {
 		LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
-		Disconnect(session_id);
+		Disconnect(sessionId);
 		return;
 	}
 
 	// Packet type : 1, 3, 5 (VALID PACKET TYPE)
-	cs_contentsPacket->IncrementRefCount();
-	JobQueuing(session_id, type, cs_contentsPacket);
+	csContentsPacket->IncrementRefCount();
+	JobQueuing(sessionId, type, csContentsPacket);
 }
 
 void ChatServerST::UpdateFunc() {
@@ -86,27 +86,27 @@ void ChatServerST::UpdateFunc() {
 			jobQ.Dequeue(&p_job);
 
 			PRO_BEGIN("UpdateFunc");
-			SessionId session_id = p_job->session_id;
-			PacketBuffer* cs_contentsPacket = p_job->p_packet;
+			SessionId sessionId = p_job->sessionId;
+			PacketBuffer* csContentsPacket = p_job->p_packet;
 
 			switch (p_job->type) {
 				case JOB_TYPE_CLIENT_JOIN: {
 					Player* p_player = playerPool.Alloc();
-					p_player->Set(session_id);
-					playerMap.insert({ session_id, p_player });
+					p_player->Set(sessionId);
+					playerMap.insert({ sessionId, p_player });
 					break;
 				}
 				case JOB_TYPE_CLIENT_LEAVE: {
 					// Player 검색
-					auto iter = playerMap.find(session_id);
+					auto iter = playerMap.find(sessionId);
 					Player* p_player = iter->second;
 
 					// 컨테이너에서 삭제
 					playerMap.erase(iter);
 
 					// Sector 에서 삭제
-					if (!p_player->sectorPos.Is_Invalid()) {
-						sectorsSet[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
+					if (!p_player->sectorPos.IsInvalid()) {
+						sectorSet[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
 					}
 
 					// Player 반환
@@ -118,10 +118,10 @@ void ChatServerST::UpdateFunc() {
 					break;
 				}
 				case en_PACKET_CS_CHAT_REQ_LOGIN: {
-					auto iter = playerMap.find(session_id);
+					auto iter = playerMap.find(sessionId);
 					if (iter == playerMap.end()) {
-						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_LOGIN() : player_map.find(session_id) == player_map.end()");
-						PacketBuffer::Free(cs_contentsPacket);
+						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_LOGIN() : player_map.find(sessionId) == player_map.end()");
+						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
 					Player* p_player = iter->second;
@@ -129,41 +129,41 @@ void ChatServerST::UpdateFunc() {
 					// 이미 로그인 된 플레이어
 					if (p_player->isLogin) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // Already login!!");
-						Disconnect(session_id);
-						PacketBuffer::Free(cs_contentsPacket);
+						Disconnect(sessionId);
+						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
 
-	#if ON_LOGIN
+					#if ON_LOGIN
 					AccountToken* p_at = tokenPool.Alloc();
-					p_at->sessionID = session_id;
+					p_at->sessionId = sessionId;
 					try {
-						cs_contentsPacket->GetData((char*)&p_at->accountNo, sizeof(ACCOUNT_NO));
-						cs_contentsPacket->GetData((char*)p_player->id, ID_LEN * 2);
-						cs_contentsPacket->GetData((char*)p_player->nickname, NICKNAME_LEN * 2);
-						cs_contentsPacket->GetData((char*)&p_at->token, 64);
+						csContentsPacket->GetData((char*)&p_at->accountNo, sizeof(AccountNo));
+						csContentsPacket->GetData((char*)p_player->id, ID_LEN * 2);
+						csContentsPacket->GetData((char*)p_player->nickname, NICKNAME_LEN * 2);
+						csContentsPacket->GetData((char*)&p_at->token, 64);
 					}
 					catch (const PacketException& e) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> Login packet");
 						tokenPool.Free(p_at);
-						Disconnect(session_id);
+						Disconnect(sessionId);
 						break;
 					}
 					p_player->accountNo = p_at->accountNo;
 					tokenQ.Enqueue(p_at);
 					SetEvent(authEvent);
-	#else ON_LOGIN
+					#else ON_LOGIN
 					try {
-						*cs_contentsPacket >> p_player->accountNo;
-						cs_contentsPacket->Get_Data((char*)p_player->id, ID_LEN * 2);
-						cs_contentsPacket->Get_Data((char*)p_player->nickname, NICKNAME_LEN * 2);
+						*csContentsPacket >> p_player->accountNo;
+						csContentsPacket->GetData((char*)p_player->id, ID_LEN * 2);
+						csContentsPacket->GetData((char*)p_player->nickname, NICKNAME_LEN * 2);
 						Token token; // 사용하지 않음
-						cs_contentsPacket->Get_Data((char*)&token, 64);
+						csContentsPacket->GetData((char*)&token, 64);
 					}
 					catch (const PacketException& e) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> Login packet");
-						Disconnect(session_id);
-						PacketBuffer::Free(cs_contentsPacket);
+						Disconnect(sessionId);
+						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
 
@@ -176,17 +176,17 @@ void ChatServerST::UpdateFunc() {
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
 					*p_packet << (BYTE)p_player->isLogin;
 					*p_packet << (INT64)p_player->accountNo;
-					SendPacket(session_id, p_packet);
+					SendPacket(sessionId, p_packet);
 					PacketBuffer::Free(p_packet);
-	#endif
-					PacketBuffer::Free(cs_contentsPacket);
+					#endif
+					PacketBuffer::Free(csContentsPacket);
 					break;
 				}
 				case en_PACKET_CS_CHAT_REQ_SECTOR_MOVE: {
-					auto iter = playerMap.find(session_id);
+					auto iter = playerMap.find(sessionId);
 					if (iter == playerMap.end()) {
-						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_SECTOR_MOVE() : player_map.find(session_id) == player_map.end()");
-						PacketBuffer::Free(cs_contentsPacket);
+						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_SECTOR_MOVE() : player_map.find(sessionId) == player_map.end()");
+						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
 					Player* p_player = iter->second;
@@ -194,55 +194,55 @@ void ChatServerST::UpdateFunc() {
 					// 로그인 상태가 아닌 플레이어
 					if (!p_player->isLogin) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // is not login!!");
-						Disconnect(session_id);
-						PacketBuffer::Free(cs_contentsPacket);
+						Disconnect(sessionId);
+						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
 
 					INT64 accountNo;
 					Sector cur_sector;
 					try {
-						*cs_contentsPacket >> accountNo;
-						*cs_contentsPacket >> cur_sector.x;
-						*cs_contentsPacket >> cur_sector.y;
+						*csContentsPacket >> accountNo;
+						*csContentsPacket >> cur_sector.x;
+						*csContentsPacket >> cur_sector.y;
 					}
 					catch (const PacketException& e) {
 						//LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> sector move packet");
-						Disconnect(session_id);
-						PacketBuffer::Free(cs_contentsPacket);
+						Disconnect(sessionId);
+						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
 
 					// 유효하지 않은 섹터로 이동 시도
-					if (cur_sector.Is_Invalid()) {
+					if (cur_sector.IsInvalid()) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // sector move Packet : Invalid Sector!!");
-						Disconnect(session_id);
-						PacketBuffer::Free(cs_contentsPacket);
+						Disconnect(sessionId);
+						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
 
 					// 이 전에 위치하던 Sector erase
-					if (!p_player->sectorPos.Is_Invalid()) {
-						sectorsSet[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
+					if (!p_player->sectorPos.IsInvalid()) {
+						sectorSet[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
 					}
-					p_player->Set_Sector(cur_sector);
-					sectorsSet[cur_sector.y][cur_sector.x].insert(p_player);
+					p_player->SetSector(cur_sector);
+					sectorSet[cur_sector.y][cur_sector.x].insert(p_player);
 
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_SECTOR_MOVE;
 					*p_packet << (INT64)accountNo;
 					*p_packet << (WORD)cur_sector.x;
 					*p_packet << (WORD)cur_sector.y;
-					SendPacket(session_id, p_packet);
+					SendPacket(sessionId, p_packet);
 					PacketBuffer::Free(p_packet);
-					PacketBuffer::Free(cs_contentsPacket);
+					PacketBuffer::Free(csContentsPacket);
 					break;
 				}
 				case en_PACKET_CS_CHAT_REQ_MESSAGE: {
 					PRO_BEGIN("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
-					Player* p_player = playerMap.find(session_id)->second;
+					Player* p_player = playerMap.find(sessionId)->second;
 					if (nullptr == p_player) {
-						PacketBuffer::Free(cs_contentsPacket);
+						PacketBuffer::Free(csContentsPacket);
 						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 						break;
 					}
@@ -250,8 +250,8 @@ void ChatServerST::UpdateFunc() {
 					// 로그인 상태가 아닌 플레이어
 					if (!p_player->isLogin) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // is not login!!");
-						Disconnect(session_id);
-						PacketBuffer::Free(cs_contentsPacket);
+						Disconnect(sessionId);
+						PacketBuffer::Free(csContentsPacket);
 						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 						break;
 					}
@@ -261,14 +261,14 @@ void ChatServerST::UpdateFunc() {
 					WORD	msgLen;
 					WCHAR	msg[MAX_MSG]; // null 미포함
 					try {
-						*cs_contentsPacket >> accountNo;
-						*cs_contentsPacket >> msgLen;
-						cs_contentsPacket->GetData((char*)msg, msgLen);
+						*csContentsPacket >> accountNo;
+						*csContentsPacket >> msgLen;
+						csContentsPacket->GetData((char*)msg, msgLen);
 					}
 					catch (const PacketException& e) {
-						//LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> chatting packet");
-						Disconnect(session_id);
-						PacketBuffer::Free(cs_contentsPacket);
+						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> chatting packet");
+						Disconnect(sessionId);
+						PacketBuffer::Free(csContentsPacket);
 						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 						break;
 					}
@@ -287,12 +287,12 @@ void ChatServerST::UpdateFunc() {
 					SendSectorAround(p_player, p_packet);
 					PRO_END("SendSectorAround");
 					PacketBuffer::Free(p_packet);
-					PacketBuffer::Free(cs_contentsPacket);
+					PacketBuffer::Free(csContentsPacket);
 					PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 					break;
 				}
 				case JOB_TYPE_CLIENT_LOGIN_SUCCESS: {
-					auto iter = playerMap.find(session_id);
+					auto iter = playerMap.find(sessionId);
 					if (iter == playerMap.end()) { // 로그인 결과 패킷 회신 전 연결끊킴
 						break;
 					}
@@ -307,12 +307,12 @@ void ChatServerST::UpdateFunc() {
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
 					*p_packet << (BYTE)p_player->isLogin;
 					*p_packet << (INT64)p_player->accountNo;
-					SendPacket(session_id, p_packet);
+					SendPacket(sessionId, p_packet);
 					PacketBuffer::Free(p_packet);
 					break;
 				}
 				case JOB_TYPE_CLIENT_LOGIN_FAIL: {
-					auto iter = playerMap.find(session_id);
+					auto iter = playerMap.find(sessionId);
 					if (iter == playerMap.end()) {  // 로그인 결과 패킷 회신 전 연결끊킴
 						break;
 					}
@@ -323,13 +323,13 @@ void ChatServerST::UpdateFunc() {
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_LOGIN;
 					*p_packet << (BYTE)false;
 					*p_packet << (INT64)p_player->accountNo;
-					SendPacket(session_id, p_packet);
+					SendPacket(sessionId, p_packet);
 					PacketBuffer::Free(p_packet);
 					break;
 				}
 				default: {
 					LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "Disconnect // ProcJob INVALID Packet type : %d", p_job->type);
-					Disconnect(session_id);
+					Disconnect(sessionId);
 					break;
 				}
 			}
@@ -356,7 +356,7 @@ void ChatServerST::AuthFunc() {
 			connectorRedis.sync_commit();
 			cpp_redis::reply reply = future_reply.get();
 			if (reply.is_string()) {
-#pragma warning(suppress : 4996)
+				#pragma warning(suppress : 4996)
 				strncpy((char*)&redisToken, reply.as_string().c_str(), 64);
 			}
 			else {
@@ -367,11 +367,11 @@ void ChatServerST::AuthFunc() {
 			if (0 == strncmp(redisToken.buf, p_at->token.buf, 64)) {
 				connectorRedis.del({ chattingKey });
 				connectorRedis.sync_commit();
-				JobQueuing(p_at->sessionID, JOB_TYPE_CLIENT_LOGIN_SUCCESS);
+				JobQueuing(p_at->sessionId, JOB_TYPE_CLIENT_LOGIN_SUCCESS);
 			}
 			// 유효하지 않은 세션
 			else {
-				JobQueuing(p_at->sessionID, JOB_TYPE_CLIENT_LOGIN_FAIL);
+				JobQueuing(p_at->sessionId, JOB_TYPE_CLIENT_LOGIN_FAIL);
 				LOG("ChattingServer-Single", LOG_LEVEL_WARN, "INVALID TOKEN AccountNo(%d)	Redis(%.*s), User(%.*s)", p_at->accountNo, 64, redisToken.buf, 64, p_at->token.buf);
 			}
 			tokenPool.Free(p_at);
@@ -383,16 +383,16 @@ void ChatServerST::AuthFunc() {
 // OTHER
 //////////////////////////////
 
-void ChatServerST::JobQueuing(SessionId session_id, WORD type, PacketBuffer* p_packet) {
+void ChatServerST::JobQueuing(SessionId sessionId, WORD type, PacketBuffer* p_packet) {
 	Job* p_job = jobPool.Alloc();
-	p_job->Set(session_id, type, p_packet);
+	p_job->Set(sessionId, type, p_packet);
 	jobQ.Enqueue(p_job);
 	SetEvent(updateEvent);
 }
 
-void ChatServerST::JobQueuing(SessionId session_id, WORD type) {
+void ChatServerST::JobQueuing(SessionId sessionId, WORD type) {
 	Job* p_job = jobPool.Alloc();
-	p_job->Set(session_id, type);
+	p_job->Set(sessionId, type);
 	jobQ.Enqueue(p_job);
 	SetEvent(updateEvent);
 }
@@ -411,9 +411,9 @@ void ChatServerST::SendSectorAround(Player* p_player, PacketBuffer* send_packet)
 	for (int i = 0; i < p_player->sectorAround.count; i++) {
 		auto sector = p_player->sectorAround.around[i];
 		//SendSector
-		for (auto iter = sectorsSet[sector.y][sector.x].begin(); iter != sectorsSet[sector.y][sector.x].end(); ++iter) {
+		for (auto iter = sectorSet[sector.y][sector.x].begin(); iter != sectorSet[sector.y][sector.x].end(); ++iter) {
 			auto p_player = *iter;
-			SendPacket(p_player->sessionID, send_packet);
+			SendPacket(p_player->sessionId, send_packet);
 		}
 	}
 }

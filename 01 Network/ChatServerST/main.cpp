@@ -10,6 +10,7 @@ using namespace std;
 void ServerMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient);
 
 CrashDump dump;
+
 int main() {
 	// 채팅 서버
 	ChatServerST chattingServer("../ServerConfig.ini", "ChattingServer_Single");
@@ -69,7 +70,7 @@ void ServerMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient
 				"Job Count            : %d                  \n"
 				"Update TPS           : %d                  \n"
 				"                                           \n"
-				"[ MonitorClient ] ------------------------\n"
+				"[ MonitorClient ] -------------------------\n"
 				"sendMsgTPS           : %u                  \n"
 				"recvMsgTPS           : %u                  \n"
 				"                                           \n"

@@ -8,7 +8,7 @@
 #define	INVALID_SESSION_ID	-1
 
 //------------------------------
-// SESSION_ID
+// SessionId
 //------------------------------
 union SessionId {
 public:
