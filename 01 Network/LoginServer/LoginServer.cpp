@@ -35,7 +35,10 @@ LoginServer::LoginServer(const char* systemFile, const char* server) : NetServer
 }
 
 LoginServer::~LoginServer(){
-	//delete(p_connecterTLS);
+	delete p_connecterTLS;
+}
+
+void LoginServer::OnServerStop() {
 }
 
 bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
@@ -44,95 +47,110 @@ bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
 }
 
 void LoginServer::OnClientJoin(SessionId sessionId) {
-	User* p_player = UserPool.Alloc();
+	User* p_player = userPool.Alloc();
 	p_player->Set(sessionId);
 
-	UserMapLock.Lock();
-	UserMap.insert({ sessionId, p_player });
-	UserMapLock.Unlock();
+	userMapLock.Lock();
+	userMap.insert({ sessionId, p_player });
+	userMapLock.Unlock();
 }
 
 void LoginServer::OnClientLeave(SessionId sessionId) {
 	// User map 삭제
-	UserMapLock.Lock();
-	auto iter = UserMap.find(sessionId);
+	userMapLock.Lock();
+	auto iter = userMap.find(sessionId);
 	User* p_player = iter->second;
-	UserMap.erase(iter);
-	UserMapLock.Unlock();
+	userMap.erase(iter);
+	userMapLock.Unlock();
 
-	UserPool.Free(p_player);
+	userPool.Free(p_player);
 }
 
-void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* contents_packet){
-	MYSQL_RES* sql_result;
-	MYSQL_ROW sql_row;
-
+void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 	WORD type;
-	INT64 accountNo;
-	Token token;
 	try {
-		*contents_packet >> type;
-		// INVALID Packet type
-		if (type != en_PACKET_CS_LOGIN_REQ_LOGIN) { // 메시지 타입은 하나만 존재
-			LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
-			Disconnect(sessionId);
-			return;
-		}
-		*contents_packet >> accountNo;
-		contents_packet->GetData((char*)&token, sizeof(Token));
+		*csContentsPacket >> type;
 	}
 	catch (const PacketException& e) {
-		LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // impossible : >> type");
+		LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
 		Disconnect(sessionId);
 		return;
+	}	
+	switch (type) {
+		case en_PACKET_CS_LOGIN_REQ_LOGIN: {
+			INT64 accountNo;
+			SessionKey sessoinKey;
+			try {
+				*csContentsPacket >> accountNo;
+				csContentsPacket->GetData((char*)&sessoinKey, sizeof(SessionKey));
+			}
+			catch (const PacketException& e) {
+				LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // impossible : >>");
+				Disconnect(sessionId);
+				return;
+			}
+
+			MYSQL_RES* sqlResult;
+			MYSQL_ROW sqlRow;
+
+			// DB 조회
+			sqlResult = p_connecterTLS->Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
+			sqlRow = mysql_fetch_row(sqlResult);
+			if (NULL == sqlRow) {
+				Disconnect(sessionId);
+				mysql_free_result(sqlResult);
+				return;
+			}
+
+			// 인증 판단 (현재 코드에서는 패킷 session key, DB session key 같다고 가정하고 코드전개)
+			mysql_free_result(sqlResult);
+
+			// DB 조회 (Get userid, usernick)
+			sqlResult = p_connecterTLS->Query("SELECT userid, usernick FROM account WHERE accountno = %d", accountNo);
+			sqlRow = mysql_fetch_row(sqlResult);
+			WCHAR id[20];
+			UTF8ToUTF16(sqlRow[0], id);
+			WCHAR nickname[20];
+			UTF8ToUTF16(sqlRow[1], nickname);
+			mysql_free_result(sqlResult);
+
+			// Set IP, PORT
+			WCHAR	GameServerIP[16] = { 0, };
+			WCHAR	ChatServerIP[16] = { 0, };
+			UTF8ToUTF16(this->gameServerIP, GameServerIP);
+			UTF8ToUTF16(this->chatServerIP, ChatServerIP);
+			USHORT	GameServerPort = this->gameServerPort;
+			USHORT	ChatServerPort = this->ChatServerPort;
+
+			// 로그인 응답 패킷 생성
+			PacketBuffer* p_packet = PacketBuffer::Alloc();
+			*p_packet << (WORD)en_PACKET_CS_LOGIN_RES_LOGIN;
+			*p_packet << (INT64)accountNo;
+			*p_packet << (BYTE)dfLOGIN_STATUS_OK;
+			p_packet->PutData((char*)id, 40);
+			p_packet->PutData((char*)nickname, 40);
+			p_packet->PutData((char*)GameServerIP, 32);
+			*p_packet << (USHORT)GameServerPort;
+			p_packet->PutData((char*)ChatServerIP, 32);
+			*p_packet << (USHORT)ChatServerPort;
+
+			// Redis에 인증토큰 삽입
+			char chattingKey[100]; // 채팅서버에서 조회할 key
+			char GameKey[100]; // 게임서버에서 조회할 key
+			snprintf(chattingKey, 100, "%d.chatting", accountNo);
+			snprintf(GameKey, 100, "%d.game", accountNo);
+			connectorRedis.setex(chattingKey, 10, (char*)&sessoinKey);
+			connectorRedis.setex(GameKey, 10, (char*)&sessoinKey);
+			connectorRedis.sync_commit();
+
+			// 로그인 응답 패킷 송신
+			SendPacket(sessionId, p_packet);
+			PacketBuffer::Free(p_packet);
+		}
+		default: {
+			LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
+			Disconnect(sessionId);
+			break;
+		}
 	}
-
-	// DB 조회 (유저가 가져온 token과 DB의 token이 일치한지 판단)
-	sql_result = p_connecterTLS->Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
-	sql_row = mysql_fetch_row(sql_result);
-	if (NULL == sql_row) return;
-	// if strcmp(sessionKey[64], sql_row[0]), DB token과 Packet의 token이 일치하는지 확인 (지금은 일치한다고 판단, sql_row[0] == null)
-	mysql_free_result(sql_result);
-
-	// DB 조회 (유저 ID, Nickname Send 하기위해 조회)
-	sql_result = p_connecterTLS->Query("SELECT userid, usernick FROM account WHERE accountno=%d", accountNo);
-	sql_row = mysql_fetch_row(sql_result);
-	WCHAR id[20];
-	UTF8ToUTF16(sql_row[0], id);
-	WCHAR nickname[20];
-	UTF8ToUTF16(sql_row[1], nickname);
-	mysql_free_result(sql_result);
-
-	// Set IP, PORT
-	WCHAR	GameServerIP[16] = { 0, };
-	WCHAR	ChatServerIP[16] = { 0, };
-	UTF8ToUTF16(this->gameServerIP, GameServerIP);
-	UTF8ToUTF16(this->chatServerIP, ChatServerIP);
-	USHORT	GameServerPort = this->gameServerPort;
-	USHORT	ChatServerPort = this->ChatServerPort;
-
-	// 로그인 응답 패킷 생성
-	PacketBuffer* p_packet = PacketBuffer::Alloc();
-	*p_packet << (WORD)en_PACKET_CS_LOGIN_RES_LOGIN;
-	*p_packet << (INT64)accountNo;
-	*p_packet << (BYTE)dfLOGIN_STATUS_OK;
-	p_packet->PutData((char*)id, 40);
-	p_packet->PutData((char*)nickname, 40);
-	p_packet->PutData((char*)GameServerIP, 32);
-	*p_packet << (USHORT)GameServerPort;
-	p_packet->PutData((char*)ChatServerIP, 32);
-	*p_packet << (USHORT)ChatServerPort;
-
-	// Redis에 유저 토큰 추가
-	char chattingKey[100]; // 채팅서버에서 조회할 key
-	char GameKey[100]; // 게임서버에서 조회할 key
-	snprintf(chattingKey, 100, "%d.chatting", accountNo);
-	snprintf(GameKey, 100, "%d.game", accountNo);
-	connectorRedis.setex(chattingKey, 10, (char*)&token);
-	connectorRedis.setex(GameKey, 10, (char*)&token);
-	connectorRedis.sync_commit();
-	//LOG("LoginServer", LOG_LEVEL_DEBUG, "Set Token // accountNo(%d) Token(%.*s)", accountNo, sizeof(Token), (char*)&token);
-
-	SendPacket(sessionId, p_packet);
-	PacketBuffer::Free(p_packet);
 }

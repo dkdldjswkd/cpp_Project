@@ -3,9 +3,6 @@
 #include <Windows.h>
 using namespace std;
 
-// 오후 1:49 2023-01-31
-// LFObjectPool.h 필요
-
 #define LOG_INST Logger::inst
 
 //------------------------------
@@ -13,7 +10,7 @@ using namespace std;
 //------------------------------
 Logger::Logger() {
 	inst.logLevel = LOG_LEVEL_DEBUG;
-	inst.log_thread = thread([]() {inst.Log_Worker(); });
+	inst.log_thread = thread([]() {inst.LogWorker(); });
 }
 Logger::~Logger() {
 	inst.Release();
@@ -25,18 +22,18 @@ Logger Logger::inst;
 
 void Logger::Release(){
 	shutDown = true;
-	QueueUserAPC(Logger::ShutDown_APC, log_thread.native_handle(), NULL);
+	QueueUserAPC(Logger::ShutDownAPC, log_thread.native_handle(), NULL);
 
 	if (inst.log_thread.joinable()) {
 		inst.log_thread.join();
 	}
 }
 
-void Logger::Set_LogLevel(const Logger::LogLevel& logLevel) {
+void Logger::SetLogLevel(const Logger::LogLevel& logLevel) {
 	inst.logLevel = logLevel;
 }
 
-void Logger::Log_Worker() {
+void Logger::LogWorker() {
 	while (!shutDown) {
 		SleepEx(INFINITE, TRUE);
 	}
@@ -52,14 +49,14 @@ void Logger::Log(const char* fileName, LogLevel logLevel, const char* format, ..
 
 	va_list var_list;
 	va_start(var_list, format);
-	vsnprintf(p_logData->log_str, LOG_SIZE - 1, format, var_list);
+	vsnprintf(p_logData->logStr, LOG_SIZE - 1, format, var_list);
 	va_end(var_list);
 
-	QueueUserAPC(Logger::Log_APC, log_thread.native_handle(), (ULONG_PTR)p_logData);
+	QueueUserAPC(Logger::LogAPC, log_thread.native_handle(), (ULONG_PTR)p_logData);
 }
 
 // * 실질 코드 진행 부, 
-VOID Logger::Log_APC(ULONG_PTR p_logData) {
+VOID Logger::LogAPC(ULONG_PTR p_logData) {
 	FILE* fp;
 	const auto& logData = *((Logger::LogData*)p_logData);
 
@@ -100,7 +97,7 @@ VOID Logger::Log_APC(ULONG_PTR p_logData) {
 
 	int log_offset = strlen(log_buf);
 	#pragma warning(suppress : 4996)
-	snprintf(log_buf + log_offset, LOG_SIZE - (log_offset + 1), "%s\n", logData.log_str);
+	snprintf(log_buf + log_offset, LOG_SIZE - (log_offset + 1), "%s\n", logData.logStr);
 	log_buf[LOG_SIZE - 1] = 0;
 
 	if (fp != NULL) {
@@ -111,11 +108,9 @@ VOID Logger::Log_APC(ULONG_PTR p_logData) {
 	LOG_INST.logData_pool.Free((Logger::LogData*)p_logData);
 }
 
-VOID Logger::ShutDown_APC(ULONG_PTR){
+VOID Logger::ShutDownAPC(ULONG_PTR){
 	return;
 }
-
-
 
 //------------------------------
 // Logger::LogData

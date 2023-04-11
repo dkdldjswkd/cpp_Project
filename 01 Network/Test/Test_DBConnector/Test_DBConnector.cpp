@@ -9,6 +9,8 @@
 #define DB_SCHEMA	"accountdb"
 #define DB_LOGTIME	200
 
+using namespace std;
+
 int main() {
 	DBConnectorTLS dbSession(
 		DB_IP,
@@ -19,12 +21,29 @@ int main() {
 		DB_LOGTIME
 	);
 
-	MYSQL_RES* sql_res = dbSession.Query("SELECT accountno, usernick FROM account where accountno = %d", 10);
-	for (;;) {
-		MYSQL_ROW sql_row = mysql_fetch_row(sql_res);
-		if (NULL == sql_row) break;
+	//DBConnector dbSession(
+	//	DB_IP,
+	//	DB_PORT,
+	//	DB_ID,
+	//	DB_PASSWORD,
+	//	DB_SCHEMA,
+	//	DB_LOGTIME
+	//);
 
-		printf("%s %s \n", sql_row[0], sql_row[1]);
+	try {
+		MYSQL_RES* sql_res = dbSession.Query("SELECT accountno, usernick FROM account where accountno = %d", 9999999999999);
+		for (;;) {
+			MYSQL_ROW sql_row = mysql_fetch_row(sql_res);
+			if (NULL == sql_row) break;
+
+			printf("%s %s \n", sql_row[0], sql_row[1]);
+		}
+		mysql_free_result(sql_res);
 	}
-	mysql_free_result(sql_res);
+	catch (DBException& e) {
+		cout << "catch" << endl;
+		cout << e.errorQuery << endl;
+		cout << e.errorNo << endl;
+		cout << e.errorStr << endl;
+	}
 }

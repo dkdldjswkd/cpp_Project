@@ -9,31 +9,32 @@
 
 struct DBException : public std::exception {
 public:
-	DBException(const char* error_code, int error_no, const char* error_str) : error_no(error_no), error_str(error_str) {}
-	DBException(int error_no, const char* error_str) : error_no(error_no), error_str(error_str) {}
+	DBException(int errorNo, const char* errorStr) : errorNo(errorNo), errorStr(errorStr) {}
+	DBException(char* errorQuery, int errorNo, const char* errorStr) : errorNo(errorNo), errorStr(errorStr) {
+		strncpy_s(this->errorQuery, MAX_QUERY, errorQuery, MAX_QUERY - 1);
+	}
 
 public:
-	int error_no;
-	const char* error_str;
+	char errorQuery[MAX_QUERY];
+	int errorNo;
+	const char* errorStr;
 };
 
-class DBConnectorTLS;
 class DBConnector {
 public:
 	DBConnector(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 	~DBConnector();
 
 private:
-	friend DBConnectorTLS;
-
-private:
+	// mysql
 	MYSQL conn;
-	MYSQL* connection;
-	const unsigned short loggingTime; // 쿼리 중 해당 시간 초과 시 로깅
+	MYSQL* connection = nullptr;
 
-private:
-	MYSQL_RES* DoQuery(const char* query);
+	// opt
+	int loggingTime; // 시간 초과 시 로깅
 
 public:
+	void ConnectDB(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 	MYSQL_RES* Query(const char* queryFormat, ...);
+	MYSQL_RES* Query(const char* queryFormat, va_list args);
 };

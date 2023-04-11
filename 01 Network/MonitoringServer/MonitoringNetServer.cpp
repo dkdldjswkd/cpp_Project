@@ -31,7 +31,10 @@ void MonitoringNetServer::OnClientLeave(SessionId sessionId) {
 	// User Free
 	p_user->Reset();
 	userPool.Free(p_user);
-} 
+}
+	
+void MonitoringNetServer::OnServerStop(){
+}
 
 void MonitoringNetServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket){
 	WORD type;

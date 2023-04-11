@@ -7,7 +7,7 @@
 #include "../../00 lib_jy/Profiler.h"
 using namespace std;
 
-void ServerMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient);
+void ConsoleMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient);
 
 CrashDump dump;
 
@@ -20,11 +20,11 @@ int main() {
 	MonitoringClient Monitoringclient("../ServerConfig.ini", "MonitoringClient", &chattingServer);
 	Monitoringclient.Start();
 
-	// 콘솔 모니터링 스레드 생성
-	ServerMonitor(&chattingServer, &Monitoringclient);
+	// 콘솔 모니터링
+	ConsoleMonitor(&chattingServer, &Monitoringclient);
 }
 
-void ServerMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient) {
+void ConsoleMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient) {
 	auto h = GetStdHandle(STD_OUTPUT_HANDLE);
 	for (;;) {
 		// 1초 주기 모니터링

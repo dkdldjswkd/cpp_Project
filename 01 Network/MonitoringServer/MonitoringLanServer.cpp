@@ -4,7 +4,7 @@
 #include "../../00 lib_jy/Logger.h"
 #include <iostream>
 
-MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* server, NetServer* localServer) : NetServer(systemFile, server), localServer(localServer){
+MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* server, NetServer* localServer) : NetServer(systemFile, server), monitoringNetServer(localServer){
 	// Set DB
 	char dbAddr[50];
 	int port;
@@ -18,6 +18,7 @@ MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* ser
 	parser.GetValue(server, "DB_PASSWORD", password);
 	parser.GetValue(server, "DB_SCHEMA", schema);
 	parser.GetValue(server, "DB_LOGTIME", &loggingTime);
+	parser.GetValue(server, "MONITOR_LOG_TIME", &monitorLogTime);
 	p_dbConnector = new DBConnector(dbAddr, port, loginID, password, schema, loggingTime);
 
 	dbEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -25,6 +26,9 @@ MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* ser
 }
 
 MonitoringLanServer::~MonitoringLanServer() {
+}
+
+void MonitoringLanServer::OnServerStop() {
 }
 
 void MonitoringLanServer::OnClientJoin(SessionId sessionId) {
@@ -90,7 +94,6 @@ void MonitoringLanServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPa
 			p_user->Login(serverNo);
 			return;
 		}
-
 		case en_PACKET_SS_MONITOR_DATA_UPDATE: {
 			BYTE dataType; // 모니터링 데이터 타입
 			int	dataValue;
@@ -120,7 +123,7 @@ void MonitoringLanServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPa
 			}
 
 			// * MonitoringNetSever로 모니터링 툴에게 모니터링 데이터 송신
-			((MonitoringNetServer*)localServer)->BroadcastMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
+			((MonitoringNetServer*)monitoringNetServer)->BroadcastMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
 			SaveMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
 			return;
 		}
@@ -131,59 +134,48 @@ void MonitoringLanServer::DBWriteFunc(){
 	for (;;) {
 		WaitForSingleObject(dbEvent, INFINITE);
 		for (;;) {
-			if (dbJobQ.GetUseCount() < 1) break;
-			DBJob* p_job;
-			dbJobQ.Dequeue(&p_job);
+			if (dbQ.GetUseCount() < 1) break;
+			MonitorData* p_logData;
+			dbQ.Dequeue(&p_logData);
 
 			// DB Write
-			p_dbConnector->Query("INSERT INTO logdb.monitorlog (serverno, type, avr, min, max) VALUES (%d, %d, %d, %d, %d)", p_job->serverNo, p_job->dataType, p_job->avr, p_job->min, p_job->max);
-			dbJobPool.Free(p_job);
+			p_dbConnector->Query("INSERT INTO logdb.monitorlog (serverno, type, avr, min, max) VALUES (%d, %d, %d, %d, %d)",
+				p_logData->serverNo, p_logData->dataType, p_logData->sum / p_logData->count, p_logData->min, p_logData->max);
+			monitorDataPool.Free(p_logData);
 		}
 	}
 }
 
 void MonitoringLanServer::SaveMonitoringData(int serverNo, int dataType, int data, int timeStamp){
-	auto monitoringMapIter = serverMonitoredDataMap.find(serverNo);
+	// Set key
+	MonitorKey key;
+	key.keyTuple.serverNo = serverNo;
+	key.keyTuple.dataType = dataType;
 
-	//////////////////////////////
-	// 모니터링 데이터 save
-	//////////////////////////////
-
-	// 데이터가 최초 저장되는 서버
-	if (monitoringMapIter == serverMonitoredDataMap.end()) {
-		auto p_dataMap = new MonitoredDataMap;
-		p_dataMap->insert({ dataType, new MonitoredData(data, timeStamp) });
-		serverMonitoredDataMap.insert({ serverNo, p_dataMap });
-		return;
+	// update data
+	MonitorData* p_data;
+	auto iter = monitorDataMap.find(key.keyValue);
+	if (iter == monitorDataMap.end()) {
+		p_data = monitorDataPool.Alloc();
+		p_data->Set(serverNo, dataType, data, timeStamp);
+		monitorDataMap.insert({ key.keyValue, p_data });
+	}
+	else {
+		p_data = iter->second;
+		p_data->updateData(data);
 	}
 
-	MonitoredDataMap* p_dataMap = monitoringMapIter->second;
-	auto MonitoredDataIter = p_dataMap->find(dataType);
-	// 최초 저장되는 데이터 항목
-	if (MonitoredDataIter == p_dataMap->end()) {
-		p_dataMap->insert({ dataType, new MonitoredData(data, timeStamp) });
-		return;
-	}
-
-	// 데이터 추가
-	MonitoredData* p_data = MonitoredDataIter->second;
-	p_data->AddData(data);
-
-	// DB Write (10분 주기)
-	if (p_data->lastWriteTime + 600 <= timeStamp) {
-		DBJobQueuing(serverNo, dataType, p_data);
+	// DB Write (monitorLogTime 주기 (10분))
+	if (p_data->lastWriteTime + monitorLogTime <= timeStamp) {
+		DBJobQueuing(p_data);
 		p_data->Init(timeStamp);
 	}
 }
 
-void MonitoringLanServer::DBJobQueuing(int serverNo, int dataType, MonitoredData* p_data) {
-	auto p_job = dbJobPool.Alloc();
-	p_job->serverNo = serverNo;
-	p_job->dataType = dataType;
-	p_job->avr = ((DWORD)p_data->sum / (DWORD)p_data->count);
-	p_job->min = p_data->min;
-	p_job->max = p_data->max;
+void MonitoringLanServer::DBJobQueuing(MonitorData* p_data) {
+	auto p_logData = monitorDataPool.Alloc();
+	*p_logData = *p_data;
 
-	dbJobQ.Enqueue(p_job);
+	dbQ.Enqueue(p_logData);
 	SetEvent(dbEvent);
 }

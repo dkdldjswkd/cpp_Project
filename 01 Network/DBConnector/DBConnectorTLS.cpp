@@ -2,48 +2,37 @@
 #include <stdio.h>
 #include <iostream>
 
-DBConnectorTLS::DBConnectorTLS(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime)
-	: tlsIndex(TlsAlloc()), port(port), loggingTime(loggingTime) {
-	#pragma warning(suppress : 4996)
-	strncpy(this->dbAddr, dbAddr, 50);
-	this->dbAddr[SCHEMA_LEN-1] = 0;
-
-	#pragma warning(suppress : 4996)
-	strncpy(this->loginID, loginID, 50);
-	this->loginID[SCHEMA_LEN - 1] = 0;
-
-	#pragma warning(suppress : 4996)
-	strncpy(this->password, password, 50);
-	this->password[SCHEMA_LEN - 1] = 0;
-
-	#pragma warning(suppress : 4996)
-	strncpy(this->schema, schema, 50);
-	this->schema[SCHEMA_LEN - 1] = 0;
+DBConnectorTLS::DBConnectorTLS(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE) : tlsIndex(TlsAlloc()) {
+	// 생성자 전달 인자 초기화
+	strncpy_s(this->dbAddr, sizeof(this->dbAddr), dbAddr, sizeof(this->dbAddr) - 1);
+	this->port = port;
+	strncpy_s(this->loginID, sizeof(this->loginID), loginID, sizeof(this->loginID) - 1);
+	strncpy_s(this->password, sizeof(this->password), password, sizeof(this->password) - 1);
+	strncpy_s(this->schema, sizeof(this->schema), schema, sizeof(this->schema) - 1);
+	this->loggingTime = loggingTime;
 }
 
 DBConnectorTLS::~DBConnectorTLS() {
-	for (int i = 0; i <= handleIndex; i++) {
-		mysql_close(handleArray[i]);
+	for (int i = 0; i <= useIndex; i++) {
+		delete connectorArr[i];
 	}
 }
 
-MYSQL_RES* DBConnectorTLS::Query(const char* queryFormat, ...) {
-	// TLS 인덱스에서 Get
-	DBConnector* p_connector = (DBConnector*)TlsGetValue(tlsIndex);
-	if (nullptr == p_connector) {
-		p_connector = new DBConnector(dbAddr, port, loginID, password, schema, loggingTime);
-		// TLS/Array Set
-		TlsSetValue(tlsIndex, (LPVOID)p_connector);
-		handleArray[InterlockedIncrement((LONG*)&handleIndex)] = p_connector->connection;
+DBConnector* DBConnectorTLS::Get() {
+	DBConnector* p = (DBConnector*)TlsGetValue(tlsIndex);
+	if (nullptr == p) {
+		p = new DBConnector(dbAddr, port, loginID, password, schema, loggingTime);
+		TlsSetValue(tlsIndex, (LPVOID)p);
+		connectorArr[InterlockedIncrement((LONG*)&useIndex)] = p;
 	}
 
-	// 해당 스레드 connector->Query() call
-	char query[MAX_QUERY];
-	va_list var_list;
-	va_start(var_list, queryFormat);
-	vsnprintf((char*)query, MAX_QUERY - 1, queryFormat, var_list);
-	query[MAX_QUERY - 1] = 0;
-	va_end(var_list);
+	return p;
+}
 
-	return p_connector->DoQuery(query);
+MYSQL_RES* DBConnectorTLS::Query(const char* queryFormat, ...) {
+    va_list args;
+    va_start(args, queryFormat);
+    MYSQL_RES* result = Get()->Query(queryFormat, args);
+    va_end(args);
+    return result;
 }

@@ -25,6 +25,7 @@ private:
 	void OnClientJoin(SessionId sessionId);
 	void OnRecv(SessionId sessionId, PacketBuffer* contents_packet);
 	void OnClientLeave(SessionId sessionId);
+	void OnServerStop();
 
 public:
 	void BroadcastMonitoringData(BYTE serverNo, BYTE dataType, int dataValue, int timeStamp);

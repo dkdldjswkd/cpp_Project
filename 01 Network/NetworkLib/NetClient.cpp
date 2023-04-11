@@ -351,18 +351,18 @@ void NetClient::RecvCompletionLAN(){
 		//------------------------------
 		// OnRecv (네트워크 헤더 제거)
 		//------------------------------
-		PacketBuffer* contents_packet = PacketBuffer::Alloc();
+		PacketBuffer* csContentsPacket = PacketBuffer::Alloc();
 
 		// 컨텐츠 패킷 생성
 		clientSession.recvBuf.MoveFront(LAN_HEADER_SIZE);
-		clientSession.recvBuf.Dequeue(contents_packet->writePos, lanHeader.len);
-		contents_packet->MoveWp(lanHeader.len);
+		clientSession.recvBuf.Dequeue(csContentsPacket->writePos, lanHeader.len);
+		csContentsPacket->MoveWp(lanHeader.len);
 
 		// 사용자 패킷 처리
-		OnRecv(contents_packet);
+		OnRecv(csContentsPacket);
 		InterlockedIncrement(&recvMsgCount);
 
-		PacketBuffer::Free(contents_packet);
+		PacketBuffer::Free(csContentsPacket);
 	}
 
 	//------------------------------

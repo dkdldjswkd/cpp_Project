@@ -14,7 +14,16 @@ public:
 	~MonitoringLanServer();
 
 private:
-	static struct MonitoredData {
+	static union MonitorKey {
+		struct {
+			WORD serverNo;
+			WORD dataType;
+		} keyTuple;
+		DWORD keyValue;
+	};
+	static struct MonitorData {
+		WORD serverNo;
+		WORD dataType;
 		DWORD count = 0;
 		DWORD64 sum = 0;
 		DWORD min = MAXDWORD;
@@ -22,10 +31,7 @@ private:
 		DWORD lastWriteTime = 0;
 
 	public:
-		MonitoredData() {}
-		MonitoredData(DWORD64 data, DWORD lastWriteTime) { AddData(data); this->lastWriteTime = lastWriteTime; }
-	public:
-		void AddData(DWORD64 data) {
+		void updateData(DWORD64 data) {
 			++count;
 			sum += data;
 			if (data < min) min = data;
@@ -38,18 +44,12 @@ private:
 			max = 0;
 			this->lastWriteTime = lastWriteTime;
 		}
-	};
-	// <dataType, MonitoredData>
-	typedef std::unordered_map<int, MonitoredData*> MonitoredDataMap;
-	// <serverNo, MonitoredDataMap>
-	typedef std::unordered_map <int, MonitoredDataMap*> ServerMonitoredDataMap;
-
-	static struct DBJob {
-		int serverNo;
-		int dataType;
-		DWORD avr;
-		DWORD min;
-		DWORD max;
+		void Set(WORD serverNo, WORD dataType, DWORD64 data, DWORD lastWriteTime) {
+			this->serverNo = serverNo;
+			this->dataType = dataType;
+			Init(lastWriteTime);
+			updateData(data);
+		}
 	};
 
 private:
@@ -58,18 +58,21 @@ private:
 	std::unordered_map<DWORD64, ServerSession*> serverSessionMap;
 	RecursiveLock serverSessionMapLock;
 
-	// Monitoring
-	ServerMonitoredDataMap serverMonitoredDataMap;
-
 	// DB
 	DBConnector* p_dbConnector;
 	std::thread dbThread;
 	HANDLE dbEvent;
-	LFQueue<DBJob*> dbJobQ;
-	LFObjectPool<DBJob> dbJobPool;
+	LFQueue<MonitorData*> dbQ;
+
+	// Monitor Data
+	LFObjectPool<MonitorData> monitorDataPool;
+	std::unordered_map<DWORD, MonitorData*> monitorDataMap;
 
 	// Control Server (this´Â Contol ServerÀÇ agent)
-	NetServer* localServer;
+	NetServer* monitoringNetServer;
+
+	// opt
+	int monitorLogTime = 600;
 
 private:
 	// Lib callback (NetServer Override)
@@ -77,10 +80,11 @@ private:
 	void OnClientJoin(SessionId sessionId);
 	void OnClientLeave(SessionId sessionId);
 	void OnRecv(SessionId sessionId, PacketBuffer* contents_packet);
+	void OnServerStop();
 
 private:
 	// DB
 	void SaveMonitoringData(int serverNo, int dataTyp, int data, int timeStamp);
 	void DBWriteFunc();
-	void DBJobQueuing(int serverNo, int dataType, MonitoredData* p_data);
+	void DBJobQueuing(MonitorData* p_data);
 };

@@ -90,7 +90,7 @@ private:
 protected:
 	// 라이브러리 사용자 측 재정의 하여 사용
 	virtual void OnConnect() = 0;
-	virtual void OnRecv(PacketBuffer* contents_packet) = 0;
+	virtual void OnRecv(PacketBuffer* csContentsPacket) = 0;
 	virtual void OnDisconnect() = 0;
 	virtual void OnClientStop() = 0;
 	// virtual void OnError(int errorcode /* (wchar*) */) = 0;

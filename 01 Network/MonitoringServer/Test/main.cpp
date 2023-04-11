@@ -1,16 +1,32 @@
-#include <stdio.h>
+#include <Windows.h>
+#include <iostream>
 #include <time.h>
+#include <unordered_map>
 
-int main()
-{
-    time_t currentTime;
+using namespace std;
 
-    while (1) {
-        time(&currentTime);
-        printf("Current time: %llu", currentTime);
-    }
+union MonitorKey {
+	struct {
+		short serverNo;
+		short dataType;
+	} tuple;
+	DWORD key;
+};
 
-    return 0;
+int main() {
+	unordered_map<DWORD, int*> monitorDataMap;
+
+	MonitorKey key;
+	key.tuple.serverNo = 1;
+	key.tuple.dataType = 2;
+
+	int* p = new int;
+	*p = 3;
+
+	monitorDataMap.insert({ key.key, p });
+	cout << *monitorDataMap.find(key.key)->second << endl;
+	(*monitorDataMap.find(key.key)->second)--;
+	cout << *monitorDataMap.find(key.key)->second << endl;
 }
 
 //#include <Windows.h>

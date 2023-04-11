@@ -6,6 +6,8 @@ DBConnectorTLS -> TLS 템플릿 상속받게 변경
 
 모니터링 서버도 포폴에 넣자
 
+ThreadCpuMonitorTLS, TLSTemplate 삭제
+
 ----
 
 DB Connector 에서 10분에 한번씩 쿼리 시간 avr, min, max 로깅 하자

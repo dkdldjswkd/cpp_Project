@@ -11,20 +11,21 @@
 #include "../NetworkLib/NetServer.h"
 #include "../DBConnector/DBConnectorTLS.h"
 
-struct Token {
-	char buf[64];
-};
-
 class LoginServer : public NetServer {
 public:
 	LoginServer(const char* systemFile, const char* server);
 	~LoginServer();
 
 private:
+	struct SessionKey {
+		char buf[64];
+	};
+
+private:
 	// User
-	RecursiveLock UserMapLock;
-	std::unordered_map<DWORD64, User*> UserMap;
-	LFObjectPool<User> UserPool;
+	RecursiveLock userMapLock;
+	std::unordered_map<DWORD64, User*> userMap;
+	LFObjectPool<User> userPool;
 
 	// Other Server IP, Port
 	char chatServerIP[20];
@@ -43,17 +44,18 @@ private:
 	void OnClientJoin(SessionId sessionId);
 	void OnRecv(SessionId sessionId, PacketBuffer* contentsPacket);
 	void OnClientLeave(SessionId sessionId);
+	void OnServerStop();
 
 public:
 	// 모니터링
-	DWORD GetPlayerCount();
-	DWORD GetPlayerPoolCount();
+	DWORD GetUserCount();
+	DWORD GetUserPoolCount();
 };
 
-inline DWORD LoginServer::GetPlayerCount() {
-	return UserMap.size();
+inline DWORD LoginServer::GetUserCount() {
+	return userMap.size();
 }
 
-inline DWORD LoginServer::GetPlayerPoolCount() {
-	return UserPool.GetUseCount();
+inline DWORD LoginServer::GetUserPoolCount() {
+	return userPool.GetUseCount();
 }
