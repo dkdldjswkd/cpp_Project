@@ -9,8 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Test\Test.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkLib", "..\NetworkLib\NetworkLib.vcxproj", "{FE4739E7-7447-476A-AD9D-6548F4549676}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ChattingServer_Multi", "..\ChattingServer_Multi\ChattingServer_Multi.vcxproj", "{CCB4E189-B3EB-4E7A-A219-081DBF63E745}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoginServer", "..\LoginServer\LoginServer.vcxproj", "{4A84366E-5349-4737-89FE-8274D36017AB}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DBConnector", "..\DBConnector\DBConnector.vcxproj", "{89FB9B93-F785-4E54-9874-5ED414214649}"
@@ -49,14 +47,6 @@ Global
 		{FE4739E7-7447-476A-AD9D-6548F4549676}.Release|x64.Build.0 = Release|x64
 		{FE4739E7-7447-476A-AD9D-6548F4549676}.Release|x86.ActiveCfg = Release|Win32
 		{FE4739E7-7447-476A-AD9D-6548F4549676}.Release|x86.Build.0 = Release|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x64.ActiveCfg = Debug|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x64.Build.0 = Debug|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x86.ActiveCfg = Debug|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Debug|x86.Build.0 = Debug|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x64.ActiveCfg = Release|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x64.Build.0 = Release|x64
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x86.ActiveCfg = Release|Win32
-		{CCB4E189-B3EB-4E7A-A219-081DBF63E745}.Release|x86.Build.0 = Release|Win32
 		{4A84366E-5349-4737-89FE-8274D36017AB}.Debug|x64.ActiveCfg = Debug|x64
 		{4A84366E-5349-4737-89FE-8274D36017AB}.Debug|x64.Build.0 = Debug|x64
 		{4A84366E-5349-4737-89FE-8274D36017AB}.Debug|x86.ActiveCfg = Debug|Win32

@@ -200,11 +200,11 @@ void ChatServerST::UpdateFunc() {
 					}
 
 					INT64 accountNo;
-					Sector cur_sector;
+					Sector curSector;
 					try {
 						*csContentsPacket >> accountNo;
-						*csContentsPacket >> cur_sector.x;
-						*csContentsPacket >> cur_sector.y;
+						*csContentsPacket >> curSector.x;
+						*csContentsPacket >> curSector.y;
 					}
 					catch (const PacketException& e) {
 						//LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> sector move packet");
@@ -214,7 +214,7 @@ void ChatServerST::UpdateFunc() {
 					}
 
 					// 유효하지 않은 섹터로 이동 시도
-					if (cur_sector.IsInvalid()) {
+					if (curSector.IsInvalid()) {
 						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // sector move Packet : Invalid Sector!!");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
@@ -225,14 +225,14 @@ void ChatServerST::UpdateFunc() {
 					if (!p_player->sectorPos.IsInvalid()) {
 						sectorSet[p_player->sectorPos.y][p_player->sectorPos.x].erase(p_player);
 					}
-					p_player->SetSector(cur_sector);
-					sectorSet[cur_sector.y][cur_sector.x].insert(p_player);
+					p_player->SetSector(curSector);
+					sectorSet[curSector.y][curSector.x].insert(p_player);
 
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_SECTOR_MOVE;
 					*p_packet << (INT64)accountNo;
-					*p_packet << (WORD)cur_sector.x;
-					*p_packet << (WORD)cur_sector.y;
+					*p_packet << (WORD)curSector.x;
+					*p_packet << (WORD)curSector.y;
 					SendPacket(sessionId, p_packet);
 					PacketBuffer::Free(p_packet);
 					PacketBuffer::Free(csContentsPacket);

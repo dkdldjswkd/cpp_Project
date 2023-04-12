@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="ChatServerMT.cpp">
-      <Filter>Server</Filter>
+      <Filter>ChatServerMT</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>Main</Filter>
@@ -25,10 +25,10 @@
       <Filter>Contents</Filter>
     </ClInclude>
     <ClInclude Include="CommonProtocol.h">
-      <Filter>Server</Filter>
+      <Filter>ChatServerMT</Filter>
     </ClInclude>
     <ClInclude Include="ChatServerMT.h">
-      <Filter>Server</Filter>
+      <Filter>ChatServerMT</Filter>
     </ClInclude>
     <ClInclude Include="User.h">
       <Filter>Contents</Filter>
@@ -41,14 +41,14 @@
     <Filter Include="Contents">
       <UniqueIdentifier>{cc1c8350-1971-4d58-8752-b4a8ba5980d5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Server">
-      <UniqueIdentifier>{34ae5d88-c12f-4abc-95a2-1e800f217de9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Main">
       <UniqueIdentifier>{6b0da137-3fec-431b-9ac2-a6efebd67c72}</UniqueIdentifier>
     </Filter>
     <Filter Include="SystemFile">
       <UniqueIdentifier>{81e46ce9-155d-4044-8188-dbeca50ebce7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ChatServerMT">
+      <UniqueIdentifier>{34ae5d88-c12f-4abc-95a2-1e800f217de9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

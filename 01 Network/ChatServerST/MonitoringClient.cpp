@@ -12,19 +12,6 @@ MonitoringClient::MonitoringClient(const char* systemFile, const char* client, C
 MonitoringClient::~MonitoringClient() {
 }
 
-void MonitoringClient::OnConnect() {
-	isConnect = true;
-
-	PacketBuffer* p_packet = PacketBuffer::Alloc();
-	*p_packet << (WORD)en_PACKET_SS_MONITOR_LOGIN;
-	*p_packet << (int)serverNo;
-	SendPacket(p_packet);
-	PacketBuffer::Free(p_packet);
-}
-
-void MonitoringClient::OnRecv(PacketBuffer* contents_packet) {
-}
-
 void MonitoringClient::OnDisconnect() {
 	isConnect = false;
 }
@@ -34,6 +21,19 @@ void MonitoringClient::OnClientStop(){
 	if (updateThread.joinable()) {
 		updateThread.join();
 	}
+}
+
+void MonitoringClient::OnRecv(PacketBuffer* contents_packet) {
+}
+
+void MonitoringClient::OnConnect() {
+	isConnect = true;
+
+	PacketBuffer* p_packet = PacketBuffer::Alloc();
+	*p_packet << (WORD)en_PACKET_SS_MONITOR_LOGIN;
+	*p_packet << (int)serverNo;
+	SendPacket(p_packet);
+	PacketBuffer::Free(p_packet);
 }
 
 void MonitoringClient::UpdateData() {

@@ -4,9 +4,11 @@ DBConnectorTLS -> TLS 템플릿 상속받게 변경
 
 멀티스레드 채팅서버도 MonitorClient 사용하자
 
-모니터링 서버도 포폴에 넣자
-
 ThreadCpuMonitorTLS, TLSTemplate 삭제
+
+DBConnector 포폴 추가?
+
+Net/Lan Client 포폴 추가?
 
 ----
 

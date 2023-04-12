@@ -6,8 +6,8 @@
 
 static struct Sector {
 public:
-	int x;
-	int y;
+	short x;
+	short y;
 
 public:
 	bool operator==(const Sector& other);

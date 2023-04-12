@@ -6,7 +6,7 @@
 #include "../../00 lib_jy/Profiler.h"
 using namespace std;
 
-void ServerMonitor(ChatServerMT* p_chatServer);
+void ConsoleMonitor(ChatServerMT* p_chatServer);
 
 CrashDump dump;
 
@@ -16,10 +16,10 @@ int main() {
 	chatServer.Start();
 
 	// 콘솔 모니터링 스레드 생성
-	ServerMonitor(&chatServer);
+	ConsoleMonitor(&chatServer);
 }
 
-void ServerMonitor(ChatServerMT* p_chatServer) {
+void ConsoleMonitor(ChatServerMT* p_chatServer) {
 	auto h = GetStdHandle(STD_OUTPUT_HANDLE);
 	for (;;) {
 		// 1초 주기 모니터링
@@ -69,7 +69,7 @@ void ServerMonitor(ChatServerMT* p_chatServer) {
 				p_chatServer->GetSendTPS(),
 				// Contents
 				p_chatServer->GetSessionCount(),
-				p_chatServer->GetPlayerCount(),
+				p_chatServer->GetUserCount(),
 				PacketBuffer::GetUseCount()
 				);
 		}

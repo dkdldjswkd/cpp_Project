@@ -50,6 +50,16 @@ private:
 			Init(lastWriteTime);
 			updateData(data);
 		}
+		MonitorData& operator=(const MonitorData& other) {
+			this->serverNo = other.serverNo;
+			this->dataType = other.dataType;
+			this->count = other.count;
+			this->sum = other.sum;
+			this->min = other.min;
+			this->max = other.max;
+			this->lastWriteTime = other.lastWriteTime;
+			return *this;
+		}
 	};
 
 private:
@@ -72,7 +82,7 @@ private:
 	NetServer* monitoringNetServer;
 
 	// opt
-	int monitorLogTime = 600;
+	int monitorLogTime;
 
 private:
 	// Lib callback (NetServer Override)

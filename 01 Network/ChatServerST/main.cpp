@@ -13,15 +13,15 @@ CrashDump dump;
 
 int main() {
 	// 채팅 서버
-	ChatServerST chattingServer("../ServerConfig.ini", "ChattingServer_Single");
-	chattingServer.Start();
+	ChatServerST chatServer("../ServerConfig.ini", "ChattingServer_Single");
+	chatServer.Start();
 
 	// 모니터링 클라
-	MonitoringClient Monitoringclient("../ServerConfig.ini", "MonitoringClient", &chattingServer);
+	MonitoringClient Monitoringclient("../ServerConfig.ini", "MonitoringClient", &chatServer);
 	Monitoringclient.Start();
 
 	// 콘솔 모니터링
-	ConsoleMonitor(&chattingServer, &Monitoringclient);
+	ConsoleMonitor(&chatServer, &Monitoringclient);
 }
 
 void ConsoleMonitor(ChatServerST* p_chatServer, MonitoringClient* p_MonitorClient) {

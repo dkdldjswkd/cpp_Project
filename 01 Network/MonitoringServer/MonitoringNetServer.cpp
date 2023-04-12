@@ -9,6 +9,9 @@ MonitoringNetServer::MonitoringNetServer(const char* systemFile, const char* ser
 MonitoringNetServer::~MonitoringNetServer() {
 }
 
+void MonitoringNetServer::OnServerStop(){
+}
+
 void MonitoringNetServer::OnClientJoin(SessionId sessionId) {
 	// User Alloc
 	MonitorTool* p_user = userPool.Alloc();
@@ -33,9 +36,6 @@ void MonitoringNetServer::OnClientLeave(SessionId sessionId) {
 	userPool.Free(p_user);
 }
 	
-void MonitoringNetServer::OnServerStop(){
-}
-
 void MonitoringNetServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket){
 	WORD type;
 	try {
@@ -46,7 +46,6 @@ void MonitoringNetServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPa
 		Disconnect(sessionId);
 		return;
 	}
-
 	switch (type) {
 		case en_PACKET_CS_MONITOR_TOOL_REQ_LOGIN: {
 			char loginSessionKey[32];
@@ -89,11 +88,15 @@ void MonitoringNetServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPa
 			PacketBuffer::Free(p_packet);
 			return;
 		}
+		default: {
+			LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // INVALID Packet type : %d", type);
+			Disconnect(sessionId);
+			break;
+		}
 	}
 }
 
 void MonitoringNetServer::BroadcastMonitoringData(BYTE serverNo, BYTE dataType, int dataValue, int timeStamp){
-	// en_PACKET_CS_MONITOR_TOOL_DATA_UPDATE
 	PacketBuffer* p_packet = PacketBuffer::Alloc();
 	*p_packet << (WORD)en_PACKET_CS_MONITOR_TOOL_DATA_UPDATE;
 	*p_packet << (BYTE)serverNo;
@@ -101,7 +104,7 @@ void MonitoringNetServer::BroadcastMonitoringData(BYTE serverNo, BYTE dataType, 
 	*p_packet << (int)dataValue;
 	*p_packet << (int)timeStamp;
 
-	// 붙어있는 모니터링 툴에게 브로드 캐스트
+	// 로그인 세션들에게 모니터링 정보 전달
 	userMapLock.SharedLock();
 	auto userMapEnd = userMap.end();
 	for (auto iter = userMap.begin(); iter != userMapEnd; ++iter) {

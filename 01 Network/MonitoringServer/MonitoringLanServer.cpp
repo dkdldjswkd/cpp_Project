@@ -123,9 +123,15 @@ void MonitoringLanServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPa
 			}
 
 			// * MonitoringNetSever로 모니터링 툴에게 모니터링 데이터 송신
-			((MonitoringNetServer*)monitoringNetServer)->BroadcastMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
+			((MonitoringNetServer*)monitoringNetServer)->BroadcastMonitoringData(
+				p_user->serverNo, dataType, dataValue, timeStamp);
 			SaveMonitoringData(p_user->serverNo, dataType, dataValue, timeStamp);
 			return;
+		}
+		default: {
+			LOG("MonitoringServer", LOG_LEVEL_WARN, "Disconnect // INVALID Packet type : %d", type);
+			Disconnect(sessionId);
+			break;
 		}
 	}
 }
@@ -139,7 +145,8 @@ void MonitoringLanServer::DBWriteFunc(){
 			dbQ.Dequeue(&p_logData);
 
 			// DB Write
-			p_dbConnector->Query("INSERT INTO logdb.monitorlog (serverno, type, avr, min, max) VALUES (%d, %d, %d, %d, %d)",
+			p_dbConnector->Query(
+				"INSERT INTO logdb.monitorlog (serverno, type, avr, min, max) VALUES (%d, %d, %d, %d, %d)",
 				p_logData->serverNo, p_logData->dataType, p_logData->sum / p_logData->count, p_logData->min, p_logData->max);
 			monitorDataPool.Free(p_logData);
 		}
@@ -165,7 +172,7 @@ void MonitoringLanServer::SaveMonitoringData(int serverNo, int dataType, int dat
 		p_data->updateData(data);
 	}
 
-	// DB Write (monitorLogTime 주기 (10분))
+	// DB Write (10분 주기)
 	if (p_data->lastWriteTime + monitorLogTime <= timeStamp) {
 		DBJobQueuing(p_data);
 		p_data->Init(timeStamp);
@@ -175,7 +182,7 @@ void MonitoringLanServer::SaveMonitoringData(int serverNo, int dataType, int dat
 void MonitoringLanServer::DBJobQueuing(MonitorData* p_data) {
 	auto p_logData = monitorDataPool.Alloc();
 	*p_logData = *p_data;
-
 	dbQ.Enqueue(p_logData);
 	SetEvent(dbEvent);
 }
+
