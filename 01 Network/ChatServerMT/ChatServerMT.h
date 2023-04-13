@@ -33,20 +33,30 @@ private:
 	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
 	void SendSector(PacketBuffer* send_packet, Sector sector);
 
+	// 모니터링
+	int updateTPS = 0;
+	alignas(64) int updateCount = 0;
+
 public:
 	// 모니터링
 	void UpdateTPS();
+	DWORD GetUpdateTPS();
 	DWORD GetUserCount();
 	DWORD GetUserPoolCount();
 };
 
-inline void ChatServerMT::UpdateTPS(){
+inline void ChatServerMT::UpdateTPS() {
+	updateTPS = InterlockedExchange((LONG*)&updateCount, 0);
+}
+
+inline DWORD ChatServerMT::GetUpdateTPS() {
+	return updateTPS;
 }
 
 inline DWORD ChatServerMT::GetUserCount() {
 	return playerMap.size();
 }
 
-inline DWORD ChatServerMT::GetUserPoolCount(){
+inline DWORD ChatServerMT::GetUserPoolCount() {
 	return playerPool.GetUseCount();
 }

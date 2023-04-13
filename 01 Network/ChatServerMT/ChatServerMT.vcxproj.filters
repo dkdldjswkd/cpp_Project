@@ -16,6 +16,9 @@
     <ClCompile Include="Sector.cpp">
       <Filter>Contents</Filter>
     </ClCompile>
+    <ClCompile Include="ChatServerMTMonitorClient.cpp">
+      <Filter>MonitoringClient</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Player.h">
@@ -24,14 +27,20 @@
     <ClInclude Include="Sector.h">
       <Filter>Contents</Filter>
     </ClInclude>
-    <ClInclude Include="CommonProtocol.h">
-      <Filter>ChatServerMT</Filter>
-    </ClInclude>
     <ClInclude Include="ChatServerMT.h">
       <Filter>ChatServerMT</Filter>
     </ClInclude>
     <ClInclude Include="User.h">
       <Filter>Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="ChatServerMTMonitorClient.h">
+      <Filter>MonitoringClient</Filter>
+    </ClInclude>
+    <ClInclude Include="CommonProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="MonitorProtocol.h">
+      <Filter>Protocol</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -49,6 +58,12 @@
     </Filter>
     <Filter Include="ChatServerMT">
       <UniqueIdentifier>{34ae5d88-c12f-4abc-95a2-1e800f217de9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="MonitoringClient">
+      <UniqueIdentifier>{9f74a99a-dc86-492b-af1e-17c90a4913d3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{6e68cd59-7c80-4a19-a941-d66c6f032b5c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

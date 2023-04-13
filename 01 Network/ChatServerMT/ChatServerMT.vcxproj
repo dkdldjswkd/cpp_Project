@@ -152,6 +152,7 @@
   <ItemGroup>
     <ClCompile Include="ChatServerMT.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ChatServerMTMonitorClient.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Sector.cpp" />
     <ClCompile Include="User.cpp" />
@@ -159,6 +160,8 @@
   <ItemGroup>
     <ClInclude Include="ChatServerMT.h" />
     <ClInclude Include="CommonProtocol.h" />
+    <ClInclude Include="ChatServerMTMonitorClient.h" />
+    <ClInclude Include="MonitorProtocol.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Sector.h" />
     <ClInclude Include="User.h" />

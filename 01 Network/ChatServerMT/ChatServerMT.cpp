@@ -206,9 +206,10 @@ void ChatServerMT::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 		default: {
 			LOG("ChatServerMT", LOG_LEVEL_WARN, "INVALID Packet type : %d", type);
 			Disconnect(sessionId);
-			break;
+			return;
 		}
 	}
+	InterlockedIncrement((LONG*)&updateCount);
 }
 
 void ChatServerMT::SendSectorAround(Player* p_player, PacketBuffer* send_packet) {

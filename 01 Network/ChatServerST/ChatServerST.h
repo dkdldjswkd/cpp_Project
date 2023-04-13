@@ -104,16 +104,20 @@ private:
 public:
 	// 모니터링
 	void UpdateTPS();
+	DWORD GetUpdateTPS();
 	DWORD GetUserCount();
 	DWORD GetUserPoolCount();
 	DWORD GetJobPoolCount();
 	DWORD GetJobQueueCount();
-	DWORD GetUpdateTPS();
 };
 
 inline void ChatServerST::UpdateTPS() {
 	updateTPS = updateCount;
 	updateCount = 0;
+}
+
+inline DWORD ChatServerST::GetUpdateTPS(){
+	return updateTPS;
 }
 
 inline DWORD ChatServerST::GetUserCount() {
@@ -130,8 +134,4 @@ inline DWORD ChatServerST::GetJobPoolCount(){
 
 inline DWORD ChatServerST::GetJobQueueCount(){
 	return jobQ.GetUseCount();
-}
-
-inline DWORD ChatServerST::GetUpdateTPS(){
-	return updateTPS;
 }

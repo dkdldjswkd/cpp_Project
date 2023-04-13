@@ -1,12 +1,13 @@
 #include <iostream>
 #include <conio.h>
 #include "ChatServerMT.h"
+#include "ChatServerMTMonitorClient.h"
 #include "../../00 lib_jy/CrashDump.h"
 #include "../../00 lib_jy/StringUtils.h"
 #include "../../00 lib_jy/Profiler.h"
 using namespace std;
 
-void ConsoleMonitor(ChatServerMT* p_chatServer);
+void ConsoleMonitor(ChatServerMT* p_chatServer, ChatServerMTMonitorClient* p_MonitorClient);
 
 CrashDump dump;
 
@@ -15,11 +16,15 @@ int main() {
 	ChatServerMT chatServer("../ServerConfig.ini", "ChattingServer_Multi");
 	chatServer.Start();
 
+	// 모니터링 클라
+	ChatServerMTMonitorClient monitorClient("../ServerConfig.ini", "MonitoringClientMT", &chatServer);
+	monitorClient.Start();
+
 	// 콘솔 모니터링 스레드 생성
-	ConsoleMonitor(&chatServer);
+	ConsoleMonitor(&chatServer, &monitorClient);
 }
 
-void ConsoleMonitor(ChatServerMT* p_chatServer) {
+void ConsoleMonitor(ChatServerMT* p_chatServer, ChatServerMTMonitorClient* p_MonitorClient) {
 	auto h = GetStdHandle(STD_OUTPUT_HANDLE);
 	for (;;) {
 		// 1초 주기 모니터링
@@ -38,6 +43,7 @@ void ConsoleMonitor(ChatServerMT* p_chatServer) {
 			}
 			else if (c == 'q' || c == 'Q') {
 				p_chatServer->Stop();
+				p_MonitorClient->Stop();
 			}
 			else if (c == 'e' || c == 'E') {
 				return;
@@ -46,6 +52,7 @@ void ConsoleMonitor(ChatServerMT* p_chatServer) {
 
 		// 모니터링 데이터 업데이트
 		p_chatServer->NetServer::UpdateTPS();
+		p_MonitorClient->NetClient::UpdateTPS();
 		p_chatServer->UpdateTPS();
 
 		// 콘솔 출력
@@ -60,7 +67,22 @@ void ConsoleMonitor(ChatServerMT* p_chatServer) {
 				"Session Count        : %d                  \n"
 				"User Count           : %d                  \n"
 				"Packet Count         : %d                  \n"
-				// Update TPS		  : %d
+				"Update TPS           : %d                  \n"
+				"                                           \n"
+				"[ MonitorClient ] -------------------------\n"
+				"sendMsgTPS           : %u                  \n"
+				"recvMsgTPS           : %u                  \n"
+				"                                           \n"
+				"[ Process ] -------------------------------\n"
+				"CPU Usage            : %d                  \n"
+				"Using Memory(MB)     : %d                  \n"
+				"                                           \n"
+				"[ Machine ] -------------------------------\n"
+				"CPU Usage            : %d                  \n"
+				"Using Non Memory(MB) : %d                  \n"
+				"avail Memory(MB)     : %d                  \n"
+				"recv Kbytes          : %d                  \n"
+				"send Kbytes          : %d                  \n"
 				,
 				// ChatServer
 				p_chatServer->GetAcceptTotal(),
@@ -70,7 +92,23 @@ void ConsoleMonitor(ChatServerMT* p_chatServer) {
 				// Contents
 				p_chatServer->GetSessionCount(),
 				p_chatServer->GetUserCount(),
-				PacketBuffer::GetUseCount()
+				PacketBuffer::GetUseCount(),
+				p_chatServer->GetUpdateTPS(),
+
+				// MonitorClient
+				p_MonitorClient->GetRecvTPS(),
+				p_MonitorClient->GetSendTPS(),
+
+				// Process
+				p_MonitorClient->GetProcessCpuUsage(),
+				p_MonitorClient->GetProcessUsingMemMb(),
+
+				// Machine
+				p_MonitorClient->GetMachineCpuUsage(),
+				p_MonitorClient->GetMachineUsingNonMemMb(),
+				p_MonitorClient->GetMachineAvailMemMb(),
+				p_MonitorClient->GetMachineRecvKbytes(),
+				p_MonitorClient->GetMachineSendKbytes()
 				);
 		}
 	}
