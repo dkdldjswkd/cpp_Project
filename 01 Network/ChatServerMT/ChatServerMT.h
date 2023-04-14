@@ -25,17 +25,18 @@ private:
 	// Lib callback
 	bool OnConnectionRequest(in_addr IP, WORD Port);
 	void OnClientJoin(SessionId sessionId);
-	void OnRecv(SessionId sessionId, PacketBuffer* contents_packet);
+	void OnRecv(SessionId sessionId, PacketBuffer* contentsPacket);
 	void OnClientLeave(SessionId sessionId);
 	void OnServerStop();
 
 	// Send
-	void SendSectorAround(Player* p_player, PacketBuffer* send_packet);
+	void SendSectorAround(Player* p_player, PacketBuffer* sendPacket);
 	void SendSector(PacketBuffer* send_packet, Sector sector);
 
 	// 모니터링
 	int updateTPS = 0;
 	alignas(64) int updateCount = 0;
+	alignas(64) int playerCount = 0;
 
 public:
 	// 모니터링
@@ -54,7 +55,7 @@ inline DWORD ChatServerMT::GetUpdateTPS() {
 }
 
 inline DWORD ChatServerMT::GetUserCount() {
-	return playerMap.size();
+	return playerCount;
 }
 
 inline DWORD ChatServerMT::GetUserPoolCount() {

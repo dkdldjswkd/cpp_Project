@@ -9,8 +9,11 @@
 
 struct DBException : public std::exception {
 public:
-	DBException(int errorNo, const char* errorStr) : errorNo(errorNo), errorStr(errorStr) {}
-	DBException(char* errorQuery, int errorNo, const char* errorStr) : errorNo(errorNo), errorStr(errorStr) {
+	DBException(int errorNo, const char* errorStr) : 
+		errorNo(errorNo), errorStr(errorStr) {
+	}
+	DBException(char* errorQuery, int errorNo, const char* errorStr) : 
+		errorNo(errorNo), errorStr(errorStr) {
 		strncpy_s(this->errorQuery, MAX_QUERY, errorQuery, MAX_QUERY - 1);
 	}
 
@@ -22,7 +25,8 @@ public:
 
 class DBConnector {
 public:
-	DBConnector(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
+	DBConnector(const char* dbAddr, int port, const char* loginID, 
+		const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 	~DBConnector();
 
 private:
@@ -34,7 +38,8 @@ private:
 	int loggingTime; // 시간 초과 시 로깅
 
 public:
-	void ConnectDB(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
+	void ConnectDB(const char* dbAddr, int port, const char* loginID, 
+		const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 	MYSQL_RES* Query(const char* queryFormat, ...);
 	MYSQL_RES* Query(const char* queryFormat, va_list args);
 };

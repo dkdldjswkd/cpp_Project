@@ -2,10 +2,5 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="소스.cpp" />
-    <ClCompile Include="Parser.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="FileUtils.h" />
-    <ClInclude Include="Parser.h" />
   </ItemGroup>
 </Project>

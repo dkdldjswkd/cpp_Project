@@ -3,6 +3,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+Parser::Parser(){
+}
+
+Parser::~Parser(){
+    if (fileBegin != nullptr) {
+        free(fileBegin);
+    }
+}
+
 // 공백과 주석을 제외한 문자가 나올때까지 fileCur을 이동시킴
 bool Parser::FindChar() {
     for (; fileCur < fileEnd; fileCur++) {
@@ -105,14 +114,15 @@ bool Parser::GetValueStr(char* value) {
     return true;
 }
 
-bool Parser::LoadFile(const char* file) {
-    if (fileBegin != nullptr)
+int Parser::LoadFile(const char* file) {
+    if (fileBegin != nullptr) {
         free(fileBegin);
+    }
 
     FILE* fp;
     fopen_s(&fp, file, "rt");
     if (!fp) {
-        return false;
+        return 0;
     }
     fseek(fp, 0, SEEK_END);
     long fileSize = ftell(fp);
@@ -125,7 +135,7 @@ bool Parser::LoadFile(const char* file) {
     fread(fileBegin, 1, fileSize, fp);
     fileBegin[fileSize] = '\0';
     fclose(fp);
-    return true;
+    return fileSize;
 }
 
 bool Parser::GetValue(const char* section, const char* key, int* value) {
@@ -153,7 +163,7 @@ bool Parser::GetValue(const char* section, const char* key, int* value) {
 
     // value 찾기
     NextChar();
-    GetValueInt(value);
+    return GetValueInt(value);
 }
 
 bool Parser::GetValue(const char* section, const char* key, char* value) {
@@ -181,5 +191,5 @@ bool Parser::GetValue(const char* section, const char* key, char* value) {
 
     // value 찾기
     NextChar();
-    GetValueStr(value);
+    return GetValueStr(value);
 }

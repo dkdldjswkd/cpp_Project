@@ -2,8 +2,8 @@
 
 struct Parser {
 public:
-	Parser() {};
-	~Parser() {};
+	Parser();
+	~Parser();
 
 private:
 	char* fileBegin = nullptr;
@@ -19,7 +19,7 @@ private:
 	bool GetValueStr(char* value);
 
 public:
-	bool LoadFile(const char* file);
+	int LoadFile(const char* file); // return file len
 	bool GetValue(const char* section, const char* key, int* value);
 	bool GetValue(const char* section, const char* key, char* value);
 };

@@ -138,8 +138,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <Optimization>Disabled</Optimization>
-      <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -158,7 +158,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CpuMonitor_Test.cpp" />
+    <ClCompile Include="LoggerTest.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="ObjectPoolTest.cpp" />
+    <ClCompile Include="ParserTest.cpp" />
     <ClCompile Include="PerformanceCounter_Test.cpp" />
     <ClCompile Include="PDH_Get_Test.cpp" />
   </ItemGroup>

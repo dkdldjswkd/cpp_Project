@@ -32,55 +32,53 @@ public:
 private:
 	static struct ProfileData {
 	public:
-		bool is_use = false;
+		bool useFlag = false;
+		bool resetFlag = false;
 		char name[PROFILE_NAME_LEN] = {0, }; // 프로파일 샘플 이름.
-		bool reset_flag = false;
 
 	public:
-		DWORD64 total_time	= 0;
-		DWORD	call_num	= 0;
-		DWORD	start_time	= 0; // ProfileBegin
-														// 아래 둘은 제외하고 평균치 계산
-		DWORD	max_time[2] = { 0, 0 };					// 0 > 1, 0번 인덱스 값이 더 큼
-		DWORD	min_time[2] = { MAXDWORD, MAXDWORD };	// 0 < 1, 0 번 인덱스 값이 더 작음
+		DWORD64 totalTime	= 0;
+		DWORD	totalCall	= 0;
+		DWORD	startTime	= 0; // ProfileBegin
+
+		// 평균 계산 시 제외하기 위함
+		DWORD	max[2] = { 0, 0 };				
+		DWORD	min[2] = { MAXDWORD, MAXDWORD };
 
 	public:
 		// 제외시킬 데이터라면 ret true (max, min 동시비교 안함)
-		bool Check_InvalidData(DWORD profile_time) {
+		bool VaildateData(DWORD profileTime) {
 			for (int i = 0; i < 2; i++) {
-				if (max_time[i] < profile_time) {
-					max_time[i] = profile_time;
+				if (max[i] < profileTime) {
+					max[i] = profileTime;
 					return true;
 				}
 			}
-
 			for (int i = 0; i < 2; i++) {
-				if (min_time[i] > profile_time) {
-					min_time[i] = profile_time;
+				if (min[i] > profileTime) {
+					min[i] = profileTime;
 					return true;
 				}
 			}
-
 			return false;
 		}
-
-		void Reset() {
-			total_time	= 0;
-			call_num	= 0;
-			max_time[0] = 0;
-			max_time[1] = 0;
-			min_time[0] = MAXDWORD;
-			min_time[1] = MAXDWORD;
+		void Init() {
+			totalTime	= 0;
+			totalCall	= 0;
+			max[0] = 0;
+			max[1] = 0;
+			min[0] = MAXDWORD;
+			min[1] = MAXDWORD;
 		}
 	};
 
 private:
-	const DWORD tls_index;
-	int profile_index = -1;
+	const DWORD tlsIndex;
+	int profileIndex = -1;
 	ProfileData profileData[MAX_THREAD_NUM][PROFILE_DATA_NUM];
 
 private:
-	ProfileData* GetTLS_ProfileArray();
+	ProfileData* Get();
 
 public:
 	void ProfileBegin(const char* name);

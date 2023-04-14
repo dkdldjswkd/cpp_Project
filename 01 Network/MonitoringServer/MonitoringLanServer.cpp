@@ -19,7 +19,12 @@ MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* ser
 	parser.GetValue(server, "DB_SCHEMA", schema);
 	parser.GetValue(server, "DB_LOGTIME", &loggingTime);
 	parser.GetValue(server, "MONITOR_LOG_TIME", &monitorLogTime);
-	p_dbConnector = new DBConnector(dbAddr, port, loginID, password, schema, loggingTime);
+	try {
+		p_dbConnector = new DBConnector(dbAddr, port, loginID, password, schema, loggingTime);
+	}
+	catch (DBException& e) {
+		CRASH();
+	}
 
 	dbEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	dbThread = std::thread([this] {DBWriteFunc(); });

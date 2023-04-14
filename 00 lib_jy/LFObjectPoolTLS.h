@@ -2,7 +2,7 @@
 #include "LFObjectPool.h"
 
 #define CHUNCK_SIZE 500
-#define USE_COUNT 1 // 1 : 낱개 단위 카운트, 2 : 청크 단위 카운트
+#define USE_COUNT	0		// 0 : 청크 단위 카운트, 1 : 낱개 단위 카운트 
 
 template <typename T>
 class LFObjectPoolTLS {

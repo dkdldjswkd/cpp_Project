@@ -40,7 +40,9 @@ void ChatServerMT::OnClientLeave(SessionId sessionId) {
 	playerMap.erase(iter);
 	playerMapLock.Unlock();
 
-	p_player->Reset(); // connect, login = false;
+	// Player 반환
+	if (p_player->isLogin) InterlockedDecrement((LONG*)&playerCount);
+	p_player->Reset();
 
 	// Secter set 삭제
 	if (!p_player->sectorPos.IsInvalid()) { // Sector 등록여부 판단 (Sector 패킷 받기전까지 등록 X)
@@ -92,7 +94,10 @@ void ChatServerMT::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 				Disconnect(sessionId);
 				return;
 			}
+
+			// 로그인 성공
 			p_player->isLogin = true;
+			InterlockedIncrement((LONG*)&playerCount);
 
 			// 로그인 정보 set
 			p_player->accountNo = accountNo;

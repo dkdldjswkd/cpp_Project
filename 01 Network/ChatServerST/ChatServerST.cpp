@@ -110,10 +110,8 @@ void ChatServerST::UpdateFunc() {
 					}
 
 					// Player ¹ÝÈ¯
-					if (p_player->isLogin) {
-						p_player->Reset();
-						playerCount--;
-					}
+					if (p_player->isLogin) playerCount--;
+					p_player->Reset();
 					playerPool.Free(p_player);
 					break;
 				}

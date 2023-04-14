@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <iostream>
 
-DBConnectorTLS::DBConnectorTLS(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE) : tlsIndex(TlsAlloc()) {
+DBConnectorTLS::DBConnectorTLS(const char* dbAddr, int port, const char* loginID, 
+	const char* password, const char* schema, unsigned short loggingTime = INFINITE) 
+	: tlsIndex(TlsAlloc()) {
 	// 생성자 전달 인자 초기화
 	strncpy_s(this->dbAddr, sizeof(this->dbAddr), dbAddr, sizeof(this->dbAddr) - 1);
 	this->port = port;

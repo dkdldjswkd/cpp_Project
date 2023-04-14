@@ -1,4 +1,6 @@
-void PerformanceCounter_Test();
+void ParserTest();
+void ObjectPoolTest();
+
 void main() {
-	PerformanceCounter_Test();
+	ObjectPoolTest();
 }

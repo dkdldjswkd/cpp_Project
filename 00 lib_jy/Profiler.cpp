@@ -8,100 +8,87 @@
 
 Profiler Profiler::inst;
 
-Profiler::Profiler() :tls_index(TlsAlloc()) {
+Profiler::Profiler() :tlsIndex(TlsAlloc()) {
 }
 
 Profiler::~Profiler() {
 }
 
-Profiler::ProfileData* Profiler::GetTLS_ProfileArray() {
-	ProfileData* profile_array = (ProfileData*)TlsGetValue(tls_index);
-	if (profile_array == nullptr) {
-		auto thread_id = GetThreadId(GetCurrentThread());
-		auto index = InterlockedIncrement((LONG*)&profile_index);
-		profile_array = profileData[index];
-		TlsSetValue(tls_index, (LPVOID)profile_array);
+Profiler::ProfileData* Profiler::Get() {
+	ProfileData* profileArr = (ProfileData*)TlsGetValue(tlsIndex);
+	if (profileArr == nullptr) {
+		profileArr = profileData[InterlockedIncrement((LONG*)&profileIndex)];
+		TlsSetValue(tlsIndex, (LPVOID)profileArr);
 	}
+	return profileArr;
+}
 
-	return profile_array;
+void Profiler::ProfileEnd(const char* name) {
+	ProfileData* profileArr = Get();
+
+	for (int i = 0; i < PROFILE_DATA_NUM; i++) {
+		// ProfileData 검색
+		if (false == profileArr[i].useFlag) return;
+		if (strcmp(profileArr[i].name, name) != 0)
+			continue;
+
+		// Profile Reset, 데이터 반영 x
+		if (true == profileArr[i].resetFlag) {
+			profileArr[i].Init();
+			profileArr[i].resetFlag = false;
+			return;
+		}
+
+		// profile time이 최대/최소 값이라면, 반영 x
+		DWORD profileTime = timeGetTime() - profileArr[i].startTime;
+		if (profileArr[i].VaildateData(profileTime)) return;
+
+		// profile time 반영 o
+		profileArr[i].totalTime += profileTime;
+		profileArr[i].totalCall++;
+	}
 }
 
 void Profiler::ProfileBegin(const char* name) {
-	ProfileData* profile_array = GetTLS_ProfileArray();
+	ProfileData* profileArr = Get();
 
 	// 프로파일 된적 있음
 	for (int i = 0; i < PROFILE_DATA_NUM; i++) {
-		if (strcmp(profile_array[i].name, name) == 0) {
-			profile_array[i].start_time = timeGetTime();
+		if (strcmp(profileArr[i].name, name) == 0) {
+			profileArr[i].startTime = timeGetTime();
 			return;
 		}
 	}
 
 	// 프로파일 처음
 	for (int i = 0; i < PROFILE_DATA_NUM; i++) {
-		if (false == profile_array[i].is_use) {
-#pragma warning(suppress : 4996)
-			strncpy(profile_array[i].name, name, PROFILE_NAME_LEN - 1);
-			profile_array[i].is_use = true;
-			profile_array[i].start_time = timeGetTime();
+		if (false == profileArr[i].useFlag) {
+			strncpy_s(profileArr[i].name, PROFILE_NAME_LEN, name, PROFILE_NAME_LEN - 1);
+			profileArr[i].useFlag = true;
+			profileArr[i].startTime = timeGetTime();
 			return;
 		}
-	}
-}
-
-void Profiler::ProfileEnd(const char* name) {
-	ProfileData* profile_array = GetTLS_ProfileArray();
-
-	for (int i = 0; i < PROFILE_DATA_NUM; i++) {
-		//------------------------------
-		// ProfileData 검색
-		//------------------------------
-		if (false == profile_array[i].is_use)
-			continue;
-		if (strcmp(profile_array[i].name, name) != 0)
-			continue;
-
-		//------------------------------
-		// ProfileData 반영 X (Reset or Invalid data)
-		//------------------------------
-		if (true == profile_array[i].reset_flag) {
-			profile_array[i].Reset();
-			profile_array[i].reset_flag = false;
-			break;
-		}
-		DWORD delta_time = timeGetTime() - profile_array[i].start_time;
-		if (profile_array[i].Check_InvalidData(delta_time))
-			break;
-
-		//------------------------------
-		// ProfileData 반영 O
-		//------------------------------
-		profile_array[i].total_time += delta_time;
-		profile_array[i].call_num++;
 	}
 }
 
 void Profiler::ProfileFileOut() {
 	// fopen
 	FILE* fp;
-	char file_name[128];
-#pragma warning(suppress : 4996)
-	sprintf(file_name, "%s_%s.csv", "Proflie", __DATE__);
-	fopen_s(&fp, file_name, "wt");
-	if (fp == NULL) 
-		return;
+	char fileName[128];
+	#pragma warning(suppress : 4996)
+	sprintf(fileName, "%s_%s.csv", "Proflie", __DATE__);
+	fopen_s(&fp, fileName, "wt");
+	if (fp == NULL) return;
 
 	// file I/O
-	for (int i = 0; i <= profile_index; i++) {
-		ProfileData* profile_array = profileData[i];
+	for (int i = 0; i <= profileIndex; i++) {
+		ProfileData* profileArr = profileData[i];
 		for (int j = 0; j < PROFILE_DATA_NUM; j++) {
-			if (false == profile_array[j].is_use)
-				break;
+			if (false == profileArr[j].useFlag)	break;
 
-			fprintf(fp, "%s \n", profile_array[j].name);
+			fprintf(fp, "%s \n", profileArr[j].name);
 			fprintf(fp, "average, total time, call num, min, max\n");
-			fprintf(fp, "%f ms, %llu ms, %u, %u, %u \n\n",
-				(float)(profile_array[j].total_time / (float)profile_array[j].call_num), profile_array[j].total_time, profile_array[j].call_num, profile_array[j].min_time[0], profile_array[j].max_time[0]);
+			fprintf(fp, "%f ms, %llu ms, %u, %u, %u \n\n", (float)(profileArr[j].totalTime / (float)profileArr[j].totalCall), profileArr[j].totalTime, profileArr[j].totalCall, profileArr[j].min[0], profileArr[j].max[0]);
 		}
 	}
 
@@ -109,11 +96,10 @@ void Profiler::ProfileFileOut() {
 }
 
 void Profiler::ProfileReset() {
-	for (int i = 0; i <= profile_index; i++) {
+	for (int i = 0; i <= profileIndex; i++) {
 		for (int j = 0; j < PROFILE_DATA_NUM; j++) {
-			if (false == profileData[i][j].is_use)
-				break;
-			profileData[i][j].reset_flag = true;
+			if (false == profileData[i][j].useFlag) break;
+			profileData[i][j].resetFlag = true;
 		}
 	}
 }
