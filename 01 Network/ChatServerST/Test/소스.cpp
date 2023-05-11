@@ -1,10 +1,15 @@
-#include <iostream>
-#include <queue>
+int __stdcall func(int a, int b, int c=0, int d= 0) {
+	return a + b;
+}
+
+int __cdecl func2(int a, int b, int c = 0, int d = 0) {
+	return a + b;
+}
 
 int main() {
-	int* p = (int*)malloc(sizeof(int));
-	*p = 3;
-	free(p);
+	int a = 1;
+	int b = 2;
 
-	printf("%d \n", *p);
+	func(a, b);
+	func2(a, b);
 }

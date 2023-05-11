@@ -1,5 +1,6 @@
 **/Debug/
 **/Release/
+**/.vs/
 **/x64/
 **/x86/
 **/*.obj

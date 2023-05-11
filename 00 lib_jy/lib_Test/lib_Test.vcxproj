@@ -165,9 +165,6 @@
     <ClCompile Include="PerformanceCounter_Test.cpp" />
     <ClCompile Include="PDH_Get_Test.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\lib_jy.lib" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

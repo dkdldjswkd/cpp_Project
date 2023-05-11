@@ -151,16 +151,6 @@
   <ItemGroup>
     <ClCompile Include="소스.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\..\DBConnector\DBConnector.lib" />
-    <Library Include="..\..\DBConnector\libmysql.lib" />
-    <Library Include="..\..\NetworkLib\NetworkLib.lib" />
-    <Library Include="..\..\Redis\cpp_redis.lib" />
-    <Library Include="..\..\Redis\tacopie.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\ServerConfig.ini" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -51,7 +51,4 @@
       <Filter>TestCode</Filter>
     </ClCompile>
   </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\lib_jy.lib" />
-  </ItemGroup>
 </Project>
