@@ -23,13 +23,12 @@ LoginServer::LoginServer(const char* systemFile, const char* server) : NetServer
 	parser.GetValue(server, "DB_PASSWORD", password);
 	parser.GetValue(server, "DB_SCHEMA", schema);
 	parser.GetValue(server, "DB_LOGTIME", &loggingTime);
-
-	// Set Other Server IP, Port (임시방편, 나중에 시스템 파일에서 전부 긁어올것)
-	strncpy_s(chatServerIP, 20, "127.0.0.1", strlen("127.0.0.1"));
-	strncpy_s(gameServerIP, 20, "127.0.0.1", strlen("127.0.0.1"));
-	parser.GetValue("ChattingServer_Single", "PORT", (int*)&ChatServerPort);
-	gameServerPort = 2000;
-
+	// Set 로그인 성공 시 회신해줄 연결서버 IP, Port
+	parser.GetValue(server, "CHATTING_SERVER_IP", chatServerIP);
+	parser.GetValue(server, "CHATTING_SERVER_PORT", (int*)&ChatServerPort);
+	parser.GetValue(server, "GAME_SERVER_IP", gameServerIP);
+	parser.GetValue(server, "GAME_SERVER_PORT", (int*)&gameServerPort);
+	
 	p_connecterTLS = new DBConnectorTLS(dbAddr, port, loginID, password, schema, loggingTime);
 	connectorRedis.connect();
 }
@@ -38,11 +37,8 @@ LoginServer::~LoginServer(){
 	delete p_connecterTLS;
 }
 
-void LoginServer::OnServerStop() {
-}
-
 bool LoginServer::OnConnectionRequest(in_addr IP, WORD Port){
-	// printf("[Accept] IP(%s), PORT(%u) \n", inet_ntoa(ip), port);
+	// ex. printf("[Accept] IP(%s), PORT(%u) \n", inet_ntoa(ip), port);
 	return true;
 }
 
@@ -93,7 +89,7 @@ void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 			MYSQL_RES* sqlResult;
 			MYSQL_ROW sqlRow;
 
-			// DB 조회
+			// DB 조회 (DB의 sessionKey와 패킷의 sessionKey 비교를 위함)
 			sqlResult = p_connecterTLS->Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
 			sqlRow = mysql_fetch_row(sqlResult);
 			if (NULL == sqlRow) {
@@ -102,10 +98,12 @@ void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 				return;
 			}
 
-			// 인증 판단 (현재 코드에서는 패킷 session key, DB session key 같다고 가정하고 코드전개)
+			// 인증 판단
+			// ...
+
 			mysql_free_result(sqlResult);
 
-			// DB 조회 (Get userid, usernick)
+			// DB 조회 (userid, usernick 등을 담은 패킷을 회신하기 위함)
 			sqlResult = p_connecterTLS->Query("SELECT userid, usernick FROM account WHERE accountno = %d", accountNo);
 			sqlRow = mysql_fetch_row(sqlResult);
 			WCHAR id[20];
@@ -115,8 +113,8 @@ void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 			mysql_free_result(sqlResult);
 
 			// Set IP, PORT
-			WCHAR	GameServerIP[16] = { 0, };
-			WCHAR	ChatServerIP[16] = { 0, };
+			WCHAR	GameServerIP[16];
+			WCHAR	ChatServerIP[16];
 			UTF8ToUTF16(this->gameServerIP, GameServerIP);
 			UTF8ToUTF16(this->chatServerIP, ChatServerIP);
 			USHORT	GameServerPort = this->gameServerPort;
@@ -135,10 +133,10 @@ void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 			*p_packet << (USHORT)ChatServerPort;
 
 			// Redis에 인증토큰 삽입
-			char chattingKey[100]; // 채팅서버에서 조회할 key
-			char GameKey[100]; // 게임서버에서 조회할 key
-			snprintf(chattingKey, 100, "%d.chatting", accountNo);
-			snprintf(GameKey, 100, "%d.game", accountNo);
+			char GameKey[100];		// 게임서버에서 조회할 key
+			char chattingKey[100];	// 채팅서버에서 조회할 key
+			snprintf(chattingKey, 100, "%lld.chatting", accountNo);
+			snprintf(GameKey, 100, "%lld.game", accountNo);
 			connectorRedis.setex(chattingKey, 10, (char*)&sessoinKey);
 			connectorRedis.setex(GameKey, 10, (char*)&sessoinKey);
 			connectorRedis.sync_commit();
@@ -146,6 +144,7 @@ void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 			// 로그인 응답 패킷 송신
 			SendPacket(sessionId, p_packet);
 			PacketBuffer::Free(p_packet);
+			break;
 		}
 		default: {
 			LOG("LoginServer", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);

@@ -23,9 +23,6 @@ void MonitoringClient::OnClientStop(){
 	}
 }
 
-void MonitoringClient::OnRecv(PacketBuffer* contents_packet) {
-}
-
 void MonitoringClient::OnConnect() {
 	isConnect = true;
 

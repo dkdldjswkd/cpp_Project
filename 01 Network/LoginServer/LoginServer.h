@@ -28,8 +28,8 @@ private:
 	LFObjectPool<User> userPool;
 
 	// Other Server IP, Port
-	char chatServerIP[20];
-	char gameServerIP[20];
+	char chatServerIP[16];
+	char gameServerIP[16];
 	DWORD ChatServerPort;
 	DWORD gameServerPort;
 
@@ -44,7 +44,7 @@ private:
 	void OnClientJoin(SessionId sessionId);
 	void OnRecv(SessionId sessionId, PacketBuffer* contentsPacket);
 	void OnClientLeave(SessionId sessionId);
-	void OnServerStop();
+	void OnServerStop() {}
 
 public:
 	// 모니터링

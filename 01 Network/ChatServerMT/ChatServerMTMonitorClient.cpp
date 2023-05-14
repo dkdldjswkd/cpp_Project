@@ -23,9 +23,6 @@ void ChatServerMTMonitorClient::OnClientStop(){
 	}
 }
 
-void ChatServerMTMonitorClient::OnRecv(PacketBuffer* contents_packet) {
-}
-
 void ChatServerMTMonitorClient::OnConnect() {
 	isConnect = true;
 
@@ -127,15 +124,6 @@ void ChatServerMTMonitorClient::ReportToMonitoringServer() {
 		*p_packet << (int)lastUpdateTime; // 측정 시간
 		SendPacket(p_packet);
 		PacketBuffer::Free(p_packet);
-
-		//// 채팅서버 UPDATE MSG 풀 사용량, 37
-		//p_packet = PacketBuffer::Alloc();
-		//*p_packet << (WORD)en_PACKET_SS_MONITOR_DATA_UPDATE; // 패킷 타입
-		//*p_packet << (BYTE)dfMONITOR_DATA_TYPE_CHAT_UPDATEMSG_POOL; // 데이터 항목
-		//*p_packet << (int)p_chatServer->GetJobQueueCount(); // 데이터 수치
-		//*p_packet << (int)lastUpdateTime; // 측정 시간
-		//SendPacket(p_packet);
-		//PacketBuffer::Free(p_packet);
 
 		// 서버컴퓨터 CPU 전체 사용률, 40
 		p_packet = PacketBuffer::Alloc();

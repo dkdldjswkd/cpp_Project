@@ -18,7 +18,7 @@ int main() {
 	MonitoringLanServer monitoringLanServer("../ServerConfig.ini", "MonitoringLanServer", &monitoringNetServer);
 	monitoringLanServer.Start();
 
-	// 콘솔 모니터링 스레드 생성
+	// 콘솔 모니터링
 	ConsoleMonitoring(&monitoringNetServer, &monitoringLanServer);
 }
 

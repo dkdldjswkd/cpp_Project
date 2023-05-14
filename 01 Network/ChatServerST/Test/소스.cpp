@@ -1,15 +1,18 @@
-int __stdcall func(int a, int b, int c=0, int d= 0) {
-	return a + b;
-}
+#include <iostream>
+#include <strsafe.h>
+using namespace std;
 
-int __cdecl func2(int a, int b, int c = 0, int d = 0) {
-	return a + b;
+#define BUF_SZIE 10
+char buf[BUF_SZIE];
+
+void test() {
+	va_list var_list;
+	va_start(var_list, "%s %s", "12", "34");
+	StringCchVPrintfA(buf, BUF_SZIE, "%s", var_list); 
+	va_end(var_list);
 }
 
 int main() {
-	int a = 1;
-	int b = 2;
-
-	func(a, b);
-	func2(a, b);
+	test();
+	cout << buf << endl;
 }

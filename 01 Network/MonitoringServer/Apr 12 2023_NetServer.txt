@@ -1,4 +1,0 @@
-[NetServer] [Apr 12 2023 17:58:30 / INFO] Start NetServer
-[NetServer] [Apr 12 2023 17:58:30 / INFO] Start NetServer
-[NetServer] [Apr 12 2023 17:58:30 / INFO] Start NetServer
-[NetServer] [Apr 12 2023 17:58:30 / INFO] Start NetServer

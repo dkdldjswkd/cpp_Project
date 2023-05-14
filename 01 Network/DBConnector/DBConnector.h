@@ -5,6 +5,7 @@
 #include <exception>
 #include "mysql/include/mysql.h"
 
+#define LOG_FILE_LEN 100
 #define MAX_QUERY 1024
 
 struct DBException : public std::exception {
@@ -25,8 +26,7 @@ public:
 
 class DBConnector {
 public:
-	DBConnector(const char* dbAddr, int port, const char* loginID, 
-		const char* password, const char* schema, unsigned short loggingTime = INFINITE);
+	DBConnector(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 	~DBConnector();
 
 private:
@@ -37,9 +37,11 @@ private:
 	// opt
 	int loggingTime; // 시간 초과 시 로깅
 
+private:
+	void Log(const char* query, unsigned long queryTime);
+
 public:
-	void ConnectDB(const char* dbAddr, int port, const char* loginID, 
-		const char* password, const char* schema, unsigned short loggingTime = INFINITE);
+	void ConnectDB(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 	MYSQL_RES* Query(const char* queryFormat, ...);
 	MYSQL_RES* Query(const char* queryFormat, va_list args);
 };

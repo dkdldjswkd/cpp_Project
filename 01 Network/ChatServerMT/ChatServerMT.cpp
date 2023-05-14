@@ -12,12 +12,8 @@ ChatServerMT::ChatServerMT(const char* systemFile, const char* server) : NetServ
 ChatServerMT::~ChatServerMT(){
 }
 
-void ChatServerMT::OnServerStop() {
-}
-
-// Session Connect ½Ã
 bool ChatServerMT::OnConnectionRequest(in_addr ip, WORD port) {
-	//printf("[Accept] IP(%s), PORT(%u) \n", inet_ntoa(ip), port);
+	// ex. printf("[Accept] IP(%s), PORT(%u) \n", inet_ntoa(ip), port);
 	return true;
 }
  

@@ -27,7 +27,7 @@ private:
 	void OnClientJoin(SessionId sessionId);
 	void OnRecv(SessionId sessionId, PacketBuffer* contentsPacket);
 	void OnClientLeave(SessionId sessionId);
-	void OnServerStop();
+	void OnServerStop() {}
 
 	// Send
 	void SendSectorAround(Player* p_player, PacketBuffer* sendPacket);

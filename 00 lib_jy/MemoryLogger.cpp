@@ -2,7 +2,7 @@
 #include "MemoryLogger.h"
 
 #define LOG_SIZE 8
-#define MEMORY_SIZE 134217727 // 0xFFFFFFFF >> 5; (2^27, 0x07FFFFFF)
+#define MEMORY_SIZE 0x07FFFFFF // 0xFFFFFFFF >> 5; (2^27, 134217727)
 
 //MemoryLogger memLogger;
 

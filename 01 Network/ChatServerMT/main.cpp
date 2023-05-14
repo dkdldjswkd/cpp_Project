@@ -20,7 +20,7 @@ int main() {
 	ChatServerMTMonitorClient monitorClient("../ServerConfig.ini", "MonitoringClientMT", &chatServer);
 	monitorClient.Start();
 
-	// 콘솔 모니터링 스레드 생성
+	// 콘솔 모니터링
 	ConsoleMonitor(&chatServer, &monitorClient);
 }
 
@@ -51,9 +51,9 @@ void ConsoleMonitor(ChatServerMT* p_chatServer, ChatServerMTMonitorClient* p_Mon
 		}
 
 		// 모니터링 데이터 업데이트
+		p_chatServer->UpdateTPS();
 		p_chatServer->NetServer::UpdateTPS();
 		p_MonitorClient->NetClient::UpdateTPS();
-		p_chatServer->UpdateTPS();
 
 		// 콘솔 출력
 		{

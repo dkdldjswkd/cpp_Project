@@ -3,6 +3,7 @@
 #include <conio.h>
 #include "LoginServer.h"
 #include "../../00 lib_jy/CrashDump.h"
+#include "../../00 lib_jy/Profiler.h"
 using namespace std;
 
 void ConsoleMonitor(LoginServer* net_server);
@@ -14,11 +15,11 @@ int main() {
 	LoginServer loginServer("../ServerConfig.ini", "LoginServer");
 	loginServer.Start();
 
-	// 콘솔 모니터링 스레드 생성
+	// 콘솔 모니터
 	ConsoleMonitor(&loginServer);
 }
 
-void ConsoleMonitor(LoginServer* net_server) {
+void ConsoleMonitor(LoginServer* net_server){
 	auto h = GetStdHandle(STD_OUTPUT_HANDLE);
 	for (;;) {
 		// 1초 주기 모니터링
@@ -26,40 +27,51 @@ void ConsoleMonitor(LoginServer* net_server) {
 		system("cls");
 		SetConsoleCursorPosition(h, { 0, 0 });
 
-		// 서버 조작
+		// 프로파일러 파일 out
 		if (_kbhit()) {
 			auto c = _getch();
-			if (c == 'q' || c == 'Q') {
-				//net_server->ServerStop();
+			if (c == 'f' || c == 'F') {
+				PRO_FILEOUT();
+			}
+			else if (c == 'r' || c == 'R') {
+				PRO_RESET();
+			}
+			else if (c == 'q' || c == 'Q') {
+				net_server->Stop();
+			}
+			else if (c == 'e' || c == 'E') {
+				return;
 			}
 		}
+
+		// 모니터링 데이터 업데이트
+		net_server->UpdateTPS();
 
 		// 콘솔 출력
 		{
 			printf(
-				"Process : LoginServer ---------------------\n"
-				"LoginServer::NetLib -----------------------\n"
-				"sessionCount    : %d                       \n"
-				"PacketCount     : %d                       \n"
-				"acceptTotal     : %d                       \n"
-				"acceptTPS       : %d                       \n"
-				"sendMsgTPS      : %d                       \n"
-				"recvMsgTPS      : %d                       \n"
-				"LoginServer -------------------------------\n"
-				"PlayerCount     : %d                       \n"
-				"PlayerPoolCount : %d                       \n"
+				"[ LoginServer ] ---------------------------\n"
+				"acceptTotal          : %u                  \n"
+				"acceptTPS            : %u                  \n"
+				"recvMsgTPS           : %u                  \n"
+				"sendMsgTPS           : %u                  \n"
+				"[ Contents ] ------------------------------\n"
+				"Session Count        : %d                  \n"
+				"User Count           : %d                  \n"
+				"Packet Count         : %d                  \n"
+				"User Pool Count      : %d                  \n"
 				,
-				// LoginServer lib
-				net_server->GetSessionCount(),
-				PacketBuffer::GetUseCount(),
+				// ChatServer
 				net_server->GetAcceptTotal(),
 				net_server->GetAcceptTPS(),
-				net_server->GetSendTPS(),
 				net_server->GetRecvTPS(),
-				// LoginServer
+				net_server->GetSendTPS(),
+				// Contents
+				net_server->GetSessionCount(),
 				net_server->GetUserCount(),
+				PacketBuffer::GetUseCount(),
 				net_server->GetUserPoolCount()
-			);
+				);
 		}
 	}
 }

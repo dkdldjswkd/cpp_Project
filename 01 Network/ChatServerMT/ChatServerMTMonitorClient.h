@@ -38,7 +38,7 @@ private:
 private:
 	// Lib Callback
 	void OnConnect();
-	void OnRecv(PacketBuffer* contents_packet);
+	void OnRecv(PacketBuffer* contents_packet) {}
 	void OnDisconnect();
 	void OnClientStop();
 

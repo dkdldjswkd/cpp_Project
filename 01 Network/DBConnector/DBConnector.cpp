@@ -2,13 +2,8 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <timeapi.h>
+#include <strsafe.h>
 #pragma comment(lib, "Winmm.lib")
-
-// 추가 구현해야할 기능
-// loggingTime 초과 쿼리 로깅
-// ...
-// 10분에 한번씩 avr, min, max, min query, max query 로깅
-// ...
 
 DBConnector::DBConnector(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime) : loggingTime(loggingTime) {
 	ConnectDB(dbAddr, port, loginID, password, schema, loggingTime);
@@ -18,8 +13,20 @@ DBConnector::~DBConnector() {
 	mysql_close(connection);
 }
 
-void DBConnector::ConnectDB(const char* dbAddr, int port, const char* loginID, 
-	const char* password, const char* schema, unsigned short loggingTime){
+void DBConnector::Log(const char* query, unsigned long queryTime){
+	// fopen
+	FILE* fp;
+	char fileName[LOG_FILE_LEN];
+	snprintf(fileName, LOG_FILE_LEN, "DB_LOG_%s.txt", __DATE__);
+	fopen_s(&fp, fileName, "at");
+
+	if (fp != NULL) {
+		fprintf(fp, "[Query : %s] [QueryTime : %u ms]\n", query, queryTime);
+		fclose(fp);
+	}
+}
+
+void DBConnector::ConnectDB(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime){
 	if (connection != nullptr)
 		return;
 
@@ -48,12 +55,16 @@ MYSQL_RES* DBConnector::Query(const char* queryFormat, ...) {
 
 	va_list var_list;
 	va_start(var_list, queryFormat);
-	vsnprintf((char*)query, MAX_QUERY - 1, queryFormat, var_list);
-	query[MAX_QUERY - 1] = 0;
+	StringCchVPrintfA(query, MAX_QUERY, queryFormat, var_list);
 	va_end(var_list);
 
+	auto start = timeGetTime();
 	if (0 != mysql_query(connection, (char*)query)) {
 		throw DBException(query, mysql_errno(connection), mysql_error(connection));
+	}
+	auto durTime = timeGetTime() - start;
+	if (loggingTime < durTime) {
+		Log(queryFormat, durTime);
 	}
 
 	return mysql_store_result(connection);
@@ -61,11 +72,15 @@ MYSQL_RES* DBConnector::Query(const char* queryFormat, ...) {
 
 MYSQL_RES* DBConnector::Query(const char* queryFormat, va_list args) {
 	char query[MAX_QUERY];
-	vsnprintf((char*)query, MAX_QUERY - 1, queryFormat, args);
-	query[MAX_QUERY - 1] = 0;
+	StringCchVPrintfA(query, MAX_QUERY, queryFormat, args);
 
+	auto start = timeGetTime();
 	if (0 != mysql_query(connection, (char*)query)) {
 		throw DBException(query, mysql_errno(connection), mysql_error(connection));
+	}
+	auto durTime = timeGetTime() - start;
+	if (loggingTime < durTime) {
+		Log(queryFormat, durTime);
 	}
 
 	return mysql_store_result(connection);

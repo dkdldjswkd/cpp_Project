@@ -27,13 +27,19 @@ MonitoringLanServer::MonitoringLanServer(const char* systemFile, const char* ser
 	}
 
 	dbEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	dbThread = std::thread([this] {DBWriteFunc(); });
+	dbThread = std::thread([this] { DBWriteFunc(); });
 }
 
 MonitoringLanServer::~MonitoringLanServer() {
+	delete p_dbConnector;
 }
 
 void MonitoringLanServer::OnServerStop() {
+	dbStop = false;
+	SetEvent(dbEvent);
+	if (dbThread.joinable()) {
+		dbThread.join();
+	}
 }
 
 void MonitoringLanServer::OnClientJoin(SessionId sessionId) {
@@ -144,6 +150,7 @@ void MonitoringLanServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPa
 void MonitoringLanServer::DBWriteFunc(){
 	for (;;) {
 		WaitForSingleObject(dbEvent, INFINITE);
+		if (dbStop) break;
 		for (;;) {
 			if (dbQ.GetUseCount() < 1) break;
 			MonitorData* p_logData;
@@ -190,4 +197,3 @@ void MonitoringLanServer::DBJobQueuing(MonitorData* p_data) {
 	dbQ.Enqueue(p_logData);
 	SetEvent(dbEvent);
 }
-

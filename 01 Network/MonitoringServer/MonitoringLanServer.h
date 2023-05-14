@@ -71,6 +71,7 @@ private:
 	// DB
 	DBConnector* p_dbConnector;
 	std::thread dbThread;
+	bool dbStop = false;
 	HANDLE dbEvent;
 	LFQueue<MonitorData*> dbQ;
 

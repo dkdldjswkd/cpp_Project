@@ -1,6 +1,7 @@
 #include "Logger.h"
 #include <iostream>
 #include <Windows.h>
+#include <strsafe.h>
 using namespace std;
 
 #define LOG_INST Logger::inst
@@ -41,7 +42,7 @@ void Logger::Log(const char* fileName, const LogLevel& logLevel, const char* for
 	// Set logStr
 	va_list var_list;
 	va_start(var_list, format);
-	vsnprintf(p_logData->logStr, LOG_SIZE - 1, format, var_list);
+	StringCchVPrintfA(p_logData->logStr, LOG_SIZE, format, var_list);
 	va_end(var_list);
 
 	QueueUserAPC(Logger::LogAPC, logThread.native_handle(), (ULONG_PTR)p_logData);
@@ -54,46 +55,38 @@ void Logger::LogAPC(ULONG_PTR p_logData) {
 
 	// fopen
 	char fileName[FILE_NAME_SIZE + 50];
-#pragma warning(suppress : 4996)
-	sprintf(fileName, "%s_%s.txt", __DATE__, logData.fileName);
+	snprintf(fileName, FILE_NAME_SIZE + 50, "%s_%s.txt", __DATE__, logData.fileName);
 	fopen_s(&fp, fileName, "at");
 
 	// Logging
 	char logBuf[LOG_SIZE];
 	switch (logData.logLevel) {
 		case LOG_LEVEL_FATAL:
-			#pragma warning(suppress : 4996)
-			snprintf(logBuf, LOG_SIZE - 1, "[%s] [%s %s / %s] ", logData.fileName, __DATE__, __TIME__, "FATAL");
+			snprintf(logBuf, LOG_SIZE, "[%s] [%s %s / %s]", logData.fileName, __DATE__, __TIME__, "FATAL");
 			break;
 
 		case LOG_LEVEL_ERROR:
-			#pragma warning(suppress : 4996)
-			snprintf(logBuf, LOG_SIZE - 1, "[%s] [%s %s / %s] ", logData.fileName, __DATE__, __TIME__, "ERROR");
+			snprintf(logBuf, LOG_SIZE, "[%s] [%s %s / %s]", logData.fileName, __DATE__, __TIME__, "ERROR");
 			break;
 
 		case LOG_LEVEL_WARN:
-			#pragma warning(suppress : 4996)
-			snprintf(logBuf, LOG_SIZE - 1, "[%s] [%s %s / %s] ", logData.fileName, __DATE__, __TIME__, "WARN");
+			snprintf(logBuf, LOG_SIZE, "[%s] [%s %s / %s]", logData.fileName, __DATE__, __TIME__, "WARN");
 			break;
 
 		case LOG_LEVEL_INFO:
-			#pragma warning(suppress : 4996)
-			snprintf(logBuf, LOG_SIZE - 1, "[%s] [%s %s / %s] ", logData.fileName, __DATE__, __TIME__, "INFO");
+			snprintf(logBuf, LOG_SIZE, "[%s] [%s %s / %s]", logData.fileName, __DATE__, __TIME__, "INFO");
 			break;
 
 		default:
-			#pragma warning(suppress : 4996)
-			snprintf(logBuf, LOG_SIZE - 1, "[%s] [%s %s / %s] ", logData.fileName, __DATE__, __TIME__, "DEBUG");
+			snprintf(logBuf, LOG_SIZE, "[%s] [%s %s / %s]", logData.fileName, __DATE__, __TIME__, "DEBUG");
 			break;
 	}
 
 	int logOffset = strlen(logBuf);
-	#pragma warning(suppress : 4996)
-	snprintf(logBuf + logOffset, (LOG_SIZE - 1) - logOffset, "%s\n", logData.logStr);
-	logBuf[LOG_SIZE - 1] = 0;
+	snprintf(logBuf + logOffset, LOG_SIZE - logOffset, "%s", logData.logStr);
 
 	if (fp != NULL) {
-		fprintf(fp, "%s", logBuf);
+		fprintf(fp, "%s\n", logBuf);
 		fclose(fp);
 	}
 

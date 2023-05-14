@@ -9,10 +9,9 @@
 #include "../../00 lib_jy/LFQueue.h"
 #include "../NetworkLib/NetServer.h"
 #include "Player.h"
-#include "../../00 lib_jy/ThreadCpuMonitor.h"
 
 // Login On/Off
-#define ON_LOGIN	0
+#define ON_LOGIN	1
 
 // JOB
 #define JOB_TYPE_CLIENT_JOIN			100
@@ -70,7 +69,7 @@ private:
 	// Token
 	LFObjectPool<AccountToken> tokenPool;
 	LFQueue<AccountToken*> tokenQ;
-	cpp_redis::client connectorRedis;
+	cpp_redis::client redisClient;
 	std::thread authThread;
 	HANDLE authEvent;
 	bool authStop = false;

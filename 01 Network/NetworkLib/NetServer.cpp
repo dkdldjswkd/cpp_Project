@@ -613,7 +613,7 @@ void NetServer::Stop() {
 		if (sessionCount == 0) {
 			break;
 		}
-		Sleep(100);
+		Sleep(10);
 	}
 
 	// Worker 종료
@@ -627,7 +627,7 @@ void NetServer::Stop() {
 	CloseHandle(h_iocp);
 	WSACleanup();
 
-	// 사용자 리소스 정리
+	// 사용자 서버 리소스 정리
 	OnServerStop();
 }
 

@@ -2,7 +2,6 @@
 #include "CommonProtocol.h"
 #include "../../00 lib_jy/Logger.h"
 #include "../../00 lib_jy/Profiler.h"
-#include "../../00 lib_jy/ThreadCpuMonitor.h"
 using namespace std;
 
 // 프로파일러 제거
@@ -19,7 +18,7 @@ ChatServerST::ChatServerST(const char* systemFile, const char* server) : NetServ
 #if ON_LOGIN
 	authEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	authThread = thread([this] { AuthFunc(); });
-	connectorRedis.connect();
+	redisClient.connect();
 #endif
 }
 
@@ -59,14 +58,14 @@ void ChatServerST::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 		*csContentsPacket >> type;
 	}
 	catch (const PacketException& e) {
-		LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> type");
+		LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // impossible : >> type");
 		Disconnect(sessionId);
 		return;
 	}
 
 	// Packet type : 2, 4, 5 (INVALID PACKET TYPE)
 	if ((5 < type) || (type == 2) || (type == 4)) {
-		LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
+		LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // OnRecv() : INVALID Packet type (%d)", type);
 		Disconnect(sessionId);
 		return;
 	}
@@ -118,7 +117,7 @@ void ChatServerST::UpdateFunc() {
 				case en_PACKET_CS_CHAT_REQ_LOGIN: {
 					auto iter = playerMap.find(sessionId);
 					if (iter == playerMap.end()) {
-						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_LOGIN() : player_map.find(sessionId) == player_map.end()");
+						LOG("ChatServerST", LOG_LEVEL_FATAL, "REQ_LOGIN() : player_map.find(sessionId) == player_map.end()");
 						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
@@ -126,7 +125,7 @@ void ChatServerST::UpdateFunc() {
 
 					// 이미 로그인 된 플레이어
 					if (p_player->isLogin) {
-						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // Already login!!");
+						LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // Already login!!");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
 						break;
@@ -142,7 +141,7 @@ void ChatServerST::UpdateFunc() {
 						csContentsPacket->GetData((char*)&p_at->token, 64);
 					}
 					catch (const PacketException& e) {
-						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> Login packet");
+						LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // impossible : >> Login packet");
 						tokenPool.Free(p_at);
 						Disconnect(sessionId);
 						break;
@@ -159,7 +158,7 @@ void ChatServerST::UpdateFunc() {
 						csContentsPacket->GetData((char*)&token, 64);
 					}
 					catch (const PacketException& e) {
-						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> Login packet");
+						LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // impossible : >> Login packet");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
 						break;
@@ -183,7 +182,7 @@ void ChatServerST::UpdateFunc() {
 				case en_PACKET_CS_CHAT_REQ_SECTOR_MOVE: {
 					auto iter = playerMap.find(sessionId);
 					if (iter == playerMap.end()) {
-						LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "REQ_SECTOR_MOVE() : player_map.find(sessionId) == player_map.end()");
+						LOG("ChatServerST", LOG_LEVEL_FATAL, "REQ_SECTOR_MOVE() : player_map.find(sessionId) == player_map.end()");
 						PacketBuffer::Free(csContentsPacket);
 						break;
 					}
@@ -191,7 +190,7 @@ void ChatServerST::UpdateFunc() {
 
 					// 로그인 상태가 아닌 플레이어
 					if (!p_player->isLogin) {
-						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // is not login!!");
+						LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // is not login!!");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
 						break;
@@ -205,7 +204,7 @@ void ChatServerST::UpdateFunc() {
 						*csContentsPacket >> curSector.y;
 					}
 					catch (const PacketException& e) {
-						//LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> sector move packet");
+						//LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // impossible : >> sector move packet");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
 						break;
@@ -213,7 +212,7 @@ void ChatServerST::UpdateFunc() {
 
 					// 유효하지 않은 섹터로 이동 시도
 					if (curSector.IsInvalid()) {
-						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // sector move Packet : Invalid Sector!!");
+						LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // sector move Packet : Invalid Sector!!");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
 						break;
@@ -247,14 +246,13 @@ void ChatServerST::UpdateFunc() {
 
 					// 로그인 상태가 아닌 플레이어
 					if (!p_player->isLogin) {
-						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // is not login!!");
+						LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // is not login!!");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
 						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
 						break;
 					}
 
-					// >>
 					INT64	accountNo;
 					WORD	msgLen;
 					WCHAR	msg[MAX_MSG]; // null 미포함
@@ -264,7 +262,7 @@ void ChatServerST::UpdateFunc() {
 						csContentsPacket->GetData((char*)msg, msgLen);
 					}
 					catch (const PacketException& e) {
-						LOG("ChattingServer-Single", LOG_LEVEL_WARN, "Disconnect // impossible : >> chatting packet");
+						LOG("ChatServerST", LOG_LEVEL_WARN, "Disconnect // impossible : >> chatting packet");
 						Disconnect(sessionId);
 						PacketBuffer::Free(csContentsPacket);
 						PRO_END("UpdateFunc::en_PACKET_CS_CHAT_REQ_MESSAGE");
@@ -272,7 +270,6 @@ void ChatServerST::UpdateFunc() {
 					}
 					msg[msgLen / 2] = 0;
 
-					// <<
 					PacketBuffer* p_packet = PacketBuffer::Alloc();
 					*p_packet << (WORD)en_PACKET_CS_CHAT_RES_MESSAGE;
 					*p_packet << (INT64)accountNo;
@@ -326,7 +323,7 @@ void ChatServerST::UpdateFunc() {
 					break;
 				}
 				default: {
-					LOG("ChattingServer-Single", LOG_LEVEL_FATAL, "Disconnect // ProcJob INVALID Packet type : %d", p_job->type);
+					LOG("ChatServerST", LOG_LEVEL_FATAL, "Disconnect // ProcJob INVALID Packet type : %d", p_job->type);
 					Disconnect(sessionId);
 					break;
 				}
@@ -348,14 +345,13 @@ void ChatServerST::AuthFunc() {
 
 		while (tokenQ.Dequeue(&p_at)) {
 			char chattingKey[100];
-			snprintf(chattingKey, 100, "%d.chatting", p_at->accountNo);
+			snprintf(chattingKey, 100, "%lld.chatting", p_at->accountNo);
 
-			std::future<cpp_redis::reply> future_reply = connectorRedis.get(chattingKey);
-			connectorRedis.sync_commit();
-			cpp_redis::reply reply = future_reply.get();
+			std::future<cpp_redis::reply> futureReply = redisClient.get(chattingKey);
+			redisClient.sync_commit();
+			cpp_redis::reply reply = futureReply.get();
 			if (reply.is_string()) {
-				#pragma warning(suppress : 4996)
-				strncpy((char*)&redisToken, reply.as_string().c_str(), 64);
+				memmove((char*)&redisToken, reply.as_string().c_str(), sizeof(Token));
 			}
 			else {
 				ZeroMemory(&redisToken, sizeof(redisToken));
@@ -363,14 +359,14 @@ void ChatServerST::AuthFunc() {
 
 			// 유효 세션
 			if (0 == strncmp(redisToken.buf, p_at->token.buf, 64)) {
-				connectorRedis.del({ chattingKey });
-				connectorRedis.sync_commit();
+				redisClient.del({ chattingKey });
+				redisClient.sync_commit();
 				JobQueuing(p_at->sessionId, JOB_TYPE_CLIENT_LOGIN_SUCCESS);
 			}
 			// 유효하지 않은 세션
 			else {
 				JobQueuing(p_at->sessionId, JOB_TYPE_CLIENT_LOGIN_FAIL);
-				LOG("ChattingServer-Single", LOG_LEVEL_WARN, "INVALID TOKEN AccountNo(%d)	Redis(%.*s), User(%.*s)", p_at->accountNo, 64, redisToken.buf, 64, p_at->token.buf);
+				LOG("ChatServerST", LOG_LEVEL_WARN, "INVALID TOKEN AccountNo(%d)	Redis(%.*s), User(%.*s)", p_at->accountNo, 64, redisToken.buf, 64, p_at->token.buf);
 			}
 			tokenPool.Free(p_at);
 		}
