@@ -3,6 +3,7 @@
 #include <Windows.h>
 #include <timeapi.h>
 #include <strsafe.h>
+#include <thread>
 #pragma comment(lib, "Winmm.lib")
 
 DBConnector::DBConnector(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime) : loggingTime(loggingTime) {
@@ -17,7 +18,7 @@ void DBConnector::Log(const char* query, unsigned long queryTime){
 	// fopen
 	FILE* fp;
 	char fileName[LOG_FILE_LEN];
-	snprintf(fileName, LOG_FILE_LEN, "DB_LOG_%s.txt", __DATE__);
+	snprintf(fileName, LOG_FILE_LEN, "DB_LOG_%s_%u.txt", __DATE__, GetCurrentThreadId()); // 멀티 스레드환경(DBConnectorTLS)에서 같은 file을 바라보지 않게 하기위함
 	fopen_s(&fp, fileName, "at");
 
 	if (fp != NULL) {
