@@ -2,7 +2,7 @@
 #include <thread>	
 #include "LFObjectPool.h"
 
-#define LOG(fileName, logLevel, format, ...) do { Logger::inst.Log(fileName, logLevel, format, __VA_ARGS__); }while(false)
+#define LOG(fileName, logLevel, format, ...) do { Logger::GetInst().Log(fileName, logLevel, format, __VA_ARGS__); }while(false)
 
 #define LOG_LEVEL_FATAL LogLevel::LEVEL_FATAL
 #define LOG_LEVEL_ERROR LogLevel::LEVEL_ERROR
@@ -26,10 +26,9 @@ private:
 	Logger();
 public:
 	~Logger();
-	static Logger inst;
 
 private:
-	static struct LogData {
+	struct LogData {
 	public:
 		LogData() {}
 		~LogData() {}
@@ -51,6 +50,7 @@ private:
 	static void LogAPC(ULONG_PTR p_logData); // logThread에서 실질적으로 처리됨
 
 public:
+	static Logger& GetInst();
 	void SetLogLevel(const LogLevel& logLevel);
 	void Log(const char* fileName, const LogLevel& logLevel, const char* format, ...);
 };

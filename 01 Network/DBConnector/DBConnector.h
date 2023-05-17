@@ -39,9 +39,9 @@ private:
 
 private:
 	void Log(const char* query, unsigned long queryTime);
+	void ConnectDB(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 
 public:
-	void ConnectDB(const char* dbAddr, int port, const char* loginID, const char* password, const char* schema, unsigned short loggingTime = INFINITE);
 	MYSQL_RES* Query(const char* queryFormat, ...);
 	MYSQL_RES* Query(const char* queryFormat, va_list args);
 };

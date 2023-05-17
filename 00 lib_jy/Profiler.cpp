@@ -6,8 +6,6 @@
 // Profiler
 //------------------------------
 
-Profiler Profiler::inst;
-
 Profiler::Profiler() :tlsIndex(TlsAlloc()) {
 }
 

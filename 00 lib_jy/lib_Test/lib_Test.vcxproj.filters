@@ -47,8 +47,11 @@
     <ClCompile Include="LoggerTest.cpp">
       <Filter>TestCode</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectPoolTest.cpp">
+    <ClCompile Include="LFObjectPool_PerfomenceTest.cpp">
       <Filter>TestCode</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\lib_jy.lib" />
   </ItemGroup>
 </Project>

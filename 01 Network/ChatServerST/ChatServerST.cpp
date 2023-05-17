@@ -351,10 +351,7 @@ void ChatServerST::AuthFunc() {
 			redisClient.sync_commit();
 			cpp_redis::reply reply = futureReply.get();
 			if (reply.is_string()) {
-				memmove((char*)&redisToken, reply.as_string().c_str(), sizeof(Token));
-			}
-			else {
-				ZeroMemory(&redisToken, sizeof(redisToken));
+				memcpy((char*)&redisToken, reply.as_string().c_str(), sizeof(Token));
 			}
 
 			// 유효 세션
@@ -366,7 +363,7 @@ void ChatServerST::AuthFunc() {
 			// 유효하지 않은 세션
 			else {
 				JobQueuing(p_at->sessionId, JOB_TYPE_CLIENT_LOGIN_FAIL);
-				LOG("ChatServerST", LOG_LEVEL_WARN, "INVALID TOKEN AccountNo(%d)	Redis(%.*s), User(%.*s)", p_at->accountNo, 64, redisToken.buf, 64, p_at->token.buf);
+				LOG("ChatServerST", LOG_LEVEL_WARN, "INVALID TOKEN AccountNo(%d) Redis(%.*s), User(%.*s)", p_at->accountNo, 64, redisToken.buf, 64, p_at->token.buf);
 			}
 			tokenPool.Free(p_at);
 		}

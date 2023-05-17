@@ -184,7 +184,7 @@ void MonitoringLanServer::SaveMonitoringData(int serverNo, int dataType, int dat
 		p_data->updateData(data);
 	}
 
-	// DB Write (10분 주기)
+	// DB Write (5분 주기)
 	if (p_data->lastWriteTime + monitorLogTime <= timeStamp) {
 		DBJobQueuing(p_data);
 		p_data->Init(timeStamp);

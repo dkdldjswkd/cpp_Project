@@ -4,9 +4,6 @@
 #include <strsafe.h>
 using namespace std;
 
-#define LOG_INST Logger::inst
-Logger Logger::inst;
-
 //------------------------------
 // Logger
 //------------------------------
@@ -21,6 +18,11 @@ Logger::~Logger() {
 	if (logThread.joinable()) logThread.join();
 }
 
+Logger& Logger::GetInst(){
+	static Logger inst;
+	return inst;
+}
+
 void Logger::AlertableFunc() {
 	while (!shutDown) {
 		SleepEx(INFINITE, TRUE);
@@ -28,14 +30,21 @@ void Logger::AlertableFunc() {
 }
 
 void Logger::SetLogLevel(const LogLevel& logLevel) {
-	inst.logLevel = logLevel;
+	this->logLevel = logLevel;
 }
 
 // 로그 스레드에 작업 큐잉
 void Logger::Log(const char* fileName, const LogLevel& logLevel, const char* format, ...) {
+	// loglevel 체크
 	if (logLevel > this->logLevel) return;
 
+	// logData 할당
 	LogData* p_logData = logDataPool.Alloc();
+
+	/////////////////////
+	// logData 셋팅
+	/////////////////////
+
 	// Set fileName, logLevel
 	strncpy_s(p_logData->fileName, FILE_NAME_SIZE, fileName, FILE_NAME_SIZE - 1);
 	p_logData->logLevel = logLevel;
@@ -45,7 +54,8 @@ void Logger::Log(const char* fileName, const LogLevel& logLevel, const char* for
 	StringCchVPrintfA(p_logData->logStr, LOG_SIZE, format, var_list);
 	va_end(var_list);
 
-	QueueUserAPC(Logger::LogAPC, logThread.native_handle(), (ULONG_PTR)p_logData);
+	// LogThread 큐잉
+	QueueUserAPC((PAPCFUNC)LogAPC, logThread.native_handle(), (ULONG_PTR)p_logData);
 }
 
 // 파일 로깅 함수 (실질적, File I/O)
@@ -56,9 +66,12 @@ void Logger::LogAPC(ULONG_PTR p_logData) {
 	// fopen
 	char fileName[FILE_NAME_SIZE + 50];
 	snprintf(fileName, FILE_NAME_SIZE + 50, "%s_%s.txt", __DATE__, logData.fileName);
-	fopen_s(&fp, fileName, "at");
+	if (0 != fopen_s(&fp, fileName, "at")) {
+		GetInst().logDataPool.Free((Logger::LogData*)p_logData);
+		return;
+	}
 
-	// Logging
+	// sprintf
 	char logBuf[LOG_SIZE];
 	switch (logData.logLevel) {
 		case LOG_LEVEL_FATAL:
@@ -82,13 +95,12 @@ void Logger::LogAPC(ULONG_PTR p_logData) {
 			break;
 	}
 
+	// file Logging
 	int logOffset = strlen(logBuf);
 	snprintf(logBuf + logOffset, LOG_SIZE - logOffset, "%s", logData.logStr);
+	fprintf(fp, "%s\n", logBuf);
 
-	if (fp != NULL) {
-		fprintf(fp, "%s\n", logBuf);
-		fclose(fp);
-	}
-
-	inst.logDataPool.Free((Logger::LogData*)p_logData);
+	// 리소스 정리
+	fclose(fp);
+	GetInst().logDataPool.Free((Logger::LogData*)p_logData);
 }

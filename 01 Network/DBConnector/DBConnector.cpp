@@ -65,7 +65,7 @@ MYSQL_RES* DBConnector::Query(const char* queryFormat, ...) {
 	}
 	auto durTime = timeGetTime() - start;
 	if (loggingTime < durTime) {
-		Log(queryFormat, durTime);
+		Log(query, durTime);
 	}
 
 	return mysql_store_result(connection);

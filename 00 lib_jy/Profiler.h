@@ -12,10 +12,10 @@
 #endif
 
 #ifndef UNUSE_PROFILE
-#define PRO_BEGIN(TagName)	Profiler::inst.ProfileBegin(TagName)
-#define PRO_END(TagName)	Profiler::inst.ProfileEnd(TagName)
-#define PRO_RESET()			Profiler::inst.ProfileReset()
-#define PRO_FILEOUT()		Profiler::inst.ProfileFileOut()
+#define PRO_BEGIN(TagName)	Profiler::getInst().ProfileBegin(TagName)
+#define PRO_END(TagName)	Profiler::getInst().ProfileEnd(TagName)
+#define PRO_RESET()			Profiler::getInst().ProfileReset()
+#define PRO_FILEOUT()		Profiler::getInst().ProfileFileOut()
 #endif
 
 #define MAX_THREAD_NUM		20
@@ -27,7 +27,12 @@ private:
 	Profiler();
 public:
 	~Profiler();
-	static Profiler inst;
+
+public:
+	static Profiler& getInst() {
+		static Profiler instance;
+		return instance;
+	}
 
 private:
 	static struct ProfileData {
