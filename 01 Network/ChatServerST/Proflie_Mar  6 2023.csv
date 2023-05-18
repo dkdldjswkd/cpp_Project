@@ -1,7 +1,0 @@
-SendPacket::PQCS SendPost ,,,,
-average, total time, call num, min, max
-0.000724 ms, 8040 ms,11099360,0,16
-,,,,
-SendSector::SendPacket ,,,,
-average, total time, call num, min, max
-0.001886 ms, 20423 ms,10826483,0,16
