@@ -89,27 +89,27 @@ void LoginServer::OnRecv(SessionId sessionId, PacketBuffer* csContentsPacket) {
 			MYSQL_RES* sqlResult;
 			MYSQL_ROW sqlRow;
 
-			// DB 조회 (DB의 sessionKey와 패킷의 sessionKey 비교를 위함)
-			sqlResult = p_connecterTLS->Query("SELECT sessionkey FROM sessionkey WHERE accountno = %d", accountNo);
+			// 인증 절차
+			sqlResult = p_connecterTLS->Query("SELECT sessionkey, userid, usernick FROM sessionkey  S JOIN account A ON S.accountno = A.accountno where S.accountno = %lld", accountNo);
 			sqlRow = mysql_fetch_row(sqlResult);
+
+			// 튜플이 존재하지 않음
 			if (NULL == sqlRow) {
 				Disconnect(sessionId);
 				mysql_free_result(sqlResult);
 				return;
 			}
 
-			// 인증 판단
-			// ...
+			// Session Key 대조
+			// (일치 가정)
 
-			mysql_free_result(sqlResult);
-
-			// DB 조회 (userid, usernick 등을 담은 패킷을 회신하기 위함)
-			sqlResult = p_connecterTLS->Query("SELECT userid, usernick FROM account WHERE accountno = %d", accountNo);
-			sqlRow = mysql_fetch_row(sqlResult);
+			// id, nick 추출
 			WCHAR id[20];
-			UTF8ToUTF16(sqlRow[0], id);
+			UTF8ToUTF16(sqlRow[1], id);
 			WCHAR nickname[20];
-			UTF8ToUTF16(sqlRow[1], nickname);
+			UTF8ToUTF16(sqlRow[2], nickname);
+
+			// result 반환
 			mysql_free_result(sqlResult);
 
 			// Set IP, PORT
