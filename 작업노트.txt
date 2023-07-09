@@ -1,0 +1,7 @@
+// 오후 9:18 2023-05-16
+
+Logger 람다 ?
+
+Parser getvalue 4 바이트 -> 8 바이트
+
+DB Connector // 주기적 로깅? (avr, min, max)
