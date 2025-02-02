@@ -1,6 +1,6 @@
-# cpp\_Project
+# lockfree-gameserver-core-cpp
 
-**cpp\_Project**는 Windows 환경에서 동작하는 **락프리 게임 서버 네트워크 코어**입니다.
+**lockfree-gameserver-core-cpp**는 Windows 환경에서 동작하는 **락프리 게임 서버 네트워크 코어**입니다.
 이 프로젝트는 **C++ 표준 라이브러리, WinAPI, ****`cpp_redis`****, MySQL Connector/C**를 활용하여 구현되었으며,
 패킷을 정의하고 핸들러만 작성하면 쉽게 사용할 수 있도록 설계되었습니다.
 
