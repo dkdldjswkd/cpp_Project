@@ -1,3 +1,8 @@
+# 프로젝트 문서
+
+본 프로젝트의 상세한 구현 방식과 성능 분석은 PDF 문서에 정리되어 있습니다.  
+📄 [PDF 문서](./lockfree-gameserver-core-cpp.pdf)
+
 # lockfree-gameserver-core-cpp
 
 **lockfree-gameserver-core-cpp**는 Windows 환경에서 동작하는 **락프리 게임 서버 네트워크 코어**입니다.
@@ -20,8 +25,3 @@
   - **락프리 오브젝트 풀**
     - **TLS (Thread Local Storage) 기반 청크 관리 방식**
     - 다중 스레드 환경에서 메모리 할당 경합을 최소화하는 구조
-
-## 프로젝트 문서
-
-본 프로젝트의 상세한 구현 방식과 성능 분석은 PDF 문서에 정리되어 있습니다.  
-📄 [PDF 문서](./lockfree-gameserver-core-cpp.pdf)
